@@ -1,4 +1,7 @@
 
+# DeepSpeed
+This repo contains example models that use [DeepSpeed](https://github.com/microsoft/DeepSpeed).
+
 # Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
