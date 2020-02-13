@@ -923,9 +923,9 @@ def main():
                 ema_loss = args.loss_plot_alpha*ema_loss + (1-args.loss_plot_alpha)*loss.item()
 
                 if args.local_rank != -1:
-                    model.disable_need_reduction()
+                    model.disable_allreduce()
                     if (step + 1) % args.gradient_accumulation_steps == 0:
-                        model.enable_need_reduction()
+                        model.enable_allreduce()
 
                 if args.fp16:
                     optimizer.backward(loss)
