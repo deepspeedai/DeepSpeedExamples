@@ -27,7 +27,7 @@ echo "gradient accumulation steps: ${gas}, micro batch size: $micro_batch"
 
 deepspeed.pt ${base_dir}/deepspeed_train.py \
 --cf ${base_dir}/bert_large_lamb_seq512.json \
---train_batch_size ${batch_per_gpu} \
+--train_batch_size ${train_batch_size} \
 --max_seq_length 512 \
 --output_dir $OUTPUT_DIR \
 --gradient_accumulation_steps ${gas} \
