@@ -274,8 +274,7 @@ def train(args, index, model, optimizer, finetune=False):
 
             # Calculate forward pass
             loss = model.network(batch)
-            # DeepSpeed already scales the loss by the gradient accumulation step. The unscaled_loss is for reporting metric only.
-            unscaled_loss = loss.item() * args.gradient_accumulation_steps
+            unscaled_loss = loss.item()
             current_data_sample_count += (args.train_batch_size * dist.get_world_size())
             if args.n_gpu > 1:
                 # this is to average loss for multi-gpu. In DistributedDataParallel
@@ -474,7 +473,7 @@ def prepare_model_optimizer(args):
 
     # Optimizer parameters
     optimizer_grouped_parameters = prepare_optimizer_parameters(args, model)
-    
+
     # DeepSpeed initializer handles FP16, distributed, optimizer automatically.
     model.network, optimizer, _, _ = deepspeed.initialize(args=args,
                                                           model=model.network,

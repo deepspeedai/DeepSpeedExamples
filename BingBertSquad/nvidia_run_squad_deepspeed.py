@@ -908,6 +908,9 @@ def main():
                 if n_gpu > 1:
                     loss = loss.mean()  # mean() to average on multi-gpu.
 
+                if args.gradient_accumulation_steps > 1:
+                    loss = loss / args.gradient_accumulation_steps
+
                 ema_loss = args.loss_plot_alpha*ema_loss + (1-args.loss_plot_alpha)*loss.item()
 
                 model.backward(loss)
