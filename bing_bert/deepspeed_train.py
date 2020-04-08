@@ -88,7 +88,7 @@ def pretrain_validation(args, index, model):
     logger = args.logger
 
     model.eval()
-    dataset = PreTrainingDataset(args.tokenizer, config['validation']['path'], args.logger,
+    dataset = PreTrainingDataset(args.tokenizer, os.path.join(args.data_path_prefix, config['validation']['path']), args.logger,
                                  args.max_seq_length, index, PretrainDataType.VALIDATION, args.max_predictions_per_seq)
     data_batches = get_dataloader(args, dataset, eval_set=True)
     eval_loss = 0
@@ -130,7 +130,7 @@ def get_train_dataset(args, index, finetune=False, shuffle=True):
             # Load Wiki Dataset
             wiki_pretrain_dataset = PreTrainingDataset(
                 args.tokenizer,
-                dataset_paths['wiki_pretrain_dataset'],
+                os.path.join(args.data_path_prefix, dataset_paths['wiki_pretrain_dataset']),
                 args.logger,
                 args.max_seq_length,
                 index,
@@ -145,7 +145,7 @@ def get_train_dataset(args, index, finetune=False, shuffle=True):
 
             bc_pretrain_dataset = PreTrainingDataset(
                 args.tokenizer,
-                dataset_paths['bc_pretrain_dataset'],
+                os.path.join(args.data_path_prefix, dataset_paths['bc_pretrain_dataset']),
                 args.logger,
                 args.max_seq_length,
                 index,

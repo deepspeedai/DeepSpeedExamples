@@ -80,6 +80,11 @@ def get_argument_parser():
                         default=100,
                         help='Interval to print training details.')
 
+    parser.add_argument('--data_path_prefix',
+                        type=str,
+                        default="",
+                        help="Path to prefix data loading, helpful for AML and other environments")
+
     return parser
 
 def is_time_to_exit(args, epoch_steps=0, global_steps=0):

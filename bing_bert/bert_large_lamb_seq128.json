@@ -23,8 +23,8 @@
             "pretrain_type": "wiki_bc"
         },
         "datasets": {
-            "wiki_pretrain_dataset": "/data/bert/bnorick_format/128/wiki_pretrain",
-            "bc_pretrain_dataset": "/data/bert/bnorick_format/128/bookcorpus_pretrain"
+            "wiki_pretrain_dataset": "bnorick_format/128/wiki_pretrain",
+            "bc_pretrain_dataset": "bnorick_format/128/bookcorpus_pretrain"
         },
         "tp1pp_evalsets":
         {
@@ -45,6 +45,6 @@
         "total_training_steps": 187000
     },
     "validation": {
-        "path": "/data/bert/validation_set/"
+        "path": "validation_set/"
     }
 }
