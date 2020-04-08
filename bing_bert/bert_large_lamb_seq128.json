@@ -36,7 +36,7 @@
         ]
     },
     "training": {
-        "num_epochs": 800,
+        "num_epochs": 150,
         "warmup_proportion": 0.02,
         "learning_rate": 4e-3,
         "num_workers": 0,

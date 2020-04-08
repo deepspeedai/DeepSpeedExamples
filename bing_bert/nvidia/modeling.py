@@ -291,7 +291,7 @@ try:
     #apex.amp.register_float_function(apex.normalization.FusedLayerNorm, 'forward')
     BertLayerNorm = apex.normalization.FusedLayerNorm
 except ImportError:
-    print("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex.")
+    #print("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex.")
     class BertLayerNorm(nn.Module):
         def __init__(self, hidden_size, eps=1e-12):
             """Construct a layernorm module in the TF style (epsilon inside the square root).
@@ -885,22 +885,9 @@ class BertForPreTraining(BertPreTrainedModel):
     """
     def __init__(self, config, args):
         super(BertForPreTraining, self).__init__(config)
-        self.summary_writer = None
-        if dist.get_rank() == 0:
-            self.summary_writer = args.summary_writer
-        self.samples_per_step = dist.get_world_size() * args.train_batch_size
-        self.sample_count = self.samples_per_step
         self.bert = BertModel(config)
         self.cls = BertPreTrainingHeads(config, self.bert.embeddings.word_embeddings.weight)
         self.apply(self.init_bert_weights)
-
-    def log_summary_writer(self, logs: dict, base='Train'):
-        if dist.get_rank() == 0:
-            module_name = "Samples" #self._batch_module_name.get(batch_type, self._get_batch_type_error(batch_type))
-            for key, log in logs.items():
-                self.summary_writer.add_scalar(
-                    f'{base}/{module_name}/{key}', log, self.sample_count)
-            self.sample_count += self.samples_per_step
 
     def forward(self, batch, log=True):
         #input_ids, token_type_ids=None, attention_mask=None, masked_lm_labels=None, next_sentence_label=None, checkpoint_activations=False):
@@ -921,8 +908,6 @@ class BertForPreTraining(BertPreTrainedModel):
             next_sentence_loss = loss_fct(seq_relationship_score.view(-1, 2), next_sentence_label.view(-1))
             #print("loss is {} {}".format(masked_lm_loss, next_sentence_loss))
             total_loss = masked_lm_loss + next_sentence_loss
-#            if log:
-#                self.log_summary_writer(logs={'train_loss': total_loss.item()})
             return total_loss
         else:
             return prediction_scores, seq_relationship_score

@@ -18,24 +18,11 @@ def get_argument_parser():
                         "longer than this will be truncated, and sequences shorter than this will be padded.")
     parser.add_argument("--max_predictions_per_seq", "--max_pred", default=80, type=int,
                         help="The maximum number of masked tokens in a sequence to be predicted.")
-    parser.add_argument("--train_batch_size", default=32,
-                        type=int, help="Total batch size for training.")
-    parser.add_argument("--no_cuda",
-                        default=False,
-                        action='store_true',
-                        help="Whether not to use CUDA when available")
     parser.add_argument('--seed',
                         type=int,
                         default=42,
                         help="random seed for initialization")
-    parser.add_argument('--gradient_accumulation_steps',
-                        type=int,
-                        default=1,
-                        help="Number of updates steps to accumulate before performing a backward/update pass.")
-    parser.add_argument('--max_grad_norm',
-                        type=float,
-                        default=0.0,
-                        help="The gradient clipping factor. Default: 0.0")
+    
     parser.add_argument("--do_lower_case",
                         default=True,
                         action='store_true',
@@ -44,30 +31,11 @@ def get_argument_parser():
                         type=int,
                         default=-1,
                         help="local_rank for distributed training on gpus")
-    parser.add_argument('--optimize_on_cpu',
-                        default=False,
-                        action='store_true',
-                        help="Whether to perform optimization and keep the optimizer averages on CPU")
-    parser.add_argument('--fp16',
-                        default=False,
-                        action='store_true',
-                        help="Whether to use 16-bit float precision instead of 32-bit")
+    
     parser.add_argument('--use_pretrain',
                         default=False,
                         action='store_true',
                         help="Whether to use Bert Pretrain Weights or not")
-
-    parser.add_argument('--loss_scale',
-                        type=float, default=0,
-                        help='Loss scaling, positive power of 2 values can improve fp16 convergence.')
-
-    parser.add_argument('--max_lamb',
-                        type=float, default=2.0,
-                        help='Max lamb Coeff.')
-
-    parser.add_argument('--min_lamb',
-                        type=float, default=0.01,
-                        help='Min lamb Coeff.')
 
     parser.add_argument('--refresh_bucket_size',
                         type=int,
@@ -97,16 +65,6 @@ def get_argument_parser():
                         action='store_true',
                         help='Rewarmup learning rate after resuming from a checkpoint')
 
-    parser.add_argument('--use_lamb',
-                        default=False,
-                        action='store_true',
-                        help="Use deepspeed lamb")
-
-    parser.add_argument('--delay_allreduce',
-                        default=False,
-                        action='store_true',
-                        help='Delay all reduce to end of back propagation. Disable computation/communication overlap')
-
     parser.add_argument('--max_steps',
                         type=int,
                         default=sys.maxsize,
@@ -121,11 +79,6 @@ def get_argument_parser():
                         type=int,
                         default=100,
                         help='Interval to print training details.')
-
-    parser.add_argument('--wall_clock_breakdown',
-                        default=False,
-                        action='store_true',
-                        help="Whether to display the breakdown of the wall-clock time for foraward, backward and step")
 
     return parser
 
