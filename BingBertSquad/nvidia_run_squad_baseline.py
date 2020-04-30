@@ -42,6 +42,7 @@ from pytorch_pretrained_bert.tokenization import whitespace_tokenize, BasicToken
 from pytorch_pretrained_bert.optimization import BertAdam
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
 
+from apex import amp
 from turing.nvidia_modeling import BertForQuestionAnswering, BertConfig
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -712,6 +713,31 @@ def set_optimizer_params_grad(named_params_optimizer, named_params_model, test_n
     return is_nan
 
 
+from apex.multi_tensor_apply import multi_tensor_applier
+class GradientClipper:
+    """
+    Clips gradient norm of an iterable of parameters. 
+    """
+    def __init__(self, max_grad_norm):
+        self.max_norm = max_grad_norm
+        if multi_tensor_applier.available:
+            import amp_C
+            self._overflow_buf = torch.cuda.IntTensor([0])
+            self.multi_tensor_l2norm = amp_C.multi_tensor_l2norm
+            self.multi_tensor_scale = amp_C.multi_tensor_scale
+        else:
+            raise RuntimeError('Gradient clipping requires cuda extensions')
+
+    def step(self, parameters):
+        l = [p.grad for p in parameters if p.grad is not None]
+        total_norm, _ = multi_tensor_applier(self.multi_tensor_l2norm, self._overflow_buf, [l], False)
+        total_norm = total_norm.item()
+        if (total_norm == float('inf')): return
+        clip_coef = self.max_norm / (total_norm + 1e-6)
+        if clip_coef < 1:
+            multi_tensor_applier(self.multi_tensor_scale, self._overflow_buf, [l, l], clip_coef)
+
+
 def main():
     parser = get_argument_parser()
     args = parser.parse_args()
@@ -813,18 +839,7 @@ def main():
         #model.bert.load_state_dict(bert_state_dict, strict=False)
         logger.info(f"Pretrained Bert Encoder Loaded from: {args.model_file}")
 
-    if args.fp16:
-        model.half()
     model.to(device)
-    if args.local_rank != -1:
-        try:
-            from apex.parallel import DistributedDataParallel as DDP
-        except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
-
-        model = DDP(model)
-    elif n_gpu > 1:
-        model = torch.nn.DataParallel(model)
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -844,24 +859,32 @@ def main():
         t_total = t_total // torch.distributed.get_world_size()
     if args.fp16:
         try:
-            from apex.optimizers import FP16_Optimizer
             from apex.optimizers import FusedAdam
         except ImportError:
             raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
 
         optimizer = FusedAdam(optimizer_grouped_parameters,
                               lr=args.learning_rate,
-                              bias_correction=False,
-                              max_grad_norm=1.0)
+                              bias_correction=False)
         if args.loss_scale == 0:
-            optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+            model, optimizer = amp.initialize(model, optimizer, opt_level="O2", keep_batchnorm_fp32=False, loss_scale="dynamic")
         else:
-            optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+            raise NotImplementedError("dynamic loss scale is only supported in baseline, please set loss_scale=0")
     else:
         optimizer = BertAdam(optimizer_grouped_parameters,
                              lr=args.learning_rate,
                              warmup=args.warmup_proportion,
                              t_total=t_total)
+
+    if args.local_rank != -1:
+        try:
+            from apex.parallel import DistributedDataParallel as DDP
+        except ImportError:
+            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
+
+        model = DDP(model)
+    elif n_gpu > 1:
+        model = torch.nn.DataParallel(model)
 
     global_step = 0
     if args.do_train:
@@ -901,6 +924,8 @@ def main():
             train_sampler = DistributedSampler(train_data)
         train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.train_batch_size)
 
+        gradClipper = GradientClipper(max_grad_norm=1.0)
+
         model.train()
         ema_loss = 0.
         sample_count = 0
@@ -928,9 +953,13 @@ def main():
                         model.enable_allreduce()
 
                 if args.fp16:
-                    optimizer.backward(loss)
+                    with amp.scale_loss(loss, optimizer) as scaled_loss:
+                        scaled_loss.backward()
                 else:
                     loss.backward()
+
+                # gradient clipping  
+                gradClipper.step(amp.master_params(optimizer))
 
                 sample_count += (args.train_batch_size * torch.distributed.get_world_size())
 
