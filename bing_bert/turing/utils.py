@@ -11,7 +11,9 @@ SUMMARY_WRITER_DIR_NAME = 'runs'
 def get_sample_writer(name, base=".."):
     """Returns a tensorboard summary writer
     """
-    return SummaryWriter(log_dir=os.path.join(base, SUMMARY_WRITER_DIR_NAME, name))
+    return SummaryWriter(
+        log_dir=os.path.join(base, SUMMARY_WRITER_DIR_NAME, name))
+
 
 class TorchTuple(tuple):
     def to(self, device, non_blocking=False):
@@ -98,7 +100,10 @@ _field_template = '''\
 '''
 
 
-def namedtorchbatch(typename: str, field_names: List[str], verbose: bool=False, rename: bool=False):
+def namedtorchbatch(typename: str,
+                    field_names: List[str],
+                    verbose: bool = False,
+                    rename: bool = False):
     """Returns a new subclass of tuple with named fields leveraging use of torch tensors.
     """
 
@@ -110,10 +115,8 @@ def namedtorchbatch(typename: str, field_names: List[str], verbose: bool=False, 
     if rename:
         seen: set = set()
         for index, name in enumerate(field_names):
-            if (not name.isidentifier()
-                or _iskeyword(name)
-                or name.startswith('_')
-                    or name in seen):
+            if (not name.isidentifier() or _iskeyword(name)
+                    or name.startswith('_') or name in seen):
                 field_names[index] = '_%d' % index
             seen.add(name)
     for name in [typename] + field_names:
@@ -138,11 +141,11 @@ def namedtorchbatch(typename: str, field_names: List[str], verbose: bool=False, 
         field_names=tuple(field_names),
         num_fields=len(field_names),
         arg_list=repr(tuple(field_names)).replace("'", "")[1:-1],
-        repr_fmt=', '.join(_repr_template.format(name=name)
-                           for name in field_names),
-        field_defs='\n'.join(_field_template.format(index=index, name=name)
-                             for index, name in enumerate(field_names))
-    )
+        repr_fmt=', '.join(
+            _repr_template.format(name=name) for name in field_names),
+        field_defs='\n'.join(
+            _field_template.format(index=index, name=name)
+            for index, name in enumerate(field_names)))
 
     # Execute the template string in a temporary namespace and support
     # tracing utilities by setting a value for frame.f_globals['__name__']
@@ -158,10 +161,9 @@ def namedtorchbatch(typename: str, field_names: List[str], verbose: bool=False, 
     # sys._getframe is not defined (Jython for example) or sys._getframe is not
     # defined for arguments greater than 0 (IronPython).
     try:
-        result.__module__ = _sys._getframe(
-            1).f_globals.get('__name__', '__main__')
+        result.__module__ = _sys._getframe(1).f_globals.get(
+            '__name__', '__main__')
     except (AttributeError, ValueError):
         pass
 
     return result
-

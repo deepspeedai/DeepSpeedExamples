@@ -1,20 +1,22 @@
 {
-  "train_batch_size": 16384,
+  "train_batch_size": 32768,
   "train_micro_batch_size_per_gpu": 16,
   "steps_per_print": 1000,
-  "prescale_gradients": true,
+  "prescale_gradients": false,
   "optimizer": {
     "type": "Lamb",
     "params": {
       "lr": 4e-3,
-      "max_grad_norm": 1.0,
       "weight_decay": 0.01,
       "bias_correction": false,
-      "max_coeff": 0.5,
-      "min_coeff": 0.08
+      "max_coeff": 0.3,
+      "min_coeff": 0.01
     }
   },
-  "wall_clock_breakdown": true,
+  "gradient_clipping": 1.0,
+
+  "wall_clock_breakdown": false,
+
   "fp16": {
     "enabled": true,
     "loss_scale": 0

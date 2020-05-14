@@ -25,6 +25,8 @@ import math
 import numpy as np
 import torch
 
+import deepspeed
+
 from arguments import get_args
 from configure_data import configure_data
 from fp16 import FP16_Module
@@ -71,6 +73,10 @@ def get_model(args):
         print(' > number of parameters on model parallel rank {}: {}'.format(
             mpu.get_model_parallel_rank(),
             sum([p.nelement() for p in model.parameters()])), flush=True)
+
+    #To prevent OOM for model sizes that cannot fit in GPU memory in full precision
+    if args.deepspeed and args.fp16:
+        model.half()
 
     # GPU allocation.
     model.cuda(torch.cuda.current_device())
@@ -154,8 +160,6 @@ def setup_model_and_optimizer(args):
     lr_scheduler = get_learning_rate_scheduler(optimizer, args)
 
     if args.deepspeed:
-        import deepspeed
-
         print_rank_0("DeepSpeed is enabled.")
 
         model, optimizer, _, lr_scheduler = deepspeed.initialize(
@@ -481,6 +485,14 @@ def evaluate(data_iterator, model, args, timers, verbose=False):
                 print_rank_0('Evaluating iter {}/{}'.format(iteration, args.eval_iters))
             # Forward evaluation.
             lm_loss = forward_step(data_iterator, model, args, timers)
+
+            '''when contiguous memory optimizations are enabled, the buffers
+            allocated by the optimizations are deallocated during backward pass
+            in the absence of backward pass the buffers should be reset after each
+            forward pass'''
+            if args.deepspeed and args.deepspeed_activation_checkpointing:
+                deepspeed.checkpointing.reset()
+
             # Reduce across processes.
             if isinstance(model, DDP):
                 torch.distributed.all_reduce(lm_loss.data)
@@ -511,6 +523,26 @@ def evaluate_and_print_results(prefix, data_iterator, model,
 
     return lm_loss
 
+'''
+    Optional DeepSpeed Activation Checkpointing features
+    Gives access to partition activations, contiguous memory optimizations
+    and cpu checkpointing.
+
+    Activation checkpoint requires keep track of the random states 
+    and setting the random seed for each MP process. Megatron uses
+    mpu.get_cuda_rng_tracker and mpu.model_parallel_cuda_manual_seed
+    for keeping track of the random states and setting the random seeds.
+    Since they are used in places outside of activation checkpointing, 
+    we overwrite them to maintain consistency.
+
+    This must be done before all the calls to mpu.model_parallel_cuda_manual_seed
+    '''
+def set_deepspeed_activation_checkpointing(args):
+
+    deepspeed.checkpointing.configure(mpu, deepspeed_config=args.deepspeed_config, num_checkpoints=args.num_layers)
+    mpu.checkpoint = deepspeed.checkpointing.checkpoint
+    mpu.get_cuda_rng_tracker = deepspeed.checkpointing.get_cuda_rng_tracker
+    mpu.model_parallel_cuda_manual_seed = deepspeed.checkpointing.model_parallel_cuda_manual_seed
 
 def initialize_distributed(args):
     """Initialize torch.distributed."""
@@ -533,10 +565,10 @@ def initialize_distributed(args):
     # Set the model-parallel / data-parallel communicators.
     mpu.initialize_model_parallel(args.model_parallel_size)
 
-    #Checkpoints are partitioned across the model parallel process 
-    #instead of having replicas in the original megatron
-    mpu.partition_activations_in_checkpoint(args.partition_activations)
-
+    # Optional DeepSpeed Activation Checkpointing Features
+    # 
+    if args.deepspeed and args.deepspeed_activation_checkpointing:
+        set_deepspeed_activation_checkpointing(args)
 
 
 def set_random_seed(seed):

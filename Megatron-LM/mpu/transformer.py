@@ -25,8 +25,12 @@ from .initialize import get_model_parallel_world_size
 from .layers import ColumnParallelLinear
 from .layers import RowParallelLinear
 from .mappings import gather_from_model_parallel_region
+
+import deepspeed
+
 from .random import checkpoint
 from .random import get_cuda_rng_tracker
+
 from .utils import divide
 from .utils import split_tensor_along_last_dim
 
@@ -87,6 +91,12 @@ class GPT2ParallelSelfAttention(torch.nn.Module):
                                        input_is_parallel=True,
                                        init_method=output_layer_init_method)
         self.output_dropout = torch.nn.Dropout(output_dropout_prob)
+
+        if deepspeed.checkpointing.is_configured():
+            global get_cuda_rng_tracker, checkpoint
+            get_cuda_rng_tracker = deepspeed.checkpointing.get_cuda_rng_tracker
+            checkpoint = deepspeed.checkpointing.checkpoint
+
 
     def _transpose_for_scores(self, tensor):
         """Transpose a 3D tensor [b, s, np*hn] into a 4D tensor with
@@ -376,6 +386,12 @@ class GPT2ParallelTransformer(torch.nn.Module):
         # Final layer norm before output.
         self.final_layernorm = LayerNorm(hidden_size, eps=layernorm_epsilon)
 
+        if deepspeed.checkpointing.is_configured():
+            global get_cuda_rng_tracker, checkpoint
+            get_cuda_rng_tracker = deepspeed.checkpointing.get_cuda_rng_tracker
+            checkpoint = deepspeed.checkpointing.checkpoint
+
+
     def forward(self, hidden_states, attention_mask):
 
         def custom(start, end):
@@ -455,6 +471,12 @@ class BertParallelSelfAttention(torch.nn.Module):
         # different outputs on different number of parallel partitions but
         # on average it should not be partition dependent.
         self.dropout = torch.nn.Dropout(dropout_prob)
+
+        if deepspeed.checkpointing.is_configured():
+            global get_cuda_rng_tracker, checkpoint
+            get_cuda_rng_tracker = deepspeed.checkpointing.get_cuda_rng_tracker
+            checkpoint = deepspeed.checkpointing.checkpoint
+
 
     def _transpose_for_scores(self, tensor):
         """Transpose a 3D tensor [b, s, np*hn] into a 4D tensor with

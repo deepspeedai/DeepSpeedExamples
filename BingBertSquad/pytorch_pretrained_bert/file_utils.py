@@ -23,8 +23,9 @@ import requests
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
-PYTORCH_PRETRAINED_BERT_CACHE = Path(os.getenv('PYTORCH_PRETRAINED_BERT_CACHE',
-                                               Path.home() / '.pytorch_pretrained_bert'))
+PYTORCH_PRETRAINED_BERT_CACHE = Path(
+    os.getenv('PYTORCH_PRETRAINED_BERT_CACHE',
+              Path.home() / '.pytorch_pretrained_bert'))
 
 
 def url_to_filename(url: str, etag: str = None) -> str:
@@ -45,7 +46,8 @@ def url_to_filename(url: str, etag: str = None) -> str:
     return filename
 
 
-def filename_to_url(filename: str, cache_dir: Union[str, Path] = None) -> Tuple[str, str]:
+def filename_to_url(filename: str,
+                    cache_dir: Union[str, Path] = None) -> Tuple[str, str]:
     """
     Return the url and etag (which may be ``None``) stored for `filename`.
     Raise ``FileNotFoundError`` if `filename` or its stored metadata do not exist.
@@ -71,7 +73,8 @@ def filename_to_url(filename: str, cache_dir: Union[str, Path] = None) -> Tuple[
     return url, etag
 
 
-def cached_path(url_or_filename: Union[str, Path], cache_dir: Union[str, Path] = None) -> str:
+def cached_path(url_or_filename: Union[str, Path],
+                cache_dir: Union[str, Path] = None) -> str:
     """
     Given something that might be a URL (or might be a local path),
     determine which. If it's a URL, download the file and cache it, and
@@ -98,7 +101,9 @@ def cached_path(url_or_filename: Union[str, Path], cache_dir: Union[str, Path] =
         raise FileNotFoundError("file {} not found".format(url_or_filename))
     else:
         # Something unknown
-        raise ValueError("unable to parse {} as a URL or as a local path".format(url_or_filename))
+        raise ValueError(
+            "unable to parse {} as a URL or as a local path".format(
+                url_or_filename))
 
 
 def split_s3_path(url: str) -> Tuple[str, str]:
@@ -119,7 +124,6 @@ def s3_request(func: Callable):
     Wrapper function for s3 requests in order to create more helpful error
     messages.
     """
-
     @wraps(func)
     def wrapper(url: str, *args, **kwargs):
         try:
@@ -156,7 +160,7 @@ def http_get(url: str, temp_file: IO) -> None:
     total = int(content_length) if content_length is not None else None
     progress = tqdm(unit="B", total=total)
     for chunk in req.iter_content(chunk_size=1024):
-        if chunk: # filter out keep-alive new chunks
+        if chunk:  # filter out keep-alive new chunks
             progress.update(len(chunk))
             temp_file.write(chunk)
     progress.close()
@@ -180,8 +184,9 @@ def get_from_cache(url: str, cache_dir: Union[str, Path] = None) -> str:
     else:
         response = requests.head(url, allow_redirects=True)
         if response.status_code != 200:
-            raise IOError("HEAD request failed for url {} with status code {}"
-                          .format(url, response.status_code))
+            raise IOError(
+                "HEAD request failed for url {} with status code {}".format(
+                    url, response.status_code))
         etag = response.headers.get("ETag")
 
     filename = url_to_filename(url, etag)
@@ -193,7 +198,8 @@ def get_from_cache(url: str, cache_dir: Union[str, Path] = None) -> str:
         # Download to temporary file, then copy to cache dir once finished.
         # Otherwise you get corrupt cache entries if the download gets interrupted.
         with tempfile.NamedTemporaryFile() as temp_file:
-            logger.info("%s not found in cache, downloading to %s", url, temp_file.name)
+            logger.info("%s not found in cache, downloading to %s", url,
+                        temp_file.name)
 
             # GET file object
             if url.startswith("s3://"):
@@ -206,7 +212,8 @@ def get_from_cache(url: str, cache_dir: Union[str, Path] = None) -> str:
             # shutil.copyfileobj() starts at the current position, so go to the start
             temp_file.seek(0)
 
-            logger.info("copying %s to cache at %s", temp_file.name, cache_path)
+            logger.info("copying %s to cache at %s", temp_file.name,
+                        cache_path)
             with open(cache_path, 'wb') as cache_file:
                 shutil.copyfileobj(temp_file, cache_file)
 

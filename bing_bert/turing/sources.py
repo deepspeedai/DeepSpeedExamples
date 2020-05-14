@@ -30,7 +30,6 @@ class TokenInstance:
     """ This TokenInstance is a obect to have the basic units of data that should be
         extracted from the raw text file and can be consumed by any BERT like model.
     """
-
     def __init__(self, tokens_a, tokens_b, is_next, lang="en"):
         self.tokens_a = tokens_a
         self.tokens_b = tokens_b
@@ -70,8 +69,8 @@ class QueryPassageFineTuningDataset:
             for i, line in enumerate(tqdm(fd)):
                 line = line.replace('\n', '')
                 entities = line.split('\t')
-                qpl_tuple: Tuple[str, str, str] = (
-                    entities[0], entities[2], entities[4])
+                qpl_tuple: Tuple[str, str,
+                                 str] = (entities[0], entities[2], entities[4])
                 all_pairs.append(qpl_tuple)
                 if i > readin:
                     break
@@ -104,7 +103,13 @@ class QueryInstanceDataset:
 
 
 class PretrainingDataCreator:
-    def __init__(self, path, tokenizer: BertTokenizer,  max_seq_length, readin: int = 2000000, dupe_factor: int = 5, small_seq_prob: float = 0.1):
+    def __init__(self,
+                 path,
+                 tokenizer: BertTokenizer,
+                 max_seq_length,
+                 readin: int = 2000000,
+                 dupe_factor: int = 5,
+                 small_seq_prob: float = 0.1):
         self.dupe_factor = dupe_factor
         self.max_seq_length = max_seq_length
         self.small_seq_prob = small_seq_prob
@@ -188,7 +193,7 @@ class PretrainingDataCreator:
             segment = document[i]
             current_chunk.append(segment)
             current_length += len(segment)
-            if i == len(document)-1 or current_length >= target_seq_length:
+            if i == len(document) - 1 or current_length >= target_seq_length:
                 if current_chunk:
                     # `a_end` is how many segments from `current_chunk` go into the `A`
                     # (first) sentence.
@@ -211,12 +216,13 @@ class PretrainingDataCreator:
                         # Pick a random document
                         for _ in range(10):
                             random_doc_index = random.randint(
-                                0, len(self.documents) - 1)
+                                0,
+                                len(self.documents) - 1)
                             if random_doc_index != index:
                                 break
 
                         random_doc = self.documents[random_doc_index]
-                        random_start = random.randint(0, len(random_doc)-1)
+                        random_start = random.randint(0, len(random_doc) - 1)
                         for j in range(random_start, len(random_doc)):
                             tokens_b.extend(random_doc[j])
                             if len(tokens_b) >= target_b_length:
@@ -238,8 +244,8 @@ class PretrainingDataCreator:
                     assert len(tokens_a) >= 1
                     assert len(tokens_b) >= 1
 
-                    instances.append(TokenInstance(
-                        tokens_a, tokens_b, int(is_random_next)))
+                    instances.append(
+                        TokenInstance(tokens_a, tokens_b, int(is_random_next)))
                     # print(instances[-1])
                 current_chunk = []
                 current_length = 0
@@ -249,7 +255,13 @@ class PretrainingDataCreator:
 
 
 class CleanBodyDataCreator(PretrainingDataCreator):
-    def __init__(self, path, tokenizer: BertTokenizer,  max_seq_length: int = 512, readin: int = 2000000, dupe_factor: int = 5, small_seq_prob: float = 0.1):
+    def __init__(self,
+                 path,
+                 tokenizer: BertTokenizer,
+                 max_seq_length: int = 512,
+                 readin: int = 2000000,
+                 dupe_factor: int = 5,
+                 small_seq_prob: float = 0.1):
         self.dupe_factor = dupe_factor
         self.max_seq_length = max_seq_length
         self.small_seq_prob = small_seq_prob
@@ -290,7 +302,13 @@ class CleanBodyDataCreator(PretrainingDataCreator):
 
 
 class WikiNBookCorpusPretrainingDataCreator(PretrainingDataCreator):
-    def __init__(self, path, tokenizer: BertTokenizer,  max_seq_length: int = 512, readin: int = 2000000, dupe_factor: int = 6, small_seq_prob: float = 0.1):
+    def __init__(self,
+                 path,
+                 tokenizer: BertTokenizer,
+                 max_seq_length: int = 512,
+                 readin: int = 2000000,
+                 dupe_factor: int = 6,
+                 small_seq_prob: float = 0.1):
         self.dupe_factor = dupe_factor
         self.max_seq_length = max_seq_length
         self.small_seq_prob = small_seq_prob
@@ -328,7 +346,13 @@ class WikiNBookCorpusPretrainingDataCreator(PretrainingDataCreator):
 
 
 class WikiPretrainingDataCreator(PretrainingDataCreator):
-    def __init__(self, path, tokenizer: BertTokenizer,  max_seq_length: int = 512, readin: int = 2000000, dupe_factor: int = 6, small_seq_prob: float = 0.1):
+    def __init__(self,
+                 path,
+                 tokenizer: BertTokenizer,
+                 max_seq_length: int = 512,
+                 readin: int = 2000000,
+                 dupe_factor: int = 6,
+                 small_seq_prob: float = 0.1):
         self.dupe_factor = dupe_factor
         self.max_seq_length = max_seq_length
         self.small_seq_prob = small_seq_prob
@@ -342,7 +366,8 @@ class WikiPretrainingDataCreator(PretrainingDataCreator):
                 # document = line
                 # if len(document.split("<sep>")) <= 3:
                 #     continue
-                if len(line) > 0 and line[:2] ==  "[[" : # This is end of document
+                if len(line
+                       ) > 0 and line[:2] == "[[":  # This is end of document
                     documents.append(document)
                     document = []
                 if len(line.split(' ')) > 2:
@@ -365,6 +390,7 @@ class WikiPretrainingDataCreator(PretrainingDataCreator):
         self.documents = None
         documents = None
 
+
 class NumpyByteInstances:
     TOKEN_SEP_VAL = int.from_bytes(b'\x1f', byteorder='big')
 
@@ -378,7 +404,10 @@ class NumpyByteInstances:
 
     def getitem_multilingual(self, i):
         tokens_a, tokens_b, is_next = self.getitem_fixed(i)
-        return TokenInstance(tokens_a, tokens_b, is_next, lang=self.data_creator.lang[i])
+        return TokenInstance(tokens_a,
+                             tokens_b,
+                             is_next,
+                             lang=self.data_creator.lang[i])
 
     def getitem_monolingual(self, i):
         return TokenInstance(*self.getitem_fixed(i))
@@ -394,14 +423,19 @@ class NumpyByteInstances:
             raise IndexError
         if i < 0:
             i += self.data_creator.len
-        instance_start, instance_end = self.data_creator.instance_offsets[i:i+2]
-        tok_offsets_start, tok_offsets_end = self.data_creator.instance_token_offsets[i:i+2]
-        token_offsets = self.data_creator.token_offsets[tok_offsets_start:tok_offsets_end]
+        instance_start, instance_end = self.data_creator.instance_offsets[i:i +
+                                                                          2]
+        tok_offsets_start, tok_offsets_end = self.data_creator.instance_token_offsets[
+            i:i + 2]
+        token_offsets = self.data_creator.token_offsets[
+            tok_offsets_start:tok_offsets_end]
         tokens_split = self.data_creator.tokens_split[i]
-        token_arrs = np.split(self.data_creator.data[instance_start:instance_end], token_offsets)
+        token_arrs = np.split(
+            self.data_creator.data[instance_start:instance_end], token_offsets)
         tokens = [t.tostring().decode('utf8') for t in token_arrs]
 
-        return tokens[:tokens_split], tokens[tokens_split:], self.data_creator.is_next[i]
+        return tokens[:tokens_split], tokens[
+            tokens_split:], self.data_creator.is_next[i]
 
     def sep_getitem_fixed(self, i):
         if i > self.data_creator.len:
@@ -409,14 +443,22 @@ class NumpyByteInstances:
         if i < 0:
             i += self.data_creator.len
 
-        instance_start, instance_end = self.data_creator.instance_offsets[i:i+2]
+        instance_start, instance_end = self.data_creator.instance_offsets[i:i +
+                                                                          2]
         instance_data = self.data_creator.data[instance_start:instance_end]
 
         tokens_split = self.data_creator.tokens_split[i]
-        token_arrs = np.split(instance_data, np.where(instance_data == NumpyByteInstances.TOKEN_SEP_VAL)[0])  # split on the token separator
-        tokens = [(t[1:] if i > 0 else t).tostring().decode('utf8') for i, t in enumerate(token_arrs)]  # ignore first byte, which will be separator, for tokens after the first
+        token_arrs = np.split(
+            instance_data,
+            np.where(instance_data == NumpyByteInstances.TOKEN_SEP_VAL)
+            [0])  # split on the token separator
+        tokens = [
+            (t[1:] if i > 0 else t).tostring().decode('utf8')
+            for i, t in enumerate(token_arrs)
+        ]  # ignore first byte, which will be separator, for tokens after the first
 
-        return tokens[:tokens_split], tokens[tokens_split:], self.data_creator.is_next[i]
+        return tokens[:tokens_split], tokens[
+            tokens_split:], self.data_creator.is_next[i]
 
     def __len__(self):
         return self.data_creator.len
@@ -431,13 +473,18 @@ class NumpyPretrainingDataCreator:
 
         self.data = np.load(str(path / 'data.npy'), mmap_mode=mmap_mode)
         self.is_next = np.load(str(path / 'is_next.npy'), mmap_mode=mmap_mode)
-        self.tokens_split = np.load(str(path / 'tokens_split.npy'), mmap_mode=mmap_mode)
-        self.instance_offsets = np.load(str(path / 'instance_offsets.npy'), mmap_mode=mmap_mode)
+        self.tokens_split = np.load(str(path / 'tokens_split.npy'),
+                                    mmap_mode=mmap_mode)
+        self.instance_offsets = np.load(str(path / 'instance_offsets.npy'),
+                                        mmap_mode=mmap_mode)
 
         if (path / 'instance_token_offsets.npy').is_file():
             self.use_separators = False
-            self.instance_token_offsets = np.load(str(path / 'instance_token_offsets.npy'), mmap_mode=mmap_mode)
-            self.token_offsets = np.load(str(path / 'token_offsets.npy'), mmap_mode=mmap_mode)
+            self.instance_token_offsets = np.load(str(
+                path / 'instance_token_offsets.npy'),
+                                                  mmap_mode=mmap_mode)
+            self.token_offsets = np.load(str(path / 'token_offsets.npy'),
+                                         mmap_mode=mmap_mode)
         else:
             self.use_separators = True
             self.instance_token_offsets = None
@@ -460,4 +507,3 @@ class NumpyPretrainingDataCreator:
     @classmethod
     def load(cls, path):
         return cls(path)
-

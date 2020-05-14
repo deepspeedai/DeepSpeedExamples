@@ -107,8 +107,8 @@ def add_training_args(parser):
                        'with larger models and sequences')
     group.add_argument('--checkpoint-num-layers', type=int, default=1,
                        help='chunk size (number of layers) for checkpointing')
-    group.add_argument('--partition-activations', action='store_true',
-                       help='partition the checkpoint activation across model parallel process')
+    group.add_argument('--deepspeed-activation-checkpointing', action='store_true',
+                       help='uses activation checkpointing from deepspeed')
     group.add_argument('--clip-grad', type=float, default=1.0,
                        help='gradient clipping')
     group.add_argument('--train-iters', type=int, default=1000000,

@@ -4,31 +4,45 @@ import torchvision.transforms as transforms
 import argparse
 import deepspeed
 
+
 def add_argument():
 
-    parser=argparse.ArgumentParser(description='CIFAR')
+    parser = argparse.ArgumentParser(description='CIFAR')
 
     #data
     # cuda
-    parser.add_argument('--with_cuda', default=False, action='store_true',
+    parser.add_argument('--with_cuda',
+                        default=False,
+                        action='store_true',
                         help='use CPU in case there\'s no GPU support')
-    parser.add_argument('--use_ema', default=False, action='store_true',
+    parser.add_argument('--use_ema',
+                        default=False,
+                        action='store_true',
                         help='whether use exponential moving average')
 
     # train
-    parser.add_argument('-b', '--batch_size', default=32, type=int,
+    parser.add_argument('-b',
+                        '--batch_size',
+                        default=32,
+                        type=int,
                         help='mini-batch size (default: 32)')
-    parser.add_argument('-e', '--epochs', default=30, type=int,
+    parser.add_argument('-e',
+                        '--epochs',
+                        default=30,
+                        type=int,
                         help='number of total epochs (default: 30)')
-    parser.add_argument('--local_rank', type=int, default=-1,
-                       help='local rank passed from distributed launcher')
+    parser.add_argument('--local_rank',
+                        type=int,
+                        default=-1,
+                        help='local rank passed from distributed launcher')
 
     # Include DeepSpeed configuration arguments
     parser = deepspeed.add_config_arguments(parser)
 
-    args=parser.parse_args()
+    args = parser.parse_args()
 
     return args
+
 
 ########################################################################
 # The output of torchvision datasets are PILImage images of range [0, 1].
@@ -37,22 +51,31 @@ def add_argument():
 #     If running on Windows and you get a BrokenPipeError, try setting
 #     the num_worker of torch.utils.data.DataLoader() to 0.
 
-transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+])
 
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
-                                          shuffle=True, num_workers=2)
+trainset = torchvision.datasets.CIFAR10(root='./data',
+                                        train=True,
+                                        download=True,
+                                        transform=transform)
+trainloader = torch.utils.data.DataLoader(trainset,
+                                          batch_size=4,
+                                          shuffle=True,
+                                          num_workers=2)
 
-testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                         shuffle=False, num_workers=2)
+testset = torchvision.datasets.CIFAR10(root='./data',
+                                       train=False,
+                                       download=True,
+                                       transform=transform)
+testloader = torch.utils.data.DataLoader(testset,
+                                         batch_size=4,
+                                         shuffle=False,
+                                         num_workers=2)
 
-classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse',
+           'ship', 'truck')
 
 ########################################################################
 # Let us show some of the training images, for fun.
@@ -62,11 +85,13 @@ import numpy as np
 
 # functions to show an image
 
+
 def imshow(img):
-    img = img / 2 + 0.5     # unnormalize
+    img = img / 2 + 0.5  # unnormalize
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
+
 
 # get some random training images
 dataiter = iter(trainloader)
@@ -85,6 +110,7 @@ print(' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -105,15 +131,17 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
+
 net = Net()
 parameters = filter(lambda p: p.requires_grad, net.parameters())
-args=add_argument()
+args = add_argument()
 
 # Initialize DeepSpeed to use the following features
 # 1) Distributed model
 # 2) Distributed data loader
 # 3) DeepSpeed optimizer
-model_engine, optimizer, trainloader, __ = deepspeed.initialize(args=args, model=net, model_parameters=parameters, training_data=trainset)
+model_engine, optimizer, trainloader, __ = deepspeed.initialize(
+    args=args, model=net, model_parameters=parameters, training_data=trainset)
 
 #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #net.to(device)
@@ -140,7 +168,8 @@ for epoch in range(2):  # loop over the dataset multiple times
     running_loss = 0.0
     for i, data in enumerate(trainloader):
         # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data[0].to(model_engine.local_rank), data[1].to(model_engine.local_rank)
+        inputs, labels = data[0].to(model_engine.local_rank), data[1].to(
+            model_engine.local_rank)
 
         outputs = model_engine(inputs)
         loss = criterion(outputs, labels)
@@ -150,7 +179,7 @@ for epoch in range(2):  # loop over the dataset multiple times
 
         # print statistics
         running_loss += loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
+        if i % 2000 == 1999:  # print every 2000 mini-batches
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
@@ -189,8 +218,7 @@ outputs = net(images.to(model_engine.local_rank))
 # So, let's get the index of the highest energy:
 _, predicted = torch.max(outputs, 1)
 
-print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
-                              for j in range(4)))
+print('Predicted: ', ' '.join('%5s' % classes[predicted[j]] for j in range(4)))
 
 ########################################################################
 # The results seem pretty good.
@@ -205,10 +233,11 @@ with torch.no_grad():
         outputs = net(images.to(model_engine.local_rank))
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
-        correct += (predicted == labels.to(model_engine.local_rank)).sum().item()
+        correct += (predicted == labels.to(
+            model_engine.local_rank)).sum().item()
 
-print('Accuracy of the network on the 10000 test images: %d %%' % (
-    100 * correct / total))
+print('Accuracy of the network on the 10000 test images: %d %%' %
+      (100 * correct / total))
 
 ########################################################################
 # That looks way better than chance, which is 10% accuracy (randomly picking
@@ -232,7 +261,5 @@ with torch.no_grad():
             class_total[label] += 1
 
 for i in range(10):
-    print('Accuracy of %5s : %2d %%' % (
-        classes[i], 100 * class_correct[i] / class_total[i]))
-
-
+    print('Accuracy of %5s : %2d %%' %
+          (classes[i], 100 * class_correct[i] / class_total[i]))

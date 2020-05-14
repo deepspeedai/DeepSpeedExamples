@@ -23,13 +23,13 @@ from torch.nn.utils import clip_grad_norm_
 
 def warmup_cosine(x, warmup=0.002):
     if x < warmup:
-        return x/warmup
+        return x / warmup
     return 0.5 * (1.0 + torch.cos(math.pi * x))
 
 
 def warmup_constant(x, warmup=0.002):
     if x < warmup:
-        return x/warmup
+        return x / warmup
     return 1.0
 
 
@@ -37,25 +37,57 @@ def warmup_linear(x, warmup=0.002):
     if warmup == 0.0:
         return 1.0
     elif x < warmup:
-        return x/warmup
+        return x / warmup
     return 1.0 - x
 
-def warmup_linear_decay_exp(global_step, decay_rate, decay_steps, total_steps, warmup=0.002):
-    x = global_step/total_steps
+
+def warmup_linear_decay_exp(global_step,
+                            decay_rate,
+                            decay_steps,
+                            total_steps,
+                            warmup=0.002):
+    x = global_step / total_steps
     warmup_end = warmup * total_steps
     if warmup == 0.0:
         return 1.0
     elif x < warmup:
-        return x/warmup
-    return decay_rate**((global_step-warmup_end)/decay_steps)
+        return x / warmup
+    return decay_rate**((global_step - warmup_end) / decay_steps)
 
+
+def warmup_exp_decay_exp(global_step,
+                         decay_rate,
+                         decay_steps,
+                         total_steps,
+                         warmup=0.002,
+                         degree=2.0):
+    x = global_step / total_steps
+    warmup_end = warmup * total_steps
+    if warmup == 0.0:
+        return 1.0
+    elif x < warmup:
+        return (x / warmup)**degree
+    return decay_rate**((global_step - warmup_end) / decay_steps)
+
+
+def warmup_exp_decay_poly(global_step,
+                          total_steps,
+                          warmup=0.002,
+                          warm_degree=1.5,
+                          degree=2.0):
+    x = global_step / total_steps
+    if x < warmup:
+        return (x / warmup)**warm_degree
+    return (1.0 - x)**degree
 
 
 SCHEDULES = {
     'warmup_cosine': warmup_cosine,
     'warmup_constant': warmup_constant,
     'warmup_linear': warmup_linear,
-    'warmup_linear_decay_exp':warmup_linear_decay_exp,
+    'warmup_linear_decay_exp': warmup_linear_decay_exp,
+    'warmup_exp_decay_poly': warmup_exp_decay_poly,
+    'warmup_exp_decay_exp': warmup_exp_decay_exp
 }
 
 
@@ -73,9 +105,16 @@ class BertAdam(Optimizer):
         weight_decay: Weight decay. Default: 0.01
         max_grad_norm: Maximum norm for the gradients (-1 means no clipping). Default: 1.0
     """
-
-    def __init__(self, params, lr=required, warmup=-1, t_total=-1, schedule='warmup_linear',
-                 b1=0.9, b2=0.999, e=1e-6, weight_decay=0.01,
+    def __init__(self,
+                 params,
+                 lr=required,
+                 warmup=-1,
+                 t_total=-1,
+                 schedule='warmup_linear',
+                 b1=0.9,
+                 b2=0.999,
+                 e=1e-6,
+                 weight_decay=0.01,
                  max_grad_norm=1.0):
         if lr is not required and lr < 0.0:
             raise ValueError(
@@ -84,18 +123,27 @@ class BertAdam(Optimizer):
             raise ValueError("Invalid schedule parameter: {}".format(schedule))
         if not 0.0 <= warmup < 1.0 and not warmup == -1:
             raise ValueError(
-                "Invalid warmup: {} - should be in [0.0, 1.0[ or -1".format(warmup))
+                "Invalid warmup: {} - should be in [0.0, 1.0[ or -1".format(
+                    warmup))
         if not 0.0 <= b1 < 1.0:
             raise ValueError(
-                "Invalid b1 parameter: {} - should be in [0.0, 1.0[".format(b1))
+                "Invalid b1 parameter: {} - should be in [0.0, 1.0[".format(
+                    b1))
         if not 0.0 <= b2 < 1.0:
             raise ValueError(
-                "Invalid b2 parameter: {} - should be in [0.0, 1.0[".format(b2))
+                "Invalid b2 parameter: {} - should be in [0.0, 1.0[".format(
+                    b2))
         if not e >= 0.0:
             raise ValueError(
                 "Invalid epsilon value: {} - should be >= 0.0".format(e))
-        defaults = dict(lr=lr, schedule=schedule, warmup=warmup, t_total=t_total,
-                        b1=b1, b2=b2, e=e, weight_decay=weight_decay,
+        defaults = dict(lr=lr,
+                        schedule=schedule,
+                        warmup=warmup,
+                        t_total=t_total,
+                        b1=b1,
+                        b2=b2,
+                        e=e,
+                        weight_decay=weight_decay,
                         max_grad_norm=max_grad_norm)
         super(BertAdam, self).__init__(params, defaults)
 
@@ -109,7 +157,7 @@ class BertAdam(Optimizer):
                 if group['t_total'] != -1:
                     schedule_fct = SCHEDULES[group['schedule']]
                     lr_scheduled = group['lr'] * schedule_fct(
-                        state['step']/group['t_total'], group['warmup'])
+                        state['step'] / group['t_total'], group['warmup'])
                 else:
                     lr_scheduled = group['lr']
                 lr.append(lr_scheduled)
@@ -133,7 +181,8 @@ class BertAdam(Optimizer):
                 grad = p.grad.data
                 if grad.is_sparse:
                     raise RuntimeError(
-                        'Adam does not support sparse gradients, please consider SparseAdam instead')
+                        'Adam does not support sparse gradients, please consider SparseAdam instead'
+                    )
 
                 state = self.state[p]
 
@@ -171,7 +220,7 @@ class BertAdam(Optimizer):
                 if group['t_total'] != -1:
                     schedule_fct = SCHEDULES[group['schedule']]
                     lr_scheduled = group['lr'] * schedule_fct(
-                        state['step']/group['t_total'], group['warmup'])
+                        state['step'] / group['t_total'], group['warmup'])
                 else:
                     lr_scheduled = group['lr']
 

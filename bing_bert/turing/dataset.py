@@ -31,8 +31,8 @@ class PretrainDataType(IntEnum):
     VALIDATION = 1
 
 
-MaskedLMInstance = collections.namedtuple(
-    "MaskedLMInstance", ["index", "label"])
+MaskedLMInstance = collections.namedtuple("MaskedLMInstance",
+                                          ["index", "label"])
 
 QABatch = collections.namedtuple(
     'QABatch', ['input_ids', 'input_mask', 'sequence_ids', 'label'])
@@ -40,10 +40,10 @@ QABatch = collections.namedtuple(
 RankingBatch = collections.namedtuple(
     'RankingBatch', ['input_ids', 'input_mask', 'sequence_ids', 'label'])
 
-PretrainBatch = collections.namedtuple(
-    'PreTrainBatch', ['input_ids', 'input_mask', 'sequence_ids',
-                      'is_next_label', 'masked_lm_output']
-)
+PretrainBatch = collections.namedtuple('PreTrainBatch', [
+    'input_ids', 'input_mask', 'sequence_ids', 'is_next_label',
+    'masked_lm_output'
+])
 
 
 class BertJobType(IntEnum):
@@ -55,8 +55,9 @@ class BertJobType(IntEnum):
 
 
 def get_random_partition(data_directory, index):
-    partitions = [os.path.join(data_directory, x)
-                  for x in os.listdir(data_directory)]
+    partitions = [
+        os.path.join(data_directory, x) for x in os.listdir(data_directory)
+    ]
     partitions = sorted(partitions)
     i = index % len(partitions)
     return partitions[i]
@@ -86,15 +87,16 @@ def encode_sequence(seqA, seqB, max_seq_len, tokenizer):
 
     input_tokens = seqA + seqB
     input_ids = tokenizer.convert_tokens_to_ids(input_tokens)
-    sequence_ids = [0]*len(seqA) + [1]*len(seqB)
-    input_mask = [1]*len(input_ids)
+    sequence_ids = [0] * len(seqA) + [1] * len(seqB)
+    input_mask = [1] * len(input_ids)
 
     while len(input_ids) < max_seq_len:
         input_ids.append(PAD)
         sequence_ids.append(PAD)
         input_mask.append(PAD)
 
-    return (map_to_torch(input_ids), map_to_torch(input_mask), map_to_torch(sequence_ids))
+    return (map_to_torch(input_ids), map_to_torch(input_mask),
+            map_to_torch(sequence_ids))
 
 
 def truncate_input_sequence(tokens_a, tokens_b, max_num_tokens):
@@ -115,7 +117,8 @@ def truncate_input_sequence(tokens_a, tokens_b, max_num_tokens):
 
 
 class QADataset(Dataset):
-    def __init__(self, tokenizer: BertTokenizer, folder: str, logger, max_seq_len, index):
+    def __init__(self, tokenizer: BertTokenizer, folder: str, logger,
+                 max_seq_len, index):
         self.tokenizer = tokenizer
         self.dir_path = folder
         self.max_seq_len = max_seq_len
@@ -127,7 +130,8 @@ class QADataset(Dataset):
         self.data = QueryPassageDataset(path)
         self.len = len(self.data)
         logger.info(
-            f"Data Loading Completed for Query-Passage Pairs from {path} with {self.len} samples.")
+            f"Data Loading Completed for Query-Passage Pairs from {path} with {self.len} samples."
+        )
 
     def __len__(self):
         return self.len
@@ -148,23 +152,28 @@ class QADataset(Dataset):
         query_tokens = self.tokenizer.tokenize(query)
         passage_tokens = self.tokenizer.tokenize(passage)
 
-        if(len(query_tokens) > self.max_seq_len//2):
-            query_tokens = query_tokens[0: self.max_seq_len//2]
+        if (len(query_tokens) > self.max_seq_len // 2):
+            query_tokens = query_tokens[0:self.max_seq_len // 2]
 
         max_passage_tokens = self.max_seq_len - \
             len(query_tokens) - 3  # Removing 3 for SEP and CLS
 
-        if(len(passage_tokens) > max_passage_tokens):
+        if (len(passage_tokens) > max_passage_tokens):
             passage_tokens = passage_tokens[0:max_passage_tokens]
 
         input_ids, input_mask, sequence_ids = encode_sequence(
             query_tokens, passage_tokens, self.max_seq_len, self.tokenizer)
-        return tuple([map_to_torch([BatchType.QP_BATCH]), input_ids, input_mask, sequence_ids, map_to_torch_float([label])])
+        return tuple([
+            map_to_torch([BatchType.QP_BATCH]), input_ids, input_mask,
+            sequence_ids,
+            map_to_torch_float([label])
+        ])
         # return QABatch(input_ids=input_ids, input_mask=input_mask, sequence_ids=sequence_ids, label=map_to_torch([label]))
 
 
 class QAFinetuningDataset(QADataset):
-    def __init__(self, tokenizer: BertTokenizer, file_path, logger, max_seq_len):
+    def __init__(self, tokenizer: BertTokenizer, file_path, logger,
+                 max_seq_len):
         self.tokenizer = tokenizer
         self.path = file_path
         self.max_seq_len = max_seq_len
@@ -174,11 +183,18 @@ class QAFinetuningDataset(QADataset):
         self.data = QueryPassageFineTuningDataset(self.path)
         self.len = len(self.data)
         logger.info(
-            f"Data Loading Completed for Finetuning Query-Passage Pairs from {self.path} with {self.len} samples.")
+            f"Data Loading Completed for Finetuning Query-Passage Pairs from {self.path} with {self.len} samples."
+        )
 
 
 class RankingDataset(Dataset):
-    def __init__(self, tokenizer: BertTokenizer, folder: str, logger, max_seq_len, index, fp16=False):
+    def __init__(self,
+                 tokenizer: BertTokenizer,
+                 folder: str,
+                 logger,
+                 max_seq_len,
+                 index,
+                 fp16=False):
         self.tokenizer = tokenizer
         self.dir_path = folder
         self.max_seq_len = max_seq_len
@@ -191,7 +207,8 @@ class RankingDataset(Dataset):
         self.data = QueryInstanceDataset(path)
         self.len = len(self.data)
         logger.info(
-            f"Data Loading Completed for Query-Instance Pairs from {path} with {self.len} samples.")
+            f"Data Loading Completed for Query-Instance Pairs from {path} with {self.len} samples."
+        )
 
     def __len__(self):
         return self.len
@@ -214,22 +231,33 @@ class RankingDataset(Dataset):
         instance_tokens = instance_tokens[:-1]
         # instance_tokens = self.tokenizer.tokenize(instance)
 
-        if(len(query_tokens) > self.max_seq_len//2):
-            query_tokens = query_tokens[0: self.max_seq_len//2]
+        if (len(query_tokens) > self.max_seq_len // 2):
+            query_tokens = query_tokens[0:self.max_seq_len // 2]
 
         max_instance_tokens = self.max_seq_len - \
             len(query_tokens) - 3  # Removing 3 for SEP and CLS
 
-        if(len(instance_tokens) > max_instance_tokens):
+        if (len(instance_tokens) > max_instance_tokens):
             instance_tokens = instance_tokens[0:max_instance_tokens]
 
         input_ids, input_mask, sequence_ids = encode_sequence(
             query_tokens, instance_tokens, self.max_seq_len, self.tokenizer)
-        return tuple([map_to_torch([BatchType.RANKING_BATCH]), input_ids, input_mask, sequence_ids, map_to_torch_float([label])])
+        return tuple([
+            map_to_torch([BatchType.RANKING_BATCH]), input_ids, input_mask,
+            sequence_ids,
+            map_to_torch_float([label])
+        ])
 
 
 class PreTrainingDataset(Dataset):
-    def __init__(self, tokenizer: BertTokenizer, folder: str, logger, max_seq_length, index, data_type: PretrainDataType = PretrainDataType.NUMPY, max_predictions_per_seq: int = 20):
+    def __init__(self,
+                 tokenizer: BertTokenizer,
+                 folder: str,
+                 logger,
+                 max_seq_length,
+                 index,
+                 data_type: PretrainDataType = PretrainDataType.NUMPY,
+                 max_predictions_per_seq: int = 20):
         self.tokenizer = tokenizer
         self.dir_path = folder
         self.max_seq_length = max_seq_length
@@ -253,11 +281,13 @@ class PreTrainingDataset(Dataset):
             self.data = NumpyPretrainingDataCreator.load(path)
         self.len = len(self.data)
         logger.info(
-            f"Data Loading Completed for Pretraining Data from {path} with {self.len} samples took {time.time()-start:.2f}s.")
+            f"Data Loading Completed for Pretraining Data from {path} with {self.len} samples took {time.time()-start:.2f}s."
+        )
 
         self.len = len(self.data)
         logger.info(
-            f"Data Loading Completed for Pretraining Data from {path} with {self.len} samples.")
+            f"Data Loading Completed for Pretraining Data from {path} with {self.len} samples."
+        )
 
     def __len__(self):
         return self.len
@@ -291,8 +321,7 @@ class PreTrainingDataset(Dataset):
         segment_ids.append(1)
 
         # Get Masked LM predictions
-        tokens, masked_lm_output = self.create_masked_lm_predictions(
-            tokens)
+        tokens, masked_lm_output = self.create_masked_lm_predictions(tokens)
 
         # Convert to Ids
         input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
@@ -303,7 +332,14 @@ class PreTrainingDataset(Dataset):
             segment_ids.append(PAD)
             input_mask.append(PAD)
             masked_lm_output.append(-1)
-        return([map_to_torch([BatchType.PRETRAIN_BATCH]), map_to_torch(input_ids), map_to_torch(input_mask), map_to_torch(segment_ids), map_to_torch([is_next]), map_to_torch(masked_lm_output)])
+        return ([
+            map_to_torch([BatchType.PRETRAIN_BATCH]),
+            map_to_torch(input_ids),
+            map_to_torch(input_mask),
+            map_to_torch(segment_ids),
+            map_to_torch([is_next]),
+            map_to_torch(masked_lm_output)
+        ])
 
     def create_masked_lm_predictions(self, tokens):
         cand_indexes = []
@@ -315,8 +351,9 @@ class PreTrainingDataset(Dataset):
         random.shuffle(cand_indexes)
         output_tokens = list(tokens)
 
-        num_to_predict = min(self.max_predictions_per_seq, max(
-            1, int(round(len(tokens) * self.masked_lm_prob))))
+        num_to_predict = min(
+            self.max_predictions_per_seq,
+            max(1, int(round(len(tokens) * self.masked_lm_prob))))
 
         masked_lms = []
         covered_indexes = set()
@@ -338,11 +375,12 @@ class PreTrainingDataset(Dataset):
                 # 10% replace w/ random word
                 else:
                     masked_token = self.vocab_words[random.randint(
-                        0, len(self.vocab_words) - 1)]
+                        0,
+                        len(self.vocab_words) - 1)]
 
             output_tokens[index] = masked_token
-            masked_lms.append(MaskedLMInstance(
-                index=index, label=tokens[index]))
+            masked_lms.append(
+                MaskedLMInstance(index=index, label=tokens[index]))
 
         masked_lms = sorted(masked_lms, key=lambda x: x.index)
         masked_lm_output = [-1] * len(output_tokens)
