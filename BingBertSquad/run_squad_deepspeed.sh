@@ -12,10 +12,14 @@ OUTPUT_DIR=$4
 LR=${5:-0.00003}
 SEED=${6:-12345}
 MASTER_PORT=${7:-29500}
+echo "lr is ${LR}"
 echo "seed is $SEED"
 echo "master port is $MASTER_PORT"
 
+# Force deepspeed to run with only local node
 NUM_NODES=1
+HOSTFILE=/dev/null
+
 NGPU=$((NGPU_PER_NODE*NUM_NODES))
 EFFECTIVE_BATCH_SIZE=24
 MAX_GPU_BATCH_SIZE=3
@@ -29,6 +33,7 @@ JOB_NAME="deepspeed_${NGPU}GPUs_${EFFECTIVE_BATCH_SIZE}batch_size"
 config_json=deepspeed_bsz24_config.json
 run_cmd="deepspeed --num_nodes ${NUM_NODES} --num_gpus ${NGPU_PER_NODE} \
        --master_port=${MASTER_PORT} \
+       --hostfile ${HOSTFILE} \
        nvidia_run_squad_deepspeed.py \
        --bert_model bert-large-uncased \
        --do_train \

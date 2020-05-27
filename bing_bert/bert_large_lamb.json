@@ -20,38 +20,38 @@
             "pretrain_dataset": true,
             "pretrain_type": "wiki_bc"
         },
-	"mixed_seq_datasets": {
-	    "128": {
-	        "wiki_pretrain_dataset": "bnorick_format/128/wiki_pretrain",
-    		"bc_pretrain_dataset": "bnorick_format/128/bookcorpus_pretrain"
-    	    },
-    	    "512": {
-	        "wiki_pretrain_dataset": "bnorick_format/512/wiki_pretrain",
-    		"bc_pretrain_dataset": "bnorick_format/512/bookcorpus_pretrain"
-    	    }
-    	}
+        "mixed_seq_datasets": {
+            "128": {
+                "wiki_pretrain_dataset": "bnorick_format/128/wiki_pretrain",
+                "bc_pretrain_dataset": "bnorick_format/128/bookcorpus_pretrain"
+            },
+            "512": {
+                "wiki_pretrain_dataset": "bnorick_format/512/wiki_pretrain",
+                "bc_pretrain_dataset": "bnorick_format/512/bookcorpus_pretrain"
+            }
+        }
     },
     "mixed_seq_training": {
-	"128": {
-	    "num_epochs": 150,
-	    "warmup_proportion": 0.06,
-    	    "learning_rate": 11e-3,
-    	    "num_workers": 0,
-    	    "async_worker": true,
-    	    "decay_rate": 0.90,
-    	    "decay_step": 250,
-    	    "total_training_steps": 7500
-	},
-	"512": {
-	    "num_epochs": 160,
-    	    "warmup_proportion": 0.02,
-    	    "learning_rate": 2e-3,
-    	    "num_workers": 0,
-    	    "async_worker": true,
-    	    "decay_rate": 0.90,
-    	    "decay_step": 150,
-    	    "total_training_steps": 7500
-	}
+        "128": {
+            "num_epochs": 150,
+            "warmup_proportion": 0.06,
+            "learning_rate": 11e-3,
+            "num_workers": 0,
+            "async_worker": true,
+            "decay_rate": 0.90,
+            "decay_step": 250,
+            "total_training_steps": 7500
+        },
+        "512": {
+            "num_epochs": 160,
+            "warmup_proportion": 0.02,
+            "learning_rate": 2e-3,
+            "num_workers": 0,
+            "async_worker": true,
+            "decay_rate": 0.90,
+            "decay_step": 150,
+            "total_training_steps": 7500
+        }
     },
     "validation": {
         "path": "validation_set/"
