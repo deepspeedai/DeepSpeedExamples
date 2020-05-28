@@ -6,7 +6,7 @@
   "optimizer": {
     "type": "Lamb",
     "params": {
-      "lr": 4e-3,
+      "lr": 2e-3,
       "weight_decay": 0.01,
       "bias_correction": false,
       "max_coeff": 0.3,
