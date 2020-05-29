@@ -12,9 +12,11 @@ OUTPUT_DIR=$4
 LR=${5:-0.00003}
 SEED=${6:-12345}
 MASTER_PORT=${7:-29500}
+DROPOUT=${8:-0.1}
 echo "lr is ${LR}"
 echo "seed is $SEED"
 echo "master port is $MASTER_PORT"
+echo "dropout is ${DROPOUT}"
 
 # Force deepspeed to run with only local node
 NUM_NODES=1
@@ -54,6 +56,7 @@ run_cmd="deepspeed --num_nodes ${NUM_NODES} --num_gpus ${NGPU_PER_NODE} \
        --deepspeed \
        --deepspeed_config ${config_json} \
        --deepspeed_transformer_kernel \
+       --dropout ${DROPOUT} \
        --model_file $MODEL_FILE \
        --seed ${SEED} \
        --preln \

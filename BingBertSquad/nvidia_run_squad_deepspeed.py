@@ -827,6 +827,8 @@ def main():
         "num_attention_heads": 16,
         "intermediate_size": 4096,
         "hidden_act": "gelu",
+        "hidden_dropout_prob": args.dropout,
+        "attention_probs_dropout_prob": args.dropout,
         "hidden_dropout_prob": 0.1,
         "attention_probs_dropout_prob": 0.1,
         "max_position_embeddings": 512,

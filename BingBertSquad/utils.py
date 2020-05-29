@@ -208,6 +208,12 @@ def get_argument_parser():
                         action='store_true',
                         help='Use DeepSpeed transformer kernel to accelerate.')
 
+    parser.add_argument(
+        '--dropout',
+        type=float,
+        default=0.1,
+        help='dropout')
+
     return parser
 
 
