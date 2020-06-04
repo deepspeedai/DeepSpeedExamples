@@ -425,6 +425,9 @@ def prepare_optimizer_parameters(args, model):
 
 
 def prepare_model_optimizer(args):
+    # Initialize torch distributed
+    torch.distributed.init_process_group(backend="nccl")
+
     # Loading Model
     model = BertMultiTask(args)
 
