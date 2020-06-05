@@ -541,7 +541,7 @@ class BertEncoder(nn.Module):
                 attn_dropout_checkpoint=args.attention_dropout_checkpoint,
                 normalize_invertible=args.normalize_invertible,
                 gelu_checkpoint=args.gelu_checkpoint,
-                stochastic_mode=True)
+                stochastic_mode=args.stochastic_mode)
 
             self.layer = nn.ModuleList([
                 copy.deepcopy(DeepSpeedTransformerLayer(i, cuda_config))

@@ -13,6 +13,7 @@ NCCL_TREE_THRESHOLD=0 deepspeed ${base_dir}/deepspeed_train.py \
 --max_seq_length 128 \
 --output_dir $OUTPUT_DIR \
 --deepspeed \
+--deepspeed_transformer_kernel \
 --print_steps 100 \
 --lr_schedule "EE" \
 --lr_offset 10e-4 \

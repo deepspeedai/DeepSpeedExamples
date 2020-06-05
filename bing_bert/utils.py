@@ -142,6 +142,11 @@ def get_argument_parser():
                         default=False,
                         action='store_true',
                         help='Use DeepSpeed transformer kernel to accelerate.')
+    
+    parser.add_argument('--stochastic_mode',
+                        default=False,
+                        action='store_true',
+                        help='Use stochastic mode for high-performance transformer kernel.')
 
     parser.add_argument(
         '--ckpt_to_save',
