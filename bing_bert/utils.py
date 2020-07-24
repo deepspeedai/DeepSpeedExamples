@@ -138,15 +138,24 @@ def get_argument_parser():
         help=
         "Path to prefix data loading, helpful for AML and other environments")
 
+    parser.add_argument(
+        '--validation_data_path_prefix',
+        type=str,
+        default=None,
+        help=
+        "Path to prefix validation data loading, helpful if pretraining dataset path is different"
+    )
+
     parser.add_argument('--deepspeed_transformer_kernel',
                         default=False,
                         action='store_true',
                         help='Use DeepSpeed transformer kernel to accelerate.')
-    
-    parser.add_argument('--stochastic_mode',
-                        default=False,
-                        action='store_true',
-                        help='Use stochastic mode for high-performance transformer kernel.')
+
+    parser.add_argument(
+        '--stochastic_mode',
+        default=False,
+        action='store_true',
+        help='Use stochastic mode for high-performance transformer kernel.')
 
     parser.add_argument(
         '--ckpt_to_save',
@@ -177,6 +186,11 @@ def get_argument_parser():
         help=
         'Use DeepSpeed transformer kernel memory optimization to checkpoint GELU activation.'
     )
+
+    parser.add_argument('--use_nvidia_dataset',
+                        default=False,
+                        action='store_true',
+                        help='Use Nvidia pretraining dataset.')
 
     return parser
 

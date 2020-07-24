@@ -23,6 +23,7 @@ deepspeed ${base_dir}/deepspeed_train.py \
 --job_name $JOB_NAME \
 --deepspeed_config ${base_dir}/deepspeed_bsz32k_lamb_config_seq512.json \
 --data_path_prefix /data/bert \
+--validation_data_path_prefix /data/bert \
 --rewarmup \
 --lr_schedule "EE" \
 --attention_dropout_checkpoint \
