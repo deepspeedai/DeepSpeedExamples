@@ -739,10 +739,9 @@ class BertPreTrainedModel(nn.Module):
             num_layers = self.config.num_hidden_layers
             std = self.config.initializer_range
             if hasattr(module, 'bert_output_layer'):
-                if torch.distributed.get_rank() == 0:
-                    print("Accounting for accumulation on the residual path")
-                    std = self.config.initializer_range / math.sqrt(
-                        2.0 * num_layers)
+                #print("Accounting for accumulation on the residual path")
+                std = self.config.initializer_range / math.sqrt(
+                    2.0 * num_layers)
             module.weight.data.normal_(mean=0.0, std=std)
         elif isinstance(module, BertLayerNorm):
             module.bias.data.zero_()
