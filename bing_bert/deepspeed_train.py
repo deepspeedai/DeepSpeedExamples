@@ -16,7 +16,7 @@ from turing.logger import Logger
 from turing.utils import get_sample_writer
 from turing.models import BertMultiTask
 from turing.dataset import PreTrainingDataset, PretrainBatch, PretrainDataType
-from turing.sources import PretrainingDataCreator
+from turing.sources import PretrainingDataCreator, WikiPretrainingDataCreator, TokenInstance
 from pytorch_pretrained_bert.tokenization import BertTokenizer
 from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear, warmup_linear_decay_exp, warmup_exp_decay_exp, warmup_exp_decay_poly
 from utils import get_argument_parser, is_time_to_exit
