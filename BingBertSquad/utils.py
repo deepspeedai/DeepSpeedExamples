@@ -3,7 +3,6 @@ import sys
 import logging
 import argparse
 from tensorboardX import SummaryWriter
-from deepspeed.pt.deepspeed_utils import get_grad_norm, get_weight_norm
 
 SUMMARY_WRITER_DIR_NAME = 'runs'
 
@@ -227,24 +226,6 @@ def get_summary_writer(name, base=".."):
 def write_summary_events(summary_writer, summary_events):
     for event in summary_events:
         summary_writer.add_scalar(event[0], event[1], event[2])
-
-
-def dump_gradient_norms(tag, param_groups, micro_step, global_step):
-    norm_groups = []
-    for i, group in enumerate(param_groups):
-        norm_groups.append(get_grad_norm(group))
-    print(
-        "\n {} gradient_norms: micro_step={}, global_step={}, norms={}".format(
-            tag, micro_step, global_step, norm_groups))
-
-
-def dump_weight_norms(tag, param_groups, micro_step, global_step):
-    norm_groups = []
-    for i, group in enumerate(param_groups):
-        norm_groups.append(get_weight_norm(group))
-    print("\n {} weight_norms: micro_step={}, global_step={}, norms={}".format(
-        tag, micro_step, global_step, norm_groups))
-
 
 def is_time_to_exit(args, epoch_steps=0, global_steps=0):
     return (epoch_steps >= args.max_steps_per_epoch) or \

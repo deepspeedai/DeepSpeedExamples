@@ -30,7 +30,6 @@ import pickle
 from tqdm import tqdm, trange
 from utils import get_argument_parser, \
     get_summary_writer, write_summary_events, \
-    dump_gradient_norms, dump_weight_norms, \
     is_time_to_exit, check_early_exit_warning
 import deepspeed
 

@@ -41,7 +41,7 @@ gpt_options="${gpt_options}
 "
 
 
-run_cmd="deepspeed.pt --num_nodes ${NUM_WORKERS} --num_gpus ${NUM_GPUS_PER_WORKER} pretrain_gpt2.py $@ ${gpt_options}"
+run_cmd="deepspeed --num_nodes ${NUM_WORKERS} --num_gpus ${NUM_GPUS_PER_WORKER} pretrain_gpt2.py $@ ${gpt_options}"
 echo ${run_cmd}
 eval ${run_cmd}
 

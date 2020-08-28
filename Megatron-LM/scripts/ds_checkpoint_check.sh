@@ -44,7 +44,7 @@ gpt_options=" \
        --deepspeed_config ds_config_func_bs8.json
 "
 
-run_cmd="deepspeed.pt --num_nodes ${DLWS_NUM_WORKER} --num_gpus ${DLWS_NUM_GPU_PER_WORKER} pretrain_gpt2.py $@ ${gpt_options}"
+run_cmd="deepspeed --num_nodes ${DLWS_NUM_WORKER} --num_gpus ${DLWS_NUM_GPU_PER_WORKER} pretrain_gpt2.py $@ ${gpt_options}"
 echo ${run_cmd}
 eval ${run_cmd}
 
