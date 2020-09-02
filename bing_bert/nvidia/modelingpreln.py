@@ -43,6 +43,8 @@ from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.nn.init as init
 
+from deepspeed.ops.sparse_attention import SparseAttentionUtils
+
 logger = logging.getLogger(__name__)
 
 PRETRAINED_MODEL_ARCHIVE_MAP = {
@@ -64,6 +66,47 @@ PRETRAINED_MODEL_ARCHIVE_MAP = {
 CONFIG_NAME = 'bert_config.json'
 WEIGHTS_NAME = 'pytorch_model.bin'
 TF_WEIGHTS_NAME = 'model.ckpt'
+
+
+def get_deepspeed_config(args):
+    if hasattr(args, 'deepspeed_config') and args.deepspeed_config:
+        from deepspeed import DeepSpeedConfig
+        return DeepSpeedConfig(args.deepspeed_config)
+    else:
+        raise RuntimeError('deepspeed_config is not found in args.')
+
+
+def get_sparse_attention_config(args, num_heads):
+    if args.deepspeed_sparse_attention:
+        ds_config = get_deepspeed_config(args)
+        if hasattr(ds_config,
+                   'sparse_attention') and ds_config.sparse_attention:
+            sa_config = ds_config.sparse_attention
+            sa_mode = sa_config.get('mode')
+            if (sa_mode == 'dense'):
+                from deepspeed.ops.sparse_attention import DenseSparsityConfig as STConfig
+            elif (sa_mode == 'fixed'):
+                from deepspeed.ops.sparse_attention import FixedSparsityConfig as STConfig
+            elif (sa_mode == 'bigbird'):
+                from deepspeed.ops.sparse_attention import BigBirdSparsityConfig as STConfig
+            elif (sa_mode == 'bslongformer'):
+                from deepspeed.ops.sparse_attention import BSLongformerSparsityConfig as STConfig
+            elif (sa_mode == 'variable'):
+                from deepspeed.ops.sparse_attention import VariableSparsityConfig as STConfig
+            else:
+                raise NotImplementedError(
+                    f'Given sparsity mode, {sa_mode}, has not been implemented yet!'
+                )
+            del sa_config['mode']
+            return STConfig(num_heads=num_heads, **sa_config)
+        else:
+            from deepspeed.ops.sparse_attention import FixedSparsityConfig as STConfig
+            print(
+                'deepspeed sparse attention is not set; Fixed sparsity is used as default.'
+            )
+            return STConfig(num_heads=num_heads)
+    else:
+        return None
 
 
 def load_tf_weights_in_bert(model, tf_checkpoint_path):
@@ -510,20 +553,21 @@ class BertLayer(nn.Module):
 
 
 class BertEncoder(nn.Module):
-    def __init__(self, config, args):
+    def __init__(self, config, args, sparse_attention_config=None):
         super(BertEncoder, self).__init__()
 
         #Added later to make it similar to GPT-2
         self.FinalLayerNorm = BertLayerNorm(config.hidden_size, eps=1e-12)
 
+        if args.deepspeed_transformer_kernel and args.deepspeed_sparse_attention:
+            raise NotImplementedError(
+                f'Currently DeepSpeed Transformer Kernels do not support Sparse Attention. To use Sparse Attention, you need to disable Transformer Kernels!'
+            )
+
         if args.deepspeed_transformer_kernel:
-            from deepspeed import DeepSpeedTransformerLayer, DeepSpeedTransformerConfig, DeepSpeedConfig
+            from deepspeed import DeepSpeedTransformerLayer, DeepSpeedTransformerConfig
 
-            if hasattr(args, 'deepspeed_config') and args.deepspeed_config:
-                ds_config = DeepSpeedConfig(args.deepspeed_config)
-            else:
-                raise RuntimeError('deepspeed_config is not found in args.')
-
+            ds_config = get_deepspeed_config(args)
             cuda_config = DeepSpeedTransformerConfig(
                 batch_size=ds_config.train_micro_batch_size_per_gpu,
                 max_seq_length=args.max_seq_length,
@@ -549,6 +593,12 @@ class BertEncoder(nn.Module):
             ])
         else:
             layer = BertLayer(config)
+            if sparse_attention_config is not None:
+                from deepspeed.ops.sparse_attention import BertSparseSelfAttention
+
+                layer.attention.self = BertSparseSelfAttention(
+                    config, sparsity_config=sparse_attention_config)
+
             self.layer = nn.ModuleList([
                 copy.deepcopy(layer) for _ in range(config.num_hidden_layers)
             ])
@@ -936,7 +986,14 @@ class BertModel(BertPreTrainedModel):
     def __init__(self, config, args=None):
         super(BertModel, self).__init__(config)
         self.embeddings = BertEmbeddings(config)
-        self.encoder = BertEncoder(config, args)
+        # set pad_token_id that is used for sparse attention padding
+        self.pad_token_id = config.pad_token_id if hasattr(
+            config, 'pad_token_id') and config.pad_token_id is not None else 0
+        # set sparse_attention_config if it has been selected
+        self.sparse_attention_config = get_sparse_attention_config(
+            args, config.num_attention_heads)
+        self.encoder = BertEncoder(
+            config, args, sparse_attention_config=self.sparse_attention_config)
         self.pooler = BertPooler(config)
         self.apply(self.init_bert_weights)
         logger.info("Init BERT pretrain model")
@@ -968,6 +1025,18 @@ class BertModel(BertPreTrainedModel):
             dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
+        # If BertEncoder uses sparse attention, it needs to be padded based on the sparse attention block size
+        if self.sparse_attention_config is not None:
+            pad_len, input_ids, attention_mask, token_type_ids, position_ids, inputs_embeds = SparseAttentionUtils.pad_to_block_size(
+                block_size=self.sparse_attention_config.block,
+                input_ids=input_ids,
+                attention_mask=extended_attention_mask,
+                token_type_ids=token_type_ids,
+                position_ids=None,
+                inputs_embeds=None,
+                pad_token_id=self.pad_token_id,
+                model_mbeddings=self.embeddings)
+
         embedding_output = self.embeddings(input_ids, token_type_ids)
         encoded_layers = self.encoder(
             embedding_output,
@@ -976,6 +1045,12 @@ class BertModel(BertPreTrainedModel):
             checkpoint_activations=checkpoint_activations)
         sequence_output = encoded_layers[-1]
         pooled_output = self.pooler(sequence_output)
+
+        # If BertEncoder uses sparse attention, and input_ids were padded, sequence output needs to be unpadded to original length
+        if self.sparse_attention_config is not None and pad_len > 0:
+            encoded_layers[-1] = SparseAttentionUtils.unpad_sequence_output(
+                pad_len, encoded_layers[-1])
+
         if not output_all_encoded_layers:
             encoded_layers = encoded_layers[-1]
         return encoded_layers, pooled_output

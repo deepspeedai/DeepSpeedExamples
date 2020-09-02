@@ -20,5 +20,15 @@
   "fp16": {
     "enabled": true,
     "loss_scale": 0
+  },
+  "sparse_attention": {
+    "mode": "fixed",
+    "block": 16,
+    "different_layout_per_head": true,
+    "num_local_blocks": 4,
+    "num_global_blocks": 1,
+    "attention": "bidirectional",
+    "horizontal_global_attention": false,
+    "num_different_global_patterns": 4
   }
 }
