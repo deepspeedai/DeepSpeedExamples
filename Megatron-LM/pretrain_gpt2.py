@@ -114,7 +114,7 @@ def get_optimizer(model, args):
         if args.cpu_torch_adam:
             cpu_adam_optimizer = torch.optim.Adam
         else:
-        from deepspeed.ops.adam import DeepSpeedCPUAdam
+            from deepspeed.ops.adam import DeepSpeedCPUAdam
             cpu_adam_optimizer = DeepSpeedCPUAdam
         optimizer = cpu_adam_optimizer(param_groups,
                         lr=args.lr, weight_decay=args.weight_decay)
