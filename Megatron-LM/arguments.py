@@ -60,6 +60,10 @@ def add_model_config_args(parser):
     group.add_argument('--make-vocab-size-divisible-by', type=int, default=128,
                        help='Pad the vocab size to be divisible by this value.'
                        'This is added for computational efficieny reasons.')
+    group.add_argument('--cpu-optimizer', action='store_true',
+                                   help='Run optimizer on CPU')
+    group.add_argument('--cpu_torch_adam', action='store_true',
+                                   help='Use Torch Adam as optimizer on CPU.')
 
     return parser
 

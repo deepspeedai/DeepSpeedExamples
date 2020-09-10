@@ -1,11 +1,12 @@
 {
-  "train_batch_size": 16,
-  "gradient_accumulation_steps": 1,
-  "steps_per_print": 1,
+  "train_micro_batch_size_per_gpu": 12,
+  "gradient_accumulation_steps": 5,
+  "steps_per_print": 100,
   "zero_optimization": {
-    "stage": 2
+    "stage": 2,
+    "cpu_offload": true,
+    "reduce_bucket_size": 50000000
   },
-  "zero_allow_untested_optimizer": true,
   "gradient_clipping": 1.0,
   "fp16": {
     "enabled": true,
@@ -16,7 +17,8 @@
   },
   "activation_checkpointing": {
     "partition_activations": true,
-    "contiguous_memory_optimization": false
+    "contiguous_memory_optimization": true,
+    "cpu_checkpointing": true
   },
   "wall_clock_breakdown": false
 }

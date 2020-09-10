@@ -110,10 +110,20 @@ def get_optimizer(model, args):
             if not hasattr(param, 'model_parallel'):
                 param.model_parallel = False
 
-    # Use Adam.
-    optimizer = Adam(param_groups,
-                     lr=args.lr, weight_decay=args.weight_decay)
+    if args.cpu_optimizer:
+        if args.cpu_torch_adam:
+            cpu_adam_optimizer = torch.optim.Adam
+        else:
+        from deepspeed.ops.adam import DeepSpeedCPUAdam
+            cpu_adam_optimizer = DeepSpeedCPUAdam
+        optimizer = cpu_adam_optimizer(param_groups,
+                        lr=args.lr, weight_decay=args.weight_decay)
+    else:
+        # Use FusedAdam.
+        optimizer = Adam(param_groups,
+                         lr=args.lr, weight_decay=args.weight_decay)
 
+    print(f'Optimizer = {optimizer.__class__.__name__}')
     if args.deepspeed:
         # fp16 wrapper is not required for DeepSpeed.
         return optimizer
@@ -528,11 +538,11 @@ def evaluate_and_print_results(prefix, data_iterator, model,
     Gives access to partition activations, contiguous memory optimizations
     and cpu checkpointing.
 
-    Activation checkpoint requires keep track of the random states 
+    Activation checkpoint requires keep track of the random states
     and setting the random seed for each MP process. Megatron uses
     mpu.get_cuda_rng_tracker and mpu.model_parallel_cuda_manual_seed
     for keeping track of the random states and setting the random seeds.
-    Since they are used in places outside of activation checkpointing, 
+    Since they are used in places outside of activation checkpointing,
     we overwrite them to maintain consistency.
 
     This must be done before all the calls to mpu.model_parallel_cuda_manual_seed
@@ -566,7 +576,7 @@ def initialize_distributed(args):
     mpu.initialize_model_parallel(args.model_parallel_size)
 
     # Optional DeepSpeed Activation Checkpointing Features
-    # 
+    #
     if args.deepspeed and args.deepspeed_activation_checkpointing:
         set_deepspeed_activation_checkpointing(args)
 
