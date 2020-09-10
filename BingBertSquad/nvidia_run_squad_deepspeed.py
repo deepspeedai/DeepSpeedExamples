@@ -33,6 +33,7 @@ from utils import get_argument_parser, \
     is_time_to_exit, check_early_exit_warning
 import deepspeed
 
+import time
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
@@ -745,61 +746,12 @@ def main():
 
     args = parser.parse_args()
 
-    if args.local_rank == -1 or args.no_cuda:
-        device = torch.device("cuda" if torch.cuda.is_available()
-                              and not args.no_cuda else "cpu")
-        n_gpu = torch.cuda.device_count()
-    else:
-        torch.cuda.set_device(args.local_rank)
-        device = torch.device("cuda", args.local_rank)
-        n_gpu = 1
-        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
-        torch.distributed.init_process_group(backend='nccl')
-    logger.info(
-        "device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".
-        format(device, n_gpu, bool(args.local_rank != -1), args.fp16))
-
-    if args.gradient_accumulation_steps < 1:
-        raise ValueError(
-            "Invalid gradient_accumulation_steps parameter: {}, should be >= 1"
-            .format(args.gradient_accumulation_steps))
-
     args.train_batch_size = int(args.train_batch_size /
                                 args.gradient_accumulation_steps)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    if n_gpu > 0:
-        torch.cuda.manual_seed_all(args.seed)
-
-    if not args.do_train and not args.do_predict:
-        raise ValueError(
-            "At least one of `do_train` or `do_predict` must be True.")
-
-    if args.do_train:
-        if not args.train_file:
-            raise ValueError(
-                "If `do_train` is True, then `train_file` must be specified.")
-    if args.do_predict:
-        if not args.predict_file:
-            raise ValueError(
-                "If `do_predict` is True, then `predict_file` must be specified."
-            )
-
-    if os.path.exists(args.output_dir) and os.listdir(
-            args.output_dir) and args.do_train:
-        raise ValueError(
-            "Output directory () already exists and is not empty.")
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    # Prepare Summary writer
-    if torch.distributed.get_rank() == 0 and args.job_name is not None:
-        args.summary_writer = get_summary_writer(name=args.job_name,
-                                                 base=args.output_dir)
-    else:
-        args.summary_writer = None
-
     tokenizer = BertTokenizer.from_pretrained(args.bert_model,
                                               do_lower_case=args.do_lower_case)
 
@@ -834,15 +786,31 @@ def main():
         "type_vocab_size": 2,
         "initializer_range": 0.02
     }
-    if args.preln:
-        bert_config = BertConfigPreLN(**bert_model_config)
+
+    if args.ckpt_type == "DS":
+        if args.preln:
+            bert_config = BertConfigPreLN(**bert_model_config)
+        else:
+            bert_config = BertConfig(**bert_model_config)
     else:
-        bert_config = BertConfig(**bert_model_config)
+        # Models from Tensorflow and Huggingface are post-LN.
+        if args.preln:
+            raise ValueError("Should NOT use --preln if the loading checkpoint doesn't use pre-layer-norm.")
+
+        # Use the original bert config if want to load from non-DeepSpeed checkpoint.
+        if args.origin_bert_config_file is None:
+            raise ValueError("--origin_bert_config_file is required for loading non-DeepSpeed checkpoint.")
+
+        bert_config = BertConfig.from_json_file(args.origin_bert_config_file)
+
+        if bert_config.vocab_size != len(tokenizer.vocab):
+            raise ValueError("vocab size from original checkpoint mismatch.")
 
     bert_config.vocab_size = len(tokenizer.vocab)
     # Padding for divisibility by 8
     if bert_config.vocab_size % 8 != 0:
-        bert_config.vocab_size += 8 - (bert_config.vocab_size % 8)
+        vocab_diff = 8 - (bert_config.vocab_size % 8)
+        bert_config.vocab_size += vocab_diff
 
     if args.preln:
         model = BertForQuestionAnsweringPreLN(bert_config, args)
@@ -853,20 +821,22 @@ def main():
     if args.model_file is not "0":
         logger.info(f"Loading Pretrained Bert Encoder from: {args.model_file}")
 
-        checkpoint_state_dict = torch.load(args.model_file,
-                                           map_location=torch.device("cpu"))
-        if 'module' in checkpoint_state_dict:
-            logger.info('Loading DeepSpeed v2.0 style checkpoint')
-            model.load_state_dict(checkpoint_state_dict['module'],
-                                  strict=False)
-        elif 'model_state_dict' in checkpoint_state_dict:
-            model.load_state_dict(checkpoint_state_dict['model_state_dict'],
-                                  strict=False)
+        if args.ckpt_type == "DS":
+            checkpoint_state_dict = torch.load(args.model_file,
+                                               map_location=torch.device("cpu"))
+            if 'module' in checkpoint_state_dict:
+                logger.info('Loading DeepSpeed v2.0 style checkpoint')
+                model.load_state_dict(checkpoint_state_dict['module'],
+                                      strict=False)
+            elif 'model_state_dict' in checkpoint_state_dict:
+                model.load_state_dict(checkpoint_state_dict['model_state_dict'],
+                                      strict=False)
+            else:
+                raise ValueError("Unable to find model state in checkpoint")
         else:
-            raise ValueError("Unable to find model state in checkpoint")
+            from convert_bert_ckpt_to_deepspeed import convert_ckpt_to_deepspeed
+            convert_ckpt_to_deepspeed(model, args.ckpt_type, args.model_file, vocab_diff, args.deepspeed_transformer_kernel)
 
-        #bert_state_dict = torch.load(args.model_file)
-        #model.bert.load_state_dict(bert_state_dict, strict=False)
         logger.info(f"Pretrained Bert Encoder Loaded from: {args.model_file}")
 
     # Prepare optimizer
@@ -882,7 +852,7 @@ def main():
         [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
         'weight_decay':
         0.01
-    }, {
+    },{
         'params':
         [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
         'weight_decay':
@@ -893,7 +863,55 @@ def main():
         args=args,
         model=model,
         model_parameters=optimizer_grouped_parameters,
-        dist_init_required=False)
+        dist_init_required=True)
+    
+    if args.local_rank == -1 or args.no_cuda:
+        device = torch.device("cuda" if torch.cuda.is_available()
+                              and not args.no_cuda else "cpu")
+        n_gpu = torch.cuda.device_count()
+    else:
+        torch.cuda.set_device(args.local_rank)
+        device = torch.device("cuda", args.local_rank)
+        n_gpu = 1
+        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+        #torch.distributed.init_process_group(backend='nccl')
+    logger.info(
+        "device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".
+        format(device, n_gpu, bool(args.local_rank != -1), args.fp16))
+
+    if args.gradient_accumulation_steps < 1:
+        raise ValueError(
+            "Invalid gradient_accumulation_steps parameter: {}, should be >= 1"
+            .format(args.gradient_accumulation_steps))
+    if n_gpu > 0:
+        torch.cuda.manual_seed_all(args.seed)
+
+    if not args.do_train and not args.do_predict:
+        raise ValueError(
+            "At least one of `do_train` or `do_predict` must be True.")
+
+    if args.do_train:
+        if not args.train_file:
+            raise ValueError(
+                "If `do_train` is True, then `train_file` must be specified.")
+    if args.do_predict:
+        if not args.predict_file:
+            raise ValueError(
+                "If `do_predict` is True, then `predict_file` must be specified."
+            )
+
+    if os.path.exists(args.output_dir) and os.listdir(
+            args.output_dir) and args.do_train:
+        os.makedirs(args.output_dir, exist_ok=True)
+
+    # Prepare Summary writer
+    if torch.distributed.get_rank() == 0 and args.job_name is not None:
+        args.summary_writer = get_summary_writer(name=args.job_name,
+                                                 base=args.output_dir)
+    else:
+        args.summary_writer = None
+
+
 
     logger.info("propagate deepspeed-config settings to client settings")
     args.train_batch_size = model.train_micro_batch_size_per_gpu()
@@ -960,11 +978,15 @@ def main():
         ema_loss = 0.
         sample_count = 0
         num_epoch = 0
+        all_step_time = 0.0
+        ave_rounds = 20
         for _ in trange(int(args.num_train_epochs), desc="Epoch"):
             num_epoch += 1
             epoch_step = 0
             for step, batch in enumerate(
                     tqdm(train_dataloader, desc="Iteration", smoothing=0)):
+                start_time = time.time()
+                bs_size = batch[0].size()[0]
                 if n_gpu == 1:
                     batch = tuple(
                         t.to(device)
@@ -983,6 +1005,8 @@ def main():
                     1 - args.loss_plot_alpha) * loss.item()
 
                 model.backward(loss)
+                loss_item = loss.item() * args.gradient_accumulation_steps
+                loss = None
 
                 sample_count += (args.train_batch_size *
                                  torch.distributed.get_world_size())
@@ -1002,7 +1026,7 @@ def main():
                     ) == 0 and args.summary_writer:
                         summary_events = [
                             (f'Train/Steps/lr', lr_this_step, global_step),
-                            (f'Train/Samples/train_loss', loss.item(),
+                            (f'Train/Samples/train_loss', loss_item,
                              sample_count),
                             (f'Train/Samples/lr', lr_this_step, sample_count),
                             (f'Train/Samples/train_ema_loss', ema_loss,
@@ -1032,7 +1056,12 @@ def main():
                         f'Warning: Early epoch termination due to max steps limit, epoch step ={epoch_step}, global step = {global_step}, epoch = {num_epoch}'
                     )
                     break
-
+                one_step_time = time.time() -start_time
+                all_step_time += one_step_time
+                if (step + 1)%(ave_rounds) == 0 and torch.distributed.get_rank() == 0:
+                    print('At Step {}, Averaged Throughput for {} rounds is: {} Samples/s'.format(step, ave_rounds, bs_size * ave_rounds * torch.distributed.get_world_size() / all_step_time ), flush=True )
+                    all_step_time = 0.0
+      
     # Save a trained model
     # model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
     #output_model_file = os.path.join(args.output_dir, "pytorch_model.bin")

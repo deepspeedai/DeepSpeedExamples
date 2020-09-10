@@ -124,6 +124,11 @@ def master_process(args):
             and dist.get_rank() == 0) or (args.no_cuda
                                           and args.local_rank == -1)
 
+            
+from deepspeed.utils.logging import logger
+
+
+
 
 def train(args,
           index,
@@ -149,8 +154,13 @@ def train(args,
     model.train()
 
     epoch_step = 0
+    rounds = 20
+    all_step_time = 0.0
+    step_counts = 0
+
     for _, batch_index in enumerate(tqdm(dataset_iterator, smoothing=1)):
         try:
+            step_start = time.time()
             batch = pretrain_dataset_provider.get_batch(batch_index)
             batch = tuple(t.to(args.device) for t in batch)  # Move to GPU
 
@@ -165,6 +175,8 @@ def train(args,
 
             model.network.backward(loss)
 
+            loss = None
+
             if model.network.is_gradient_accumulation_boundary():
                 if args.fp16:
                     # modify learning rate with special warm up BERT uses
@@ -176,6 +188,7 @@ def train(args,
                                     global_step, current_data_sample_count)
 
                 model.network.step()
+
 
                 report_lamb_coefficients(args, optimizer)
                 global_step += 1
@@ -195,6 +208,12 @@ def train(args,
                 f'Warning: Early epoch termination due to max steps limit, epoch step ={epoch_step}, global step = {current_global_step}, epoch = {index+1}'
             )
             break
+        step_time = time.time() - step_start
+        all_step_time += step_time
+        if global_step % rounds == 0 and global_step != 0 and model.network.is_gradient_accumulation_boundary() and dist.get_rank() == 0:
+            one_step_bs = args.train_micro_batch_size_per_gpu * args.gradient_accumulation_steps * dist.get_world_size() * rounds
+            print(' At step {}, the throughput is {:2f} Samples/s'.format(global_step * args.gradient_accumulation_steps, one_step_bs/all_step_time), flush=True)
+            all_step_time = 0.0
 
     pretrain_dataset_provider.release_shard(index)
 
@@ -368,6 +387,9 @@ def prepare_optimizer_parameters(args, model):
 
 
 def prepare_model_optimizer(args):
+    # Initialize torch distributed
+    # torch.distributed.init_process_group(backend="nccl")
+
     # Loading Model
     model = BertMultiTask(args)
 
@@ -391,7 +413,8 @@ def prepare_model_optimizer(args):
     args.device = model.network.device
     model.set_device(args.device)
     args.fp16 = model.network.fp16_enabled()
-    args.use_lamb = model.network.optimizer_name() == deepspeed.LAMB_OPTIMIZER
+    args.use_lamb = model.network.optimizer_name(
+    ) == deepspeed.runtime.config.LAMB_OPTIMIZER
 
     # Prepare Summary Writer and saved_models path
     if dist.get_rank() == 0:

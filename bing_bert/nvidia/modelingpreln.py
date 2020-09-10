@@ -43,7 +43,6 @@ from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 import torch.nn.init as init
 
-from deepspeed.ops.sparse_attention import SparseAttentionUtils
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +107,11 @@ def get_sparse_attention_config(args, num_heads):
     else:
         return None
 
+def get_sparse_attention_utils(sparse_attention_config):
+    if sparse_attention_config is not None:
+        from deepspeed.ops.sparse_attention import SparseAttentionUtils
+        return SparseAttentionUtils
+    return None
 
 def load_tf_weights_in_bert(model, tf_checkpoint_path):
     """ Load tf checkpoints in a pytorch model
@@ -789,6 +793,7 @@ class BertPreTrainedModel(nn.Module):
             num_layers = self.config.num_hidden_layers
             std = self.config.initializer_range
             if hasattr(module, 'bert_output_layer'):
+                # "Accounting for accumulation on the residual path"
                 #print("Accounting for accumulation on the residual path")
                 std = self.config.initializer_range / math.sqrt(
                     2.0 * num_layers)
@@ -992,6 +997,7 @@ class BertModel(BertPreTrainedModel):
         # set sparse_attention_config if it has been selected
         self.sparse_attention_config = get_sparse_attention_config(
             args, config.num_attention_heads)
+        self.sparse_attention_utils = get_sparse_attention_utils(self.sparse_attention_config)
         self.encoder = BertEncoder(
             config, args, sparse_attention_config=self.sparse_attention_config)
         self.pooler = BertPooler(config)
@@ -1027,7 +1033,7 @@ class BertModel(BertPreTrainedModel):
 
         # If BertEncoder uses sparse attention, it needs to be padded based on the sparse attention block size
         if self.sparse_attention_config is not None:
-            pad_len, input_ids, attention_mask, token_type_ids, position_ids, inputs_embeds = SparseAttentionUtils.pad_to_block_size(
+            pad_len, input_ids, attention_mask, token_type_ids, position_ids, inputs_embeds = self.sparse_attention_utils.pad_to_block_size(
                 block_size=self.sparse_attention_config.block,
                 input_ids=input_ids,
                 attention_mask=extended_attention_mask,
@@ -1048,7 +1054,7 @@ class BertModel(BertPreTrainedModel):
 
         # If BertEncoder uses sparse attention, and input_ids were padded, sequence output needs to be unpadded to original length
         if self.sparse_attention_config is not None and pad_len > 0:
-            encoded_layers[-1] = SparseAttentionUtils.unpad_sequence_output(
+            encoded_layers[-1] = self.sparse_attention_utils.unpad_sequence_output(
                 pad_len, encoded_layers[-1])
 
         if not output_all_encoded_layers:
