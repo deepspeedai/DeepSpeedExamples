@@ -236,6 +236,7 @@ def write_summary_events(summary_writer, summary_events):
     for event in summary_events:
         summary_writer.add_scalar(event[0], event[1], event[2])
 
+
 def is_time_to_exit(args, epoch_steps=0, global_steps=0):
     return (epoch_steps >= args.max_steps_per_epoch) or \
             (global_steps >= args.max_steps)

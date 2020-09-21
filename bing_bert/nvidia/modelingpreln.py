@@ -576,6 +576,7 @@ class BertEncoder(nn.Module):
                 batch_size=ds_config.train_micro_batch_size_per_gpu,
                 max_seq_length=args.max_seq_length,
                 hidden_size=config.hidden_size,
+                intermediate_size=config.intermediate_size,
                 heads=config.num_attention_heads,
                 attn_dropout_ratio=config.attention_probs_dropout_prob,
                 hidden_dropout_ratio=config.hidden_dropout_prob,
