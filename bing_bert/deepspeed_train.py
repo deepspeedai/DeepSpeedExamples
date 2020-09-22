@@ -124,10 +124,8 @@ def master_process(args):
             and dist.get_rank() == 0) or (args.no_cuda
                                           and args.local_rank == -1)
 
-            
+
 from deepspeed.utils.logging import logger
-
-
 
 
 def train(args,
@@ -184,11 +182,10 @@ def train(args,
                     lr_this_step = update_learning_rate(
                         args, config, global_step, optimizer)
 
-                report_step_metrics(args, lr_this_step, unscaled_loss,
-                                    global_step, current_data_sample_count)
+                    report_step_metrics(args, lr_this_step, unscaled_loss,
+                                        global_step, current_data_sample_count)
 
                 model.network.step()
-
 
                 report_lamb_coefficients(args, optimizer)
                 global_step += 1
@@ -210,9 +207,14 @@ def train(args,
             break
         step_time = time.time() - step_start
         all_step_time += step_time
-        if global_step % rounds == 0 and global_step != 0 and model.network.is_gradient_accumulation_boundary() and dist.get_rank() == 0:
-            one_step_bs = args.train_micro_batch_size_per_gpu * args.gradient_accumulation_steps * dist.get_world_size() * rounds
-            print(' At step {}, the throughput is {:2f} Samples/s'.format(global_step * args.gradient_accumulation_steps, one_step_bs/all_step_time), flush=True)
+        if global_step % rounds == 0 and global_step != 0 and model.network.is_gradient_accumulation_boundary(
+        ) and dist.get_rank() == 0:
+            one_step_bs = args.train_micro_batch_size_per_gpu * args.gradient_accumulation_steps * dist.get_world_size(
+            ) * rounds
+            print(' At step {}, the throughput is {:2f} Samples/s'.format(
+                global_step * args.gradient_accumulation_steps,
+                one_step_bs / all_step_time),
+                  flush=True)
             all_step_time = 0.0
 
     pretrain_dataset_provider.release_shard(index)
