@@ -111,9 +111,11 @@ def get_optimizer(model, args):
                 param.model_parallel = False
 
     if args.cpu_optimizer:
+        #Apex FusedAdam uses decoupled weight decay so use the same here
         if args.cpu_torch_adam:
-            cpu_adam_optimizer = torch.optim.Adam
+            cpu_adam_optimizer = torch.optim.AdamW
         else:
+            #TODO add option for decoupled weight decay in DeepCPUAdam
             from deepspeed.ops.adam import DeepSpeedCPUAdam
             cpu_adam_optimizer = DeepSpeedCPUAdam
         optimizer = cpu_adam_optimizer(param_groups,
