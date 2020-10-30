@@ -34,7 +34,6 @@ gpt_options=" \
        --checkpoint-activations \
        --deepspeed-activation-checkpointing \
        --fp16 \
-       --cpu-optimizer
        --log-interval 5 \
 "
 gpt_options="${gpt_options}
