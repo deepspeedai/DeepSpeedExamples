@@ -8,9 +8,6 @@ from pytorch_pretrained_bert.modeling import BertModel
 from pytorch_pretrained_bert.modeling import BertPreTrainingHeads, PreTrainedBertModel, BertPreTrainingHeads
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
 
-from nvidia.modelingpreln import BertForPreTrainingPreLN, BertConfig
-
-
 class BertPretrainingLoss(PreTrainedBertModel):
     def __init__(self, bert_encoder, config):
         super(BertPretrainingLoss, self).__init__(config)
@@ -108,6 +105,12 @@ class BertMultiTask:
         self.config = args.config
 
         if not args.use_pretrain:
+
+            if args.progressive_layer_drop:
+                print("BertConfigPreLnLayerDrop")
+                from nvidia.modelingpreln_layerdrop import BertForPreTrainingPreLN, BertConfig
+            else:
+                from nvidia.modelingpreln import BertForPreTrainingPreLN, BertConfig
 
             bert_config = BertConfig(**self.config["bert_model_config"])
             bert_config.vocab_size = len(args.tokenizer.vocab)

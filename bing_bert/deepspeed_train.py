@@ -182,8 +182,8 @@ def train(args,
                     lr_this_step = update_learning_rate(
                         args, config, global_step, optimizer)
 
-                    report_step_metrics(args, lr_this_step, unscaled_loss,
-                                        global_step, current_data_sample_count)
+                report_step_metrics(args, lr_this_step, unscaled_loss,
+                                    global_step, current_data_sample_count)
 
                 model.network.step()
 

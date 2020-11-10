@@ -33,24 +33,14 @@
     },
     "mixed_seq_training": {
         "128": {
-            "num_epochs": 500,
-            "warmup_proportion": 0.1,
-            "learning_rate": 4e-4,
+            "num_epochs": 200,
+            "warmup_proportion": 0.02,
+            "learning_rate": 1e-3,
             "num_workers": 0,
             "async_worker": true,
             "decay_rate": 0.99,
-            "decay_step": 520,
-            "total_training_steps": 125000
-        },
-        "512": {
-            "num_epochs": 160,
-            "warmup_proportion": 0.02,
-            "learning_rate": 1e-5,
-            "num_workers": 0,
-            "async_worker": true,
-            "decay_rate": 0.90,
-            "decay_step": 150,
-            "total_training_steps": 7500
+            "decay_step": 1000,
+            "total_training_steps": 200000
         }
     },
     "validation": {

@@ -196,6 +196,11 @@ def get_argument_parser():
                         action='store_true',
                         help='Use Nvidia pretraining dataset.')
 
+    parser.add_argument('--progressive_layer_drop',
+                        default=False,
+                        action='store_true',
+                        help="Whether to enable progressive layer dropping or not")
+
     return parser
 
 
