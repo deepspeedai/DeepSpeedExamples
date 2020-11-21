@@ -1,12 +1,11 @@
 {
-  "train_batch_size": 4096,
   "train_micro_batch_size_per_gpu": 16,
   "steps_per_print": 100,
   "prescale_gradients": false,
   "optimizer": {
     "type": "OneBitAdam",
     "params": {
-      "lr": 1e-8,
+      "lr": 4e-4,
       "weight_decay": 0.01,
       "bias_correction": false,
       "freeze_step": 23000,
