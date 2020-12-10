@@ -20,8 +20,7 @@ NCCL_TREE_THRESHOLD=0 python ${base_dir}/deepspeed_train.py \
 --deepspeed_mpi \
 --deepspeed \
 --print_steps 40 \
---lr_schedule "EE" \
---lr_offset 10e-4 \
+--lr_schedule "LE" \
 --job_name $JOB_NAME \
 --deepspeed_config ${base_dir}/deepspeed_bsz4k_onebit_config_seq128.json \
 --data_path_prefix /data/bert 
