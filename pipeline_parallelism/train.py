@@ -149,7 +149,7 @@ if __name__ == '__main__':
     args = get_args()
 
     torch.cuda.set_device(args.local_rank)
-    dist.init_process_group(backend=args.backend)
+    deepspeed.init_distributed(dist_backend=args.backend)
 
     if args.pipeline_parallel_size == 0:
         train_base(args)

@@ -549,20 +549,24 @@ def set_deepspeed_activation_checkpointing(args):
 def initialize_distributed(args):
     """Initialize torch.distributed."""
 
-    # Manually set the device ids.
-    device = args.rank % torch.cuda.device_count()
+    if args.deepspeed:
+        deepspeed.init_distributed(dist_backend=args.distributed_backend)
+    else:
+        # Manually set the device ids.
+        device = args.rank % torch.cuda.device_count()
+        # Call the init process
+        init_method = 'tcp://'
+        master_ip = os.getenv('MASTER_ADDR', 'localhost')
+        master_port = os.getenv('MASTER_PORT', '6000')
+        init_method += master_ip + ':' + master_port
+        torch.distributed.init_process_group(
+            backend=args.distributed_backend,
+            world_size=args.world_size, rank=args.rank,
+            init_method=init_method)
+
     if args.local_rank is not None:
         device = args.local_rank
     torch.cuda.set_device(device)
-    # Call the init process
-    init_method = 'tcp://'
-    master_ip = os.getenv('MASTER_ADDR', 'localhost')
-    master_port = os.getenv('MASTER_PORT', '6000')
-    init_method += master_ip + ':' + master_port
-    torch.distributed.init_process_group(
-        backend=args.distributed_backend,
-        world_size=args.world_size, rank=args.rank,
-        init_method=init_method)
 
     # Set the model-parallel / data-parallel communicators.
     mpu.initialize_model_parallel(args.model_parallel_size)
