@@ -741,6 +741,8 @@ def set_optimizer_params_grad(named_params_optimizer,
 def main():
     parser = get_argument_parser()
 
+    torch.distributed.init_process_group(backend='nccl')
+
     # Include DeepSpeed configuration arguments
     parser = deepspeed.add_config_arguments(parser)
 
