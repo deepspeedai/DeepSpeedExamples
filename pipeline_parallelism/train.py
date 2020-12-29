@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import argparse
 
 import torch
@@ -148,8 +149,9 @@ def train_pipe(args, part='parameters'):
 if __name__ == '__main__':
     args = get_args()
 
-    torch.cuda.set_device(args.local_rank)
     deepspeed.init_distributed(dist_backend=args.backend)
+    args.local_rank = int(os.environ['LOCAL_RANK'])
+    torch.cuda.set_device(args.local_rank)
 
     if args.pipeline_parallel_size == 0:
         train_base(args)

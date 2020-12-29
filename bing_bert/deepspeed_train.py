@@ -391,6 +391,7 @@ def prepare_optimizer_parameters(args, model):
 def prepare_model_optimizer(args):
     # Initialize torch distributed
     deepspeed.init_distributed(dist_backend='nccl')
+    args.local_rank = int(os.environ['LOCAL_RANK'])
 
     # Loading Model
     model = BertMultiTask(args)
