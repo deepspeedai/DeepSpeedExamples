@@ -742,13 +742,12 @@ def main():
     parser = get_argument_parser()
 
     deepspeed.init_distributed(dist_backend='nccl')
-    args.local_rank = int(os.environ['LOCAL_RANK'])
 
     # Include DeepSpeed configuration arguments
     parser = deepspeed.add_config_arguments(parser)
 
     args = parser.parse_args()
-
+    args.local_rank = int(os.environ['LOCAL_RANK'])
     args.train_batch_size = int(args.train_batch_size /
                                 args.gradient_accumulation_steps)
 
