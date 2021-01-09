@@ -862,6 +862,9 @@ def main():
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    if args.deepspeed_transformer_kernel:
+        no_decay = no_decay + ['attn_nw', 'attn_nb', 'norm_w', 'norm_b',
+                               'attn_qkvb', 'attn_ob', 'inter_b', 'output_b']
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if not any(
             nd in n for nd in no_decay)], 'weight_decay': 0.01},

@@ -368,6 +368,9 @@ def prepare_optimizer_parameters(args, model):
     param_optimizer = list(model.network.named_parameters())
     param_optimizer = [n for n in param_optimizer if 'pooler' not in n[0]]
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    if args.deepspeed_transformer_kernel:
+        no_decay = no_decay + ['attn_nw', 'attn_nb', 'norm_w', 'norm_b',
+                               'attn_qkvb', 'attn_ob', 'inter_b', 'output_b']
     if "weight_decay" in config["training"].keys():
         weight_decay = config["training"]["weight_decay"]
     else:
