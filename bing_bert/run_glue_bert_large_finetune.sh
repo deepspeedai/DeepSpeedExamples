@@ -5,18 +5,18 @@ fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-NGPU=1
+NGPU=$1
 
 echo "Started scripts"
 
-TASK=$1
-EFFECTIVE_BATCH_SIZE=$2
-LR=$3
-NUM_EPOCH=$4
-
-model_name="bert_base"
-JOBNAME=$5
-CHECKPOINT_PATH=$6
+TASK=$2
+EFFECTIVE_BATCH_SIZE=$3
+LR=$4
+NUM_EPOCH=$5
+base_dir=`pwd`
+model_name="bert_large"
+JOBNAME=$6
+CHECKPOINT_PATH=$7
 OUTPUT_DIR="${SCRIPT_DIR}/outputs/${model_name}/${JOBNAME}_bsz${EFFECTIVE_BATCH_SIZE}_lr${LR}_epoch${NUM_EPOCH}"
 
 GLUE_DIR="/data/GlueData"
@@ -32,13 +32,16 @@ fi
 echo "Fine Tuning $CHECKPOINT_PATH"
 run_cmd="python3.6 -m torch.distributed.launch \
        --nproc_per_node=${NGPU} \
-       --master_port=${MASTER_PORT} \
-       run_glue_classifier_bert_base.py \
+       --master_port=12346 \
+       run_glue_classifier_bert_large.py \
        --task_name $TASK \
        --do_train \
        --do_eval \
        --deepspeed \
-       --deepspeed_config ${base_dir}/glue_bert_base.json \
+       --deepspeed_transformer_kernel \
+       --fp16 \
+       --preln \
+       --deepspeed_config ${base_dir}/glue_bert_large.json \
        --do_lower_case \
        --data_dir $GLUE_DIR/$TASK/ \
        --bert_model bert-large-uncased \
@@ -48,8 +51,7 @@ run_cmd="python3.6 -m torch.distributed.launch \
        --learning_rate ${LR} \
        --num_train_epochs ${NUM_EPOCH} \
        --output_dir ${OUTPUT_DIR}_${TASK} \
-       --progressive_layer_drop \
-       --model_file $CHECKPOINT_PATH &> $LOG_DIR/${model_name}/${JOBNAME}_${TASK}_bzs${EFFECTIVE_BATCH_SIZE}_lr${LR}_epoch${NUM_EPOCH}.txt
+       --model_file $CHECKPOINT_PATH &> $LOG_DIR/${model_name}/${JOBNAME}_${TASK}_bzs${EFFECTIVE_BATCH_SIZE}_lr${LR}_epoch${NUM_EPOCH}_${NGPU}_deepspeed-kernel.txt
        "
 echo ${run_cmd}
-eval ${run_cmd} 
+eval ${run_cmd}
