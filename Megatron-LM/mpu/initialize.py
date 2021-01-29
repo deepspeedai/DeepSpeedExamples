@@ -36,7 +36,7 @@ def initialize_model_parallel(model_parallel_size_):
 
     Let's say we have a total of 8 GPUs denoted by g0 ... g7 and we
     use 2 GPUs to parallelize the model. The present function will
-    create 4 model parallel groups and 2 data parallel grous as:
+    create 4 model parallel groups and 2 data parallel groups as:
         4 model parallel groups:
             [g0, g1], [g2, g3], [g4, g5], [g6, g7]
         2 data parallel groups:
@@ -110,7 +110,7 @@ def get_model_parallel_rank():
 
 
 def get_model_parallel_src_rank():
-    """Calculate the global rank corresponding to a local rank zeor
+    """Calculate the global rank corresponding to a local rank zero
     in the model parallel group."""
     global_rank = torch.distributed.get_rank()
     local_world_size = get_model_parallel_world_size()
