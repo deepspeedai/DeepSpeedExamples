@@ -522,8 +522,8 @@ class BertEncoder(nn.Module):
                 pre_layer_norm=False)
 
             self.layer = nn.ModuleList([
-                copy.deepcopy(DeepSpeedTransformerLayer(i, cuda_config))
-                for i in range(config.num_hidden_layers)
+                copy.deepcopy(DeepSpeedTransformerLayer(cuda_config))
+                for _ in range(config.num_hidden_layers)
             ])
         else:
             layer = BertLayer(config)
