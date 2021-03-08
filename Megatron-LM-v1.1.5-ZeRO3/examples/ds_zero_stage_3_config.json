@@ -1,0 +1,25 @@
+{
+  "train_batch_size": 64,
+  "gradient_accumulation_steps": 1,
+  "steps_per_print": 1,
+  "zero_optimization": {
+    "stage": 3,
+    "stage3_max_live_parameters": 100000000,
+    "stage3_max_reuse_distance": 100000000,
+    "stage3_prefetch_bucket_size": 25000000,
+    "stage3_param_persitance_threshold": 100000,
+    "overlap_comm": true,
+    "reduce_bucket_size": 50000000,
+    "contiguous_gradients": true
+  },
+  "gradient_clipping": 1.0,
+  "fp16": {
+    "enabled": true,
+    "loss_scale": 0,
+    "loss_scale_window": 1000,
+    "hysteresis": 2,
+    "min_loss_scale": 1
+  },
+  "wall_clock_breakdown": true,
+  "zero_allow_untested_optimizer": false
+}
