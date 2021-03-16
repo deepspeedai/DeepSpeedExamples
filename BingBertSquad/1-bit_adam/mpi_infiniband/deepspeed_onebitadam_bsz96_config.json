@@ -9,7 +9,8 @@
       "freeze_step": 400,
       "weight_decay": 0.0,
       "bias_correction": false,
-      "cuda_aware": true
+      "cuda_aware": true,
+      "comm_backend_name": "mpi"
     }
   },
   "gradient_clipping": 1.0,

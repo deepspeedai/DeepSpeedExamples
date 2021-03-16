@@ -52,6 +52,7 @@ logging.basicConfig(
     datefmt='%m/%d/%Y %H:%M:%S',
     level=logging.INFO)
 logger = logging.getLogger(__name__)
+all_step_time = 0.0
 
 
 class SquadExample(object):
@@ -797,11 +798,15 @@ def main():
     else:
         # Models from Tensorflow and Huggingface are post-LN.
         if args.preln:
-            raise ValueError("Should NOT use --preln if the loading checkpoint doesn't use pre-layer-norm.")
+            raise ValueError(
+                "Should NOT use --preln if the loading checkpoint doesn't use pre-layer-norm."
+            )
 
         # Use the original bert config if want to load from non-DeepSpeed checkpoint.
         if args.origin_bert_config_file is None:
-            raise ValueError("--origin_bert_config_file is required for loading non-DeepSpeed checkpoint.")
+            raise ValueError(
+                "--origin_bert_config_file is required for loading non-DeepSpeed checkpoint."
+            )
 
         bert_config = BertConfig.from_json_file(args.origin_bert_config_file)
 
@@ -824,20 +829,22 @@ def main():
         logger.info(f"Loading Pretrained Bert Encoder from: {args.model_file}")
 
         if args.ckpt_type == "DS":
-            checkpoint_state_dict = torch.load(args.model_file,
-                                               map_location=torch.device("cpu"))
+            checkpoint_state_dict = torch.load(
+                args.model_file, map_location=torch.device("cpu"))
             if 'module' in checkpoint_state_dict:
                 logger.info('Loading DeepSpeed v2.0 style checkpoint')
                 model.load_state_dict(checkpoint_state_dict['module'],
                                       strict=False)
             elif 'model_state_dict' in checkpoint_state_dict:
-                model.load_state_dict(checkpoint_state_dict['model_state_dict'],
-                                      strict=False)
+                model.load_state_dict(
+                    checkpoint_state_dict['model_state_dict'], strict=False)
             else:
                 raise ValueError("Unable to find model state in checkpoint")
         else:
             from convert_bert_ckpt_to_deepspeed import convert_ckpt_to_deepspeed
-            convert_ckpt_to_deepspeed(model, args.ckpt_type, args.model_file, vocab_diff, args.deepspeed_transformer_kernel)
+            convert_ckpt_to_deepspeed(model, args.ckpt_type, args.model_file,
+                                      vocab_diff,
+                                      args.deepspeed_transformer_kernel)
 
         logger.info(f"Pretrained Bert Encoder Loaded from: {args.model_file}")
 
@@ -850,14 +857,16 @@ def main():
 
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
     if args.deepspeed_transformer_kernel:
-        no_decay = no_decay + ['attn_nw', 'attn_nb', 'norm_w', 'norm_b',
-                               'attn_qkvb', 'attn_ob', 'inter_b', 'output_b']
+        no_decay = no_decay + [
+            'attn_nw', 'attn_nb', 'norm_w', 'norm_b', 'attn_qkvb', 'attn_ob',
+            'inter_b', 'output_b'
+        ]
     optimizer_grouped_parameters = [{
         'params':
         [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
         'weight_decay':
         0.01
-    },{
+    }, {
         'params':
         [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
         'weight_decay':
@@ -869,7 +878,7 @@ def main():
         model=model,
         model_parameters=optimizer_grouped_parameters,
         dist_init_required=True)
-    
+
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device("cuda" if torch.cuda.is_available()
                               and not args.no_cuda else "cpu")
@@ -915,8 +924,6 @@ def main():
                                                  base=args.output_dir)
     else:
         args.summary_writer = None
-
-
 
     logger.info("propagate deepspeed-config settings to client settings")
     args.train_batch_size = model.train_micro_batch_size_per_gpu()
@@ -983,7 +990,7 @@ def main():
         ema_loss = 0.
         sample_count = 0
         num_epoch = 0
-        all_step_time = 0.0
+        global all_step_time
         ave_rounds = 20
         for _ in trange(int(args.num_train_epochs), desc="Epoch"):
             num_epoch += 1
@@ -1061,12 +1068,20 @@ def main():
                         f'Warning: Early epoch termination due to max steps limit, epoch step ={epoch_step}, global step = {global_step}, epoch = {num_epoch}'
                     )
                     break
-                one_step_time = time.time() -start_time
+                one_step_time = time.time() - start_time
                 all_step_time += one_step_time
-                if (step + 1)%(ave_rounds) == 0 and torch.distributed.get_rank() == 0:
-                    print('At Step {}, Averaged Throughput for {} rounds is: {} Samples/s'.format(step, ave_rounds, bs_size * ave_rounds * torch.distributed.get_world_size() / all_step_time ), flush=True )
+                if (step + 1) % (
+                        ave_rounds) == 0 and torch.distributed.get_rank() == 0:
+                    print(
+                        ' At step {}, averaged throughput for {} rounds is: {} Samples/s'
+                        .format(
+                            step, ave_rounds,
+                            bs_size * ave_rounds *
+                            torch.distributed.get_world_size() /
+                            all_step_time),
+                        flush=True)
                     all_step_time = 0.0
-      
+
     # Save a trained model
     # model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
     #output_model_file = os.path.join(args.output_dir, "pytorch_model.bin")
