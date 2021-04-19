@@ -38,9 +38,10 @@ from megatron.model import get_params_for_weight_decay_optimization
 from megatron.model.realm_model import ICTBertModel
 from megatron.utils import check_adlr_autoresume_termination
 from megatron.utils import make_data_loader
-from megatron.utils import report_memory
+from megatron.utils import report_memory, flops_calculator
 
 import deepspeed
+from deepspeed.runtime.utils import see_memory_usage
 
 
 def pretrain(train_valid_test_dataset_provider, model_provider,
@@ -98,7 +99,7 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
         iteration = train(forward_step_func,
                           model, optimizer, lr_scheduler,
                           train_data_iterator, valid_data_iterator)
-        
+
     if args.do_valid:
         prefix = 'the end of training for val data'
         evaluate_and_print_results(prefix, forward_step_func,
@@ -122,12 +123,6 @@ def get_model(model_provider_func):
 
     # Build model on cpu.
     model = model_provider_func()
-
-    # Print number of parameters.
-    if mpu.get_data_parallel_rank() == 0:
-        print(' > number of parameters on model parallel rank {}: {}'.format(
-            mpu.get_model_parallel_rank(),
-            sum([p.nelement() for p in model.parameters()])), flush=True)
 
     if args.deepspeed:
         # DeepSpeed handles CUDA, FP16, and DDP components.
@@ -183,8 +178,8 @@ def get_optimizer(model):
         #optimizer = Adam(param_groups,
         optimizer = torch.optim.AdamW(param_groups,
                          lr=args.lr,
-                         weight_decay=args.weight_decay, 
-                         betas=(args.adam_beta1, args.adam_beta2), 
+                         weight_decay=args.weight_decay,
+                         betas=(args.adam_beta1, args.adam_beta2),
                          eps=args.adam_eps)
 
     if args.deepspeed:
@@ -317,16 +312,20 @@ def train_step(forward_step_func, data_iterator,
     args = get_args()
     timers = get_timers()
 
+    see_memory_usage(f'before forward {model.global_steps}', force=True)
     # Forward model for one step.
     timers('forward').start()
     loss, loss_reduced = forward_step_func(data_iterator, model)
-    print_rank_0(f"Loss {loss} and reduced loss {loss_reduced}")
     timers('forward').stop()
+
+    see_memory_usage(f'before backward {model.global_steps}', force=True)
     # Calculate gradients, reduce across processes, and clip.
     timers('backward').start()
     backward_step(optimizer, model, loss)
     timers('backward').stop()
 
+
+    see_memory_usage(f'before optimizer {model.global_steps}', force=True)
     # Update parameters.
     skipped_iter = 0
     timers('optimizer').start()
@@ -432,25 +431,6 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
         flops_calculator(model, args, elapsed_time)
 
     return report_memory_flag
-
-def get_parameters_in_billions(model):
-    gpus_per_model = torch.distributed.get_world_size(group=mpu.get_model_parallel_group())
-    
-    approx_parameters_in_billions = sum([p.ds_numel if hasattr(p,'ds_id') else p.numel() for p in model.parameters()]) * gpus_per_model / 1000000000.0
-    
-    return approx_parameters_in_billions
-
-def flops_calculator(model, args, iteration_time):
-    gpus_per_model = torch.distributed.get_world_size(group = mpu.get_model_parallel_group())
-
-    approx_parameters_in_billions = get_parameters_in_billions(model)
-
-    giga_flops_per_model_per_train_step = approx_parameters_in_billions * args.batch_size * args.seq_length * 2.0 * 4.0
-
-    effective_tera_flops_per_gpu = giga_flops_per_model_per_train_step / (iteration_time * 1000.0 * gpus_per_model)
-
-    print_rank_0(f"Effective Tera Flops per GPU: {round(effective_tera_flops_per_gpu, 2)} and total parameters {round(approx_parameters_in_billions, 3)} B")
-
 
 
 def train(forward_step_func, model, optimizer, lr_scheduler,

@@ -19,6 +19,7 @@
 
 
 import math
+from deepspeed.runtime.zero.partition_parameters import print_rank_0
 
 import torch
 import torch.nn.functional as F
@@ -189,7 +190,7 @@ class ColumnParallelLinear(torch.nn.Module):
                      to zero.
         stride: For the strided linear layers.
         keep_master_weight_for_test: This was added for testing and should be
-                                     set to False. It returns the master weights
+                                     set to False. It returns the master weight
                                      used for initialization.
         skip_bias_add: This was added to enable performance optimations where bias
                        can be fused with other elementwise operations. we skip 
@@ -210,6 +211,8 @@ class ColumnParallelLinear(torch.nn.Module):
         world_size = get_model_parallel_world_size()
         self.output_size_per_partition = divide(output_size, world_size)
         self.skip_bias_add = skip_bias_add
+        if not bias:
+            self.skip_bias_add = True
 
         # Parameters.
         # Note: torch.nn.functional.linear performs XA^T + b and as a result
@@ -255,7 +258,6 @@ class ColumnParallelLinear(torch.nn.Module):
         # Set up backprop all-reduce.
         input_parallel = copy_to_model_parallel_region(input_)
         # Matrix multiply.
-
         bias = self.bias if not self.skip_bias_add else None
         output_parallel = F.linear(input_parallel, self.weight, bias)
         if self.gather_output:

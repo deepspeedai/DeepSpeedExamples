@@ -105,6 +105,10 @@ class Embedding(MegatronModule):
         init_method: weight initialization method
         num_tokentypes: size of the token-type embeddings. 0 value
                         will ignore this embedding
+        scattered_embeddings: perform elementwise-operations on
+                              partitioned embedding activations.
+                              introduces minor dropout differences
+                              betwen MP configurations.
     """
 
     def __init__(self,
@@ -113,12 +117,14 @@ class Embedding(MegatronModule):
                  max_sequence_length,
                  embedding_dropout_prob,
                  init_method,
-                 num_tokentypes=0):
+                 num_tokentypes=0,
+                 scattered_embeddings=False):
         super(Embedding, self).__init__()
 
         self.hidden_size = hidden_size
         self.init_method = init_method
         self.num_tokentypes = num_tokentypes
+        self.scattered_embeddings = scattered_embeddings
 
         # Word embeddings (parallel).
         self.word_embeddings = mpu.VocabParallelEmbedding(
@@ -143,8 +149,10 @@ class Embedding(MegatronModule):
         if self.num_tokentypes > 0:
             self.tokentype_embeddings = torch.nn.Embedding(self.num_tokentypes,
                                                            self.hidden_size)
-            # Initialize the token-type embeddings.
-            self.init_method(self.tokentype_embeddings.weight)
+            with deepspeed.zero.GatheredParameters(self.tokentype_embeddings.weight,
+                                                   modifier_rank=0):
+                # Initialize the token-type embeddings.
+                self.init_method(self.tokentype_embeddings.weight)
         else:
             self.tokentype_embeddings = None
 
@@ -164,22 +172,32 @@ class Embedding(MegatronModule):
         self.num_tokentypes = num_tokentypes
         self.tokentype_embeddings = torch.nn.Embedding(num_tokentypes,
                                                        self.hidden_size)
-        # Initialize the token-type embeddings.
-        self.init_method(self.tokentype_embeddings.weight)
+        with deepspeed.zero.GatheredParameters(self.tokentype_embeddings.weight,
+                                               modifier_rank=0):
+            # Initialize the token-type embeddings.
+            self.init_method(self.tokentype_embeddings.weight)
 
     def forward(self, input_ids, position_ids, tokentype_ids=None):
+        if self.scattered_embeddings:
+            scatter = mpu.scatter_to_model_parallel_region
+            gather = mpu.gather_from_model_parallel_region
+        else:
+            # do nothing
+            scatter = lambda x: x
+            gather = lambda x: x
+
         # Embeddings.
-        words_embeddings = self.word_embeddings(input_ids)
-        position_embeddings = self.position_embeddings(position_ids)
+        words_embeddings = scatter(self.word_embeddings(input_ids))
+        position_embeddings = scatter(self.position_embeddings(position_ids))
         embeddings = words_embeddings + position_embeddings
         if tokentype_ids is not None:
             assert self.tokentype_embeddings is not None
-            embeddings = embeddings + self.tokentype_embeddings(tokentype_ids)
+            embeddings = embeddings + scatter(self.tokentype_embeddings(tokentype_ids))
         else:
             assert self.tokentype_embeddings is None
 
         # Dropout.
-        embeddings = self.embedding_dropout(embeddings)
+        embeddings = gather(self.embedding_dropout(embeddings))
 
         return embeddings
 
@@ -285,7 +303,8 @@ class TransformerLanguageModel(MegatronModule):
                                    args.max_position_embeddings,
                                    args.hidden_dropout,
                                    self.init_method,
-                                   self.num_tokentypes)
+                                   self.num_tokentypes,
+                                   scattered_embeddings=args.scattered_embeddings)
         self._embedding_key = 'embedding'
 
         # Transformer

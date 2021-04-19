@@ -26,18 +26,29 @@ from megatron.data.gpt2_dataset import build_train_valid_test_datasets
 from megatron.model import GPT2Model
 from megatron.training import pretrain
 from megatron.utils import get_ltor_masks_and_position_ids
-from megatron.utils import reduce_losses
+from megatron.utils import reduce_losses, get_parameters_in_billions
+
 
 import deepspeed
+from deepspeed.runtime.utils import see_memory_usage
 
 def model_provider():
     """Build the model."""
 
     print_rank_0('building GPT2 model ...')
+    see_memory_usage(f"Before Building Model", force=True)
     with deepspeed.zero.Init(data_parallel_group=mpu.get_data_parallel_group(),
-                             remote_device=get_args().remote_device,
-                             enabled=get_args().zero_stage==3):
+                                    remote_device=get_args().remote_device,
+                                    deepspeed_config=get_args().deepspeed_config,
+                                    enabled=get_args().zero_stage==3):
         model = GPT2Model(num_tokentypes=0, parallel_output=True)
+    see_memory_usage(f"After Building Model", force=True)
+
+    if mpu.get_data_parallel_rank() == 0:
+        billion_params = get_parameters_in_billions(model)
+        print(f' > number of parameters on model parallel rank {mpu.get_model_parallel_rank()}\
+            {round(billion_params, 3)} Billion',
+            flush=True)
 
     return model
 

@@ -5,16 +5,21 @@
   "zero_optimization": {
     "stage": 3,
     "stage3_max_live_parameters": 1e9,
-    "stage3_max_reuse_distance": 1e9,
-    "stage3_prefetch_bucket_size": 1e7,
-    "stage3_param_persitence_threshold": 1e5,
-    "reduce_bucket_size": 1e7,
-    "contiguous_gradients": true
+    "stage3_max_reuse_distance": 1e8,
+    "stage3_param_persitance_threshold": 1e5,
+    "stage3_prefetch_bucket_size": 5e7,
+    "contiguous_gradients": true,
+    "cpu_offload": true,
+    "cpu_offload_params": true,
+    "cpu_offload_use_pin_memory": true,
+    "overlap_comm": true,
+    "reduce_bucket_size": 90000000,
+    "sub_group_size": 4e8
   },
   "gradient_clipping": 1.0,
   "fp16": {
     "enabled": true,
-    "loss_scale": 0,
+    "loss_scale": 1024,
     "loss_scale_window": 1000,
     "hysteresis": 2,
     "min_loss_scale": 1

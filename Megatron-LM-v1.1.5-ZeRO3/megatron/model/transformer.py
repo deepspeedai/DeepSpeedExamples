@@ -71,12 +71,24 @@ class ParallelMLP(MegatronModule):
         args = get_args()
 
         # Project to 4h.
-        self.dense_h_to_4h = mpu.ColumnParallelLinear(
-            args.hidden_size,
-            4 * args.hidden_size,
-            gather_output=False,
-            init_method=init_method,
-            skip_bias_add=True)
+        if not args.memory_centric_tiled_linear:
+            self.dense_h_to_4h = mpu.ColumnParallelLinear(
+                args.hidden_size,
+                4 * args.hidden_size,
+                gather_output=False,
+                init_method=init_method,
+                skip_bias_add=True)
+        else:
+            self.dense_h_to_4h = deepspeed.zero.TiledLinearReturnBias(
+                in_features=args.hidden_size,
+                out_features=4*args.hidden_size,
+                linear_cls=mpu.ColumnParallelLinear,
+                in_splits=args.tile_factor,
+                out_splits=4*args.tile_factor,
+                combine_out_splits=True,
+                gather_output=False,
+                init_method=init_method,
+                skip_bias_add=True)
 
         self.bias_gelu_fusion = args.bias_gelu_fusion
         self.activation_func = F.gelu
@@ -86,16 +98,26 @@ class ParallelMLP(MegatronModule):
             self.activation_func = erf_gelu
 
         # Project back to h.
-        self.dense_4h_to_h = mpu.RowParallelLinear(
-            4 * args.hidden_size,
-            args.hidden_size,
-            input_is_parallel=True,
-            init_method=output_layer_init_method,
-            skip_bias_add=True)
+        if not args.memory_centric_tiled_linear:
+            self.dense_4h_to_h = mpu.RowParallelLinear(
+                4 * args.hidden_size,
+                args.hidden_size,
+                input_is_parallel=True,
+                init_method=output_layer_init_method,
+                skip_bias_add=True)
+        else:
+            self.dense_4h_to_h = deepspeed.zero.TiledLinearReturnBias(
+                in_features=4*args.hidden_size,
+                out_features=args.hidden_size,
+                linear_cls=mpu.RowParallelLinear,
+                in_splits=4*args.tile_factor,
+                out_splits=args.tile_factor,
+                input_is_already_split=False,
+                combine_out_splits=True,
+                input_is_parallel=True,
+                init_method=output_layer_init_method,
+                skip_bias_add=True)
          
-        if self.dense_h_to_4h.bias is not None:
-            deepspeed.zero.register_external_parameter(self, self.dense_h_to_4h.bias)
-
     def forward(self, hidden_states):
 
         # [s, b, 4hp]
@@ -143,11 +165,23 @@ class ParallelSelfAttention(MegatronModule):
             args.num_attention_heads, world_size)
 
         # Strided linear layer.
-        self.query_key_value = mpu.ColumnParallelLinear(
-            args.hidden_size,
-            3 * args.hidden_size,
-            gather_output=False,
-            init_method=init_method)
+        if not args.memory_centric_tiled_linear:
+            self.query_key_value = mpu.ColumnParallelLinear(
+                args.hidden_size,
+                3 * args.hidden_size,
+                gather_output=False,
+                init_method=init_method)
+        else:
+            self.query_key_value = deepspeed.zero.TiledLinearReturnBias(
+                in_features=args.hidden_size,
+                out_features=3*args.hidden_size,
+                linear_cls=mpu.ColumnParallelLinear,
+                gather_output=False,
+                init_method=init_method,
+                in_splits=args.tile_factor,
+                out_splits=3*args.tile_factor,
+                combine_out_splits=True
+            )
 
         coeff = None
         self.norm_factor = math.sqrt(self.hidden_size_per_attention_head)
@@ -169,12 +203,25 @@ class ParallelSelfAttention(MegatronModule):
         self.attention_dropout = torch.nn.Dropout(args.attention_dropout)
 
         # Output.
-        self.dense = mpu.RowParallelLinear(
-            args.hidden_size,
-            args.hidden_size,
-            input_is_parallel=True,
-            init_method=output_layer_init_method,
-            skip_bias_add=True)
+        if not args.memory_centric_tiled_linear:
+            self.dense = mpu.RowParallelLinear(
+                args.hidden_size,
+                args.hidden_size,
+                input_is_parallel=True,
+                init_method=output_layer_init_method,
+                skip_bias_add=True)
+        else:
+            self.dense = deepspeed.zero.TiledLinearReturnBias(
+                in_features=args.hidden_size,
+                out_features=args.hidden_size,
+                linear_cls=mpu.RowParallelLinear,
+                input_is_parallel=True,
+                init_method=output_layer_init_method,
+                skip_bias_add=True,
+                out_splits=args.tile_factor,
+                in_splits=args.tile_factor,
+                combine_out_splits=True
+            )
 
 
         if deepspeed.checkpointing.is_configured():
@@ -413,6 +460,9 @@ class ParallelTransformerLayer(MegatronModule):
         self.apply_residual_connection_post_layernorm \
             = args.apply_residual_connection_post_layernorm
 
+        # Memory-saving optimization
+        self.scattered_attn_output = args.scattered_embeddings
+
         # Layernorm on the input data.
         self.input_layernorm = LayerNorm(
             args.hidden_size,
@@ -434,10 +484,6 @@ class ParallelTransformerLayer(MegatronModule):
         self.mlp = ParallelMLP(init_method,
                                output_layer_init_method)
 
-        if self.attention.dense.bias is not None:
-            deepspeed.zero.register_external_parameter(self, self.attention.dense.bias)
-        if self.mlp.dense_4h_to_h.bias is not None:
-            deepspeed.zero.register_external_parameter(self, self.mlp.dense_4h_to_h.bias)
 
     def forward(self, hidden_states, attention_mask, layer_past=None,
                 get_key_value=False):
@@ -453,6 +499,273 @@ class ParallelTransformerLayer(MegatronModule):
                            get_key_value=get_key_value)
 
         if get_key_value:
+            attention_output, presents = attention_output
+
+        if self.scattered_attn_output:
+            attention_output = mpu.scatter_to_model_parallel_region(attention_output)
+            attention_bias = mpu.scatter_to_model_parallel_region(attention_bias)
+    
+        # Residual connection.
+        if self.apply_residual_connection_post_layernorm:
+            residual = layernorm_output
+        else:
+            residual = hidden_states
+
+        if self.scattered_attn_output:
+            residual = mpu.scatter_to_model_parallel_region(residual)
+
+        # jit scripting for a nn.module (with dropout) is not 
+        # trigerring the fusion kernel. For now, we use two 
+        # different nn.functional routines to account for varying
+        # dropout semantics during training and inference phases.
+        if self.bias_dropout_fusion:
+            if self.training:
+                bias_dropout_add_func = bias_dropout_add_fused_train
+            else:
+                bias_dropout_add_func = bias_dropout_add_fused_inference
+        else:
+            bias_dropout_add_func = get_bias_dropout_add(self.training)
+
+        #re-enable torch grad to enable fused optimization.
+        with torch.enable_grad():
+            layernorm_input = bias_dropout_add_func(
+                attention_output,
+                attention_bias.expand_as(residual),
+                residual,
+                self.hidden_dropout)
+
+        # Collect the scattered result from the fused dropout.
+        if self.scattered_attn_output:
+            layernorm_input = mpu.gather_from_model_parallel_region(layernorm_input)
+            # Attention output/bias are not used again, so no need to gather
+
+        # Layer norm post the self attention.
+        layernorm_output = self.post_attention_layernorm(layernorm_input)
+
+        # MLP.
+        mlp_output, mlp_bias = self.mlp(layernorm_output)
+        
+        # Second residual connection.
+        if self.apply_residual_connection_post_layernorm:
+            residual = layernorm_output
+        else:
+            residual = layernorm_input
+
+        #re-enable torch grad to enable fused optimization.
+        with torch.enable_grad():
+            output = bias_dropout_add_func(
+                mlp_output,
+                mlp_bias.expand_as(residual),
+                residual,
+                self.hidden_dropout)
+
+        if get_key_value:
+            output = [output, presents]
+
+        return output
+
+class ParallelTransformerLayerPart1(MegatronModule):
+    """A single transformer layer.
+
+    Transformore layer takes input with size [b, s, h] and returns an
+    output of the same size.
+    """
+
+    def __init__(self, attention_mask_func, init_method, 
+                 output_layer_init_method, layer_number):
+        args = get_args()
+
+        super(ParallelTransformerLayerPart1, self).__init__()
+        self.layer_number = layer_number
+
+        self.apply_residual_connection_post_layernorm \
+            = args.apply_residual_connection_post_layernorm
+
+        # Layernorm on the input data.
+        self.input_layernorm = LayerNorm(
+            args.hidden_size,
+            eps=args.layernorm_epsilon)
+
+        # Self attention.
+        self.attention = ParallelSelfAttention(attention_mask_func, init_method,
+                                               output_layer_init_method,
+                                               layer_number)
+        self.hidden_dropout = args.hidden_dropout
+        self.bias_dropout_fusion = args.bias_dropout_fusion
+
+
+    def forward(self, hidden_states, attention_mask, layer_past=None,
+                get_key_value=False):
+        # hidden_states: [b, s, h]
+
+        # Layer norm at the begining of the transformer layer.
+        layernorm_output = self.input_layernorm(hidden_states)
+        # Self attention.
+        attention_output, attention_bias = \
+            self.attention(layernorm_output,
+                           attention_mask,
+                           layer_past=layer_past,
+                           get_key_value=get_key_value)
+
+        presents = None
+        if get_key_value:
+            raise NotImplementedError('get_key_value param is not yet supported with split-transformers')
+            attention_output, presents = attention_output
+
+    
+        # Residual connection.
+        if self.apply_residual_connection_post_layernorm:
+            residual = layernorm_output
+        else:
+            residual = hidden_states
+
+        if self.scattered_attn_output:
+            residual = mpu.scatter_to_model_parallel_region(residual)
+
+        # jit scripting for a nn.module (with dropout) is not 
+        # trigerring the fusion kernel. For now, we use two 
+        # different nn.functional routines to account for varying
+        # dropout semantics during training and inference phases.
+        if self.bias_dropout_fusion:
+            if self.training:
+                bias_dropout_add_func = bias_dropout_add_fused_train
+            else:
+                bias_dropout_add_func = bias_dropout_add_fused_inference
+        else:
+            bias_dropout_add_func = get_bias_dropout_add(self.training)
+
+        #re-enable torch grad to enable fused optimization.
+        with torch.enable_grad():
+            layernorm_input = bias_dropout_add_func(
+                attention_output,
+                attention_bias.expand_as(residual),
+                residual,
+                self.hidden_dropout)
+
+        return layernorm_input
+
+class ParallelTransformerLayerPart2(MegatronModule):
+    """A single transformer layer.
+
+    Transformore layer takes input with size [b, s, h] and returns an
+    output of the same size.
+    """
+
+    def __init__(self, attention_mask_func, init_method, 
+                 output_layer_init_method, layer_number):
+        args = get_args()
+
+        super(ParallelTransformerLayerPart2, self).__init__()
+        self.layer_number = layer_number
+
+        self.apply_residual_connection_post_layernorm \
+            = args.apply_residual_connection_post_layernorm
+
+        self.hidden_dropout = args.hidden_dropout
+        self.bias_dropout_fusion = args.bias_dropout_fusion
+
+        # Layernorm on the input data.
+        self.post_attention_layernorm = LayerNorm(
+            args.hidden_size,
+            eps=args.layernorm_epsilon)
+
+        # MLP
+        self.mlp = ParallelMLP(init_method,
+                               output_layer_init_method)
+
+
+    def forward(self, layernorm_input, attention_mask, presents=None, layer_past=None,
+                get_key_value=False):
+        # hidden_states: [b, s, h]
+        
+        # Collect the scattered result from the fused dropout.
+        if self.scattered_attn_output:
+            layernorm_input = mpu.gather_from_model_parallel_region(layernorm_input)
+            # Attention output/bias are not used again, so no need to gather
+
+        # Layer norm post the self attention.
+        layernorm_output = self.post_attention_layernorm(layernorm_input)
+
+        # MLP.
+        mlp_output, mlp_bias = self.mlp(layernorm_output)
+        
+        # Second residual connection.
+        if self.apply_residual_connection_post_layernorm:
+            residual = layernorm_output
+        else:
+            residual = layernorm_input
+
+        # jit scripting for a nn.module (with dropout) is not 
+        # trigerring the fusion kernel. For now, we use two 
+        # different nn.functional routines to account for varying
+        # dropout semantics during training and inference phases.
+        if self.bias_dropout_fusion:
+            if self.training:
+                bias_dropout_add_func = bias_dropout_add_fused_train
+            else:
+                bias_dropout_add_func = bias_dropout_add_fused_inference
+        else:
+            bias_dropout_add_func = get_bias_dropout_add(self.training)
+
+        #re-enable torch grad to enable fused optimization.
+        with torch.enable_grad():
+            output = bias_dropout_add_func(
+                mlp_output,
+                mlp_bias.expand_as(residual),
+                residual,
+                self.hidden_dropout)
+
+        if get_key_value:
+            output = [output, presents]
+
+        return output
+
+class ParallelTransformerLayerPart1(MegatronModule):
+    """A single transformer layer.
+
+    Transformore layer takes input with size [b, s, h] and returns an
+    output of the same size.
+    """
+
+    def __init__(self, attention_mask_func, init_method, 
+                 output_layer_init_method, layer_number):
+        args = get_args()
+
+        super(ParallelTransformerLayerPart1, self).__init__()
+        self.layer_number = layer_number
+
+        self.apply_residual_connection_post_layernorm \
+            = args.apply_residual_connection_post_layernorm
+
+        # Layernorm on the input data.
+        self.input_layernorm = LayerNorm(
+            args.hidden_size,
+            eps=args.layernorm_epsilon)
+
+        # Self attention.
+        self.attention = ParallelSelfAttention(attention_mask_func, init_method,
+                                               output_layer_init_method,
+                                               layer_number)
+        self.hidden_dropout = args.hidden_dropout
+        self.bias_dropout_fusion = args.bias_dropout_fusion
+
+
+    def forward(self, hidden_states, attention_mask, layer_past=None,
+                get_key_value=False):
+        # hidden_states: [b, s, h]
+
+        # Layer norm at the begining of the transformer layer.
+        layernorm_output = self.input_layernorm(hidden_states)
+        # Self attention.
+        attention_output, attention_bias = \
+            self.attention(layernorm_output,
+                           attention_mask,
+                           layer_past=layer_past,
+                           get_key_value=get_key_value)
+
+        presents = None
+        if get_key_value:
+            raise NotImplementedError('get_key_value param is not yet supported with split-transformers')
             attention_output, presents = attention_output
     
         # Residual connection.
@@ -481,6 +794,42 @@ class ParallelTransformerLayer(MegatronModule):
                 residual,
                 self.hidden_dropout)
 
+        return layernorm_input
+
+class ParallelTransformerLayerPart2(MegatronModule):
+    """A single transformer layer.
+
+    Transformore layer takes input with size [b, s, h] and returns an
+    output of the same size.
+    """
+
+    def __init__(self, attention_mask_func, init_method, 
+                 output_layer_init_method, layer_number):
+        args = get_args()
+
+        super(ParallelTransformerLayerPart2, self).__init__()
+        self.layer_number = layer_number
+
+        self.apply_residual_connection_post_layernorm \
+            = args.apply_residual_connection_post_layernorm
+
+        self.hidden_dropout = args.hidden_dropout
+        self.bias_dropout_fusion = args.bias_dropout_fusion
+
+        # Layernorm on the input data.
+        self.post_attention_layernorm = LayerNorm(
+            args.hidden_size,
+            eps=args.layernorm_epsilon)
+
+        # MLP
+        self.mlp = ParallelMLP(init_method,
+                               output_layer_init_method)
+
+
+    def forward(self, layernorm_input, attention_mask, presents=None, layer_past=None,
+                get_key_value=False):
+        # hidden_states: [b, s, h]
+
         # Layer norm post the self attention.
         layernorm_output = self.post_attention_layernorm(layernorm_input)
 
@@ -492,6 +841,18 @@ class ParallelTransformerLayer(MegatronModule):
             residual = layernorm_output
         else:
             residual = layernorm_input
+
+        # jit scripting for a nn.module (with dropout) is not 
+        # trigerring the fusion kernel. For now, we use two 
+        # different nn.functional routines to account for varying
+        # dropout semantics during training and inference phases.
+        if self.bias_dropout_fusion:
+            if self.training:
+                bias_dropout_add_func = bias_dropout_add_fused_train
+            else:
+                bias_dropout_add_func = bias_dropout_add_fused_inference
+        else:
+            bias_dropout_add_func = get_bias_dropout_add(self.training)
 
         #re-enable torch grad to enable fused optimization.
         with torch.enable_grad():
@@ -533,8 +894,27 @@ class ParallelTransformer(MegatronModule):
             return ParallelTransformerLayer(
                 attention_mask_func, init_method,
                 output_layer_init_method, layer_number)
-        self.layers = torch.nn.ModuleList(
-            [build_layer(i + 1) for i in range(self.num_unique_layers)])
+
+        def build_layer_part1(layer_number):
+            return ParallelTransformerLayerPart1(
+                attention_mask_func, init_method,
+                output_layer_init_method, layer_number)
+        def build_layer_part2(layer_number):
+            return ParallelTransformerLayerPart2(
+                attention_mask_func, init_method,
+                output_layer_init_method, layer_number)
+
+        if args.split_transformers:
+            layers = []
+            for i in range(self.num_unique_layers):
+                layers.append(build_layer_part1(i + 1))
+                layers.append(build_layer_part2(i + 1))
+            self.layers = torch.nn.ModuleList(layers)
+            self.num_layers *= 2
+            self.num_unique_layers *= 2
+        else:
+            self.layers = torch.nn.ModuleList(
+                [build_layer(i + 1) for i in range(self.num_unique_layers)])
 
         # Print layer ordering.
         if self.num_layers != self.num_unique_layers:

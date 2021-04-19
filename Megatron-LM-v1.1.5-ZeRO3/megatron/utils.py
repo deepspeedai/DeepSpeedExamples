@@ -175,3 +175,22 @@ def get_ltor_masks_and_position_ids(data,
     return attention_mask, loss_mask, position_ids
 
 
+
+def get_parameters_in_billions(model):
+    gpus_per_model = torch.distributed.get_world_size(group=mpu.get_model_parallel_group())
+
+    approx_parameters_in_billions = sum([p.ds_numel if hasattr(p,'ds_id') else p.numel() for p in model.parameters()]) * gpus_per_model / 1000000000.0
+
+    return approx_parameters_in_billions
+
+
+def flops_calculator(model, args, iteration_time):
+    gpus_per_model = torch.distributed.get_world_size(group = mpu.get_model_parallel_group())
+
+    approx_parameters_in_billions = get_parameters_in_billions(model)
+
+    giga_flops_per_model_per_train_step = approx_parameters_in_billions * args.batch_size * args.seq_length * 2.0 * 4.0
+
+    effective_tera_flops_per_gpu = giga_flops_per_model_per_train_step / (iteration_time * 1000.0 * gpus_per_model)
+
+    print_rank_0(f"Effective Tera Flops per GPU: {round(effective_tera_flops_per_gpu, 2)} and total parameters {round(approx_parameters_in_billions, 3)} B")

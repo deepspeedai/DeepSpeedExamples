@@ -43,6 +43,7 @@ def parse_args(extra_args_provider=None, defaults={},
     parser = _add_autoresume_args(parser)
     parser = _add_realm_args(parser)
     parser = _add_zero_args(parser)
+    parser = _add_memoryopt_args(parser)
     parser = _add_activation_checkpoint_args(parser)
 
     # Custom arguments.
@@ -97,7 +98,7 @@ def parse_args(extra_args_provider=None, defaults={},
     # Check required arguments.
     required_args = ['num_layers', 'hidden_size', 'num_attention_heads',
                      'max_position_embeddings']
-    for req_arg in required_args: 
+    for req_arg in required_args:
         _check_arg_is_not_none(args, req_arg)
 
     # Checks.
@@ -511,11 +512,34 @@ def _add_zero_args(parser):
                        help='Use contigious memory optimizaiton if specified')
     group.add_argument("--zero-reduce-bucket-size", type=int, default=0.0)
     group.add_argument("--zero-allgather-bucket-size", type=int, default=0.0)
-    group.add_argument('--remote-device', type=str, default=None, choices=[None, 'cpu'],
+    group.add_argument('--remote-device', type=str, default=None, choices=[None, 'cpu', 'nvme'],
                       help='Remote device for ZeRO-3 initialized parameters.')
     group.add_argument('--use-pin-memory', action='store_true',
                      help='Use pinned CPU memory for ZeRO-3 initialized model parameters.')
     return parser
+
+def _add_memoryopt_args(parser):
+    """Memory optimization arguments."""
+
+    group = parser.add_argument_group('Memory optimizations', 'configurations')
+    group.add_argument("--scattered-embeddings", action='store_true',
+                       help='Save memory by scattering embedding activations. '
+                            'Introduces dropout differences across MP configurations.')
+    group.add_argument("--split-transformers", action='store_true',
+                       help='Save memory by splitting transformer layers into two parts, '
+                       'allowing for more frequent activation checkpoint savings.')
+    group.add_argument("--memory-centric-tiled-linear", action="store_true",
+                       help='Save memory by tiling with deepspeed.zero.TiledLinear.')
+    group.add_argument("--tile-factor", type=int, default=1,
+                       help='Make all linear layers the same size of [hidden/tile_factor, hidden/tile_factor]. ' 
+                            'Must be enabled with --memory-centric-tiled-linear. '
+                            'Example A: if tile_factor=1, the qkv layer [hidden, 3* hidden] would be converted into [1,3] tiles of size [hidden,hidden]. '
+                            'Example B: if tile_factor=2, the intermediate layer [4*hidden, hidden] will be converted into [8, 2] tiles of size [hidden/2, hidden/2]. '
+                            'Default is 1.')
+
+    return parser
+
+
 
 
 def _add_activation_checkpoint_args(parser):
