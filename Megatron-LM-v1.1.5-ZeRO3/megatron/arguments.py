@@ -512,7 +512,7 @@ def _add_zero_args(parser):
                        help='Use contigious memory optimizaiton if specified')
     group.add_argument("--zero-reduce-bucket-size", type=int, default=0.0)
     group.add_argument("--zero-allgather-bucket-size", type=int, default=0.0)
-    group.add_argument('--remote-device', type=str, default=None, choices=[None, 'cpu', 'nvme'],
+    group.add_argument('--remote-device', type=str, default='none', choices=['none', 'cpu', 'nvme'],
                       help='Remote device for ZeRO-3 initialized parameters.')
     group.add_argument('--use-pin-memory', action='store_true',
                      help='Use pinned CPU memory for ZeRO-3 initialized model parameters.')

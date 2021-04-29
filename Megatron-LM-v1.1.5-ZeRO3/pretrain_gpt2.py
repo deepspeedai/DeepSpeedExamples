@@ -37,10 +37,11 @@ def model_provider():
 
     print_rank_0('building GPT2 model ...')
     see_memory_usage(f"Before Building Model", force=True)
+    args = get_args()
     with deepspeed.zero.Init(data_parallel_group=mpu.get_data_parallel_group(),
-                                    remote_device=get_args().remote_device,
-                                    deepspeed_config=get_args().deepspeed_config,
-                                    enabled=get_args().zero_stage==3):
+                             remote_device=None if args.remote_device=='none' else args.remote_device,
+                             config=args.deepspeed_config,
+                             enabled=args.zero_stage==3):
         model = GPT2Model(num_tokentypes=0, parallel_output=True)
     see_memory_usage(f"After Building Model", force=True)
 
