@@ -1,0 +1,1 @@
+In order to reproduce MoQ results (for the time being) please refer to this copied version of Huggingface Transformers, it includes some minor modifications for DeepSpeed. They are not fundemental changes, we will be working to clean this up in the very short term.

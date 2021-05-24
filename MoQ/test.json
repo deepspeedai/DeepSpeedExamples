@@ -1,0 +1,25 @@
+{
+    "steps_per_print": 10,
+    "gradient_clipping": 1.0,
+    "fp16": {
+      "initial_scale_power": 16,
+      "enabled": true
+    },
+    "quantize_training": {
+      "enabled": true,
+      "quantize_verbose": true,
+      "quantizer_kernel": true,
+      "quantize_algo": {
+        "q_type": "symmetric"
+      },
+      "quantize_bits": {
+        "start_bits": 16,
+        "target_bits": 8
+      },
+      "quantize_schedule": {
+        "quantize_period": 400,
+        "schedule_offset": 0
+      },
+      "quantize_groups": 8
+    }
+}
