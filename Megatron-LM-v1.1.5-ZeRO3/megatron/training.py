@@ -19,6 +19,7 @@ from datetime import datetime
 import math
 import sys
 import torch
+import json
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
 from apex.optimizers import FusedAdam as Adam
 
@@ -76,6 +77,14 @@ def pretrain(train_valid_test_dataset_provider, model_provider,
 
     args = get_args()
     timers = get_timers()
+
+    args.curriculum_learning = False
+    if args.deepspeed:
+        args.deepspeed_configuration = json.load(
+            open(args.deepspeed_config, 'r', encoding='utf-8'))
+        if "curriculum_learning" in args.deepspeed_configuration:
+            if "enabled" in args.deepspeed_configuration["curriculum_learning"]:
+                args.curriculum_learning = args.deepspeed_configuration["curriculum_learning"]["enabled"]
 
     # Model, optimizer, and learning rate.
     timers('model and optimizer').start()
@@ -210,7 +219,10 @@ def get_learning_rate_scheduler(optimizer):
         num_iters = args.train_iters
     num_iters = max(1, num_iters)
     init_step = 0
-    warmup_iter = args.warmup * num_iters
+    if args.warmup_iters is not None:
+        warmup_iter = args.warmup_iters
+    else:
+        warmup_iter = args.warmup * num_iters
     lr_scheduler = AnnealingLR(
         optimizer,
         start_lr=args.lr,
@@ -315,7 +327,7 @@ def train_step(forward_step_func, data_iterator,
     see_memory_usage(f'before forward {model.global_steps}', force=True)
     # Forward model for one step.
     timers('forward').start()
-    loss, loss_reduced = forward_step_func(data_iterator, model)
+    loss, loss_reduced = forward_step_func(data_iterator, model, args.curriculum_learning)
     timers('forward').stop()
 
     see_memory_usage(f'before backward {model.global_steps}', force=True)
@@ -387,9 +399,17 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
 
     # Tensorboard values.
     if writer and torch.distributed.get_rank() == 0:
+        writer.add_scalar('tokens', args.tokens, iteration)
         writer.add_scalar('learning_rate', learning_rate, iteration)
+        writer.add_scalar('learning_rate/vs tokens', learning_rate, args.tokens)
+        if args.curriculum_learning:
+            writer.add_scalar('seqlen',
+                args.curriculum_seqlen, iteration)
+            writer.add_scalar('seqlen/vs tokens',
+                args.curriculum_seqlen, args.tokens)
         for key in loss_dict:
             writer.add_scalar(key, loss_dict[key], iteration)
+            writer.add_scalar(key + '/vs tokens', loss_dict[key], args.tokens)
         if args.fp16:
             writer.add_scalar('loss_scale', loss_scale, iteration)
         normalizer = iteration % args.log_interval
@@ -450,13 +470,20 @@ def train(forward_step_func, model, optimizer, lr_scheduler,
 
     timers('interval time').start()
     report_memory_flag = True
-    while iteration < args.train_iters:
+    data_parallel_size = mpu.get_data_parallel_world_size()
+    global_batch_size = args.batch_size * data_parallel_size
+    while iteration < args.train_iters and \
+        (args.train_tokens is None or args.tokens < args.train_tokens):
         loss_dict, skipped_iter = train_step(forward_step_func,
                                              train_data_iterator,
                                              model,
                                              optimizer,
                                              lr_scheduler)
         iteration += 1
+        if args.curriculum_learning:
+            args.tokens += global_batch_size * args.curriculum_seqlen
+        else:
+            args.tokens += global_batch_size * args.seq_length
 
         # Logging.
         loss_scale = None
@@ -545,6 +572,7 @@ def evaluate_and_print_results(prefix, forward_step_func,
                                iteration, verbose=False):
     """Helper function to evaluate and dump results on screen."""
     writer = get_tensorboard_writer()
+    args = get_args()
 
     total_loss_dict = evaluate(forward_step_func, data_iterator, model, verbose)
     string = ' validation loss at {} | '.format(prefix)
@@ -556,7 +584,11 @@ def evaluate_and_print_results(prefix, forward_step_func,
             writer.add_scalar('{} value'.format(key),
                               total_loss_dict[key].item(),
                               iteration)
+            writer.add_scalar('{} value/vs tokens'.format(key),
+                              total_loss_dict[key].item(),
+                              args.tokens)
             writer.add_scalar('{} ppl'.format(key), ppl, iteration)
+            writer.add_scalar('{} ppl/vs tokens'.format(key), ppl, args.tokens)
 
     length = len(string) + 1
     print_rank_0('-' * length)

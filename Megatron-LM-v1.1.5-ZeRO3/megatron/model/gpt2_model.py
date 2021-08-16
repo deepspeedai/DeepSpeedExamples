@@ -54,7 +54,19 @@ class GPT2Model(MegatronModule):
 
     def forward(self, input_ids, position_ids, attention_mask, labels=None,
                 tokentype_ids=None, layer_past=None, get_key_value=False,
-                forward_method_parallel_output=None):
+                forward_method_parallel_output=None, curriculum_seqlen=None):
+        if curriculum_seqlen is not None:
+            args = get_args()
+            args.curriculum_seqlen = curriculum_seqlen
+            if curriculum_seqlen < input_ids.size()[1]:
+                # seqlen-based curriculum learning
+                # input_ids, position_ids, labels have size [batch size, seqlen]
+                input_ids = input_ids[:, :curriculum_seqlen].contiguous()
+                position_ids = position_ids[:, :curriculum_seqlen].contiguous()
+                labels = labels[:, :curriculum_seqlen].contiguous()
+
+                # attention_mask has size [1, 1, seqlen, seqlen]
+                attention_mask = attention_mask[:, :, :curriculum_seqlen, :curriculum_seqlen].contiguous()
 
         # Language model.
         lm_output = self.language_model(input_ids,

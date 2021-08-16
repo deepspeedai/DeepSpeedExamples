@@ -59,6 +59,7 @@ def parse_args(extra_args_provider=None, defaults={},
     else:
         args = parser.parse_args()
 
+    args.tokens = 0
     # Distributed args.
     args.rank = int(os.getenv('RANK', '0'))
     args.world_size = int(os.getenv("WORLD_SIZE", '1'))
@@ -239,6 +240,9 @@ def _add_training_args(parser):
     group.add_argument('--train-iters', type=int, default=None,
                        help='Total number of iterations to train over all '
                        'training runs.')
+    group.add_argument('--train-tokens', type=int, default=None,
+                       help='Total number of tokens to train over all '
+                       'training runs.')
     group.add_argument('--log-interval', type=int, default=100,
                        help='Report loss and timing interval.')
     group.add_argument('--exit-interval', type=int, default=None,
@@ -298,6 +302,9 @@ def _add_learning_rate_args(parser):
     group.add_argument('--warmup', type=float, default=0.01,
                        help='Percentage of total iterations to warmup on '
                        '(.01 = 1 percent of all training iters).')
+    group.add_argument('--warmup-iters', type=int, default=None,
+                       help='Number of iterations for LR warmup.'
+                       'If not None will override `--warmup`')
     group.add_argument('--override-lr-scheduler', action='store_true',
                        help='Reset the values of the scheduler (learning rate,'
                        'warmup iterations, minimum learning rate, maximum '

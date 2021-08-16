@@ -52,20 +52,28 @@ class AnnealingLR(object):
         """Learning rate decay functions from:
               https://openreview.net/pdf?id=BJYwwY9ll pg. 4"""
 
-        num_iters_ = min(self.num_iters, self.end_iter - self.warmup_iter)
         # Warmup.
         if self.warmup_iter > 0 and self.num_iters <= self.warmup_iter:
-            return float(self.start_lr) * num_iters_ / self.warmup_iter
+            return float(self.start_lr) * self.num_iters / self.warmup_iter
 
-        num_iters_ = num_iters_ - self.warmup_iter
+        # For any iterations larger than `self.end_iter`, use `self.min_lr`.
+        if self.num_iters > self.end_iter:
+            return self.min_lr
+        # If we are done with the warmup period, use the decay style.
+        current_iter = self.num_iters - self.warmup_iter
+        decay_iter = self.end_iter - self.warmup_iter
+        decay_ratio = float(current_iter) / float(decay_iter)
+        assert decay_ratio >= 0.0
+        assert decay_ratio <= 1.0
+
         if self.decay_style == 'linear':
-            lr = self.start_lr * (self.end_iter - num_iters_) / self.end_iter
+            lr = self.start_lr * (1.0 - decay_ratio)
         elif self.decay_style == 'cosine':
             lr = self.start_lr / 2.0 * (math.cos(
-                math.pi * num_iters_ / self.end_iter) + 1)
+                math.pi * decay_ratio) + 1)
         elif self.decay_style == 'exponential':
             # exp(-0.693) = 1/2
-            lr = self.start_lr * math.exp(-0.693 * num_iters_ / self.end_iter)
+            lr = self.start_lr * math.exp(-0.693 * decay_ratio)
         else:
             lr = self.start_lr
         return max(lr, self.min_lr)

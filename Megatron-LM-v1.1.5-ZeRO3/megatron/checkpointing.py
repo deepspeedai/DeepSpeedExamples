@@ -94,6 +94,7 @@ def save_ds_checkpoint(iteration, model, args):
 
     sd = {}
     sd['iteration'] = iteration
+    sd['tokens'] = args.tokens
     sd['checkpoint_version'] = 2.0
     sd['args'] = args
 
@@ -132,6 +133,7 @@ def save_checkpoint(iteration, model, optimizer, lr_scheduler):
             state_dict['args'] = args
             state_dict['checkpoint_version'] = 2.0
             state_dict['iteration'] = iteration
+            state_dict['tokens'] = args.tokens
             state_dict['model'] = model.state_dict_for_save_checkpoint()
 
             # Optimizer stuff.
@@ -236,7 +238,11 @@ def load_checkpoint(model, optimizer, lr_scheduler, load_arg='load'):
             sys.exit()
             # Model.
 
-        model.load_state_dict(state_dict['model'])
+        if 'model' in state_dict:
+            model.load_state_dict(state_dict['model'])
+        else:
+            # This is a HACK to load deepspeed checkpoint's model state even if not initialized with deepspeed
+            model.load_state_dict(state_dict['module'])
 
         # Optimizer.
         if not release and not args.finetune and not args.no_load_optim:
@@ -262,6 +268,7 @@ def load_checkpoint(model, optimizer, lr_scheduler, load_arg='load'):
     else:
         try:
             iteration = state_dict['iteration']
+            args.tokens = state_dict['tokens']
         except KeyError:
             try:  # Backward compatible with older checkpoints
                 iteration = state_dict['total_iters']

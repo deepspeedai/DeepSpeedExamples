@@ -86,7 +86,7 @@ def get_batch(data_iterator):
     return tokens, labels, loss_mask, attention_mask, position_ids
 
 
-def forward_step(data_iterator, model):
+def forward_step(data_iterator, model, curriculum_learning=False):
     """Forward step."""
     args = get_args()
     timers = get_timers()
@@ -98,6 +98,8 @@ def forward_step(data_iterator, model):
     timers('batch generator').stop()
     # Forward model.
     losses = model(tokens, position_ids, attention_mask, labels=labels)
+    if curriculum_learning and args.curriculum_seqlen < args.seq_length:
+        loss_mask = loss_mask[:, :args.curriculum_seqlen].contiguous()
     loss_mask = loss_mask.view(-1)
     loss = torch.sum(losses.view(-1) * loss_mask) / loss_mask.sum()
 
