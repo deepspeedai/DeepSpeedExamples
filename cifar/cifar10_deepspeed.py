@@ -187,7 +187,6 @@ class Net(nn.Module):
                 expert=self.fc3,
                 num_experts=args.num_experts,
                 k=args.top_k,
-                output_dropout_prob=0.1,
                 min_capacity=args.min_capacity,
                 noisy_gate_policy=args.noisy_gate_policy)
             self.fc4 = nn.Linear(84, 10)
