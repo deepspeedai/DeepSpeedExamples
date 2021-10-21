@@ -210,7 +210,7 @@ checkpoint_step = client_state['checkpoint_step']
 
 ## 2.1 Launching Training
 
-We are now ready to launch our training! As a convenience, DeepSpeed provides its own launcher that is seamlessly compatible with internal clusters at MSFT (e.g., ITP). You can now try running your model on your available GPU(s) with the command below. By default this will attempt to run data-parallel training across all available GPUs on the current machine + any external machines listed in your `/job/hostfile`. Please read [more details about the DeepSpeed launcher](https://www.deepspeed.ai/getting-started/#launching-deepspeed-training) on our website.
+We are now ready to launch our training! As a convenience, DeepSpeed provides its own launcher that is seamlessly compatible with clusters that provide a `/job/hostfile` containing all available machines in your job. You can now try running your model on your available GPU(s) with the command below. By default this will attempt to run distributed data-parallel (DDP) training across all available GPUs on the current machine + any external machines listed in your `/job/hostfile`. Please read [more details about the DeepSpeed launcher](https://www.deepspeed.ai/getting-started/#launching-deepspeed-training) and its assumptions on our website.
 
 ```bash
 deepspeed train_bert.py --checkpoint_dir .
@@ -283,18 +283,18 @@ deepspeed train_bert.py --checkpoint_dir . --num_layers 24 --h_dim 4096
 > <a id="1">[1]</a> 
 [Vaswani et al. Attention is all you need. 
 In Proceedings of the 31st International Conference on Neural Information Processing Systems (NIPS'17)](https://arxiv.org/pdf/1706.03762.pdf)
-
+>
 > <a id="2">[2]</a>
 [J. Devlin et al. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL-HLT'19)](https://aclanthology.org/N19-1423.pdf)
-
+>
 > <a id="3">[3]</a>
 [P. Micikevicius et al. Mixed Precision Training (ICLR'18)](https://arxiv.org/pdf/1710.03740v3.pdf)
-
+>
 > <a id="4">[4]></a>
 [S. Rajbhandari, J. Rasley, O. Ruwase, Y. He. ZeRO: memory optimizations toward training trillion parameter models. (SC‘20)](https://arxiv.org/pdf/1910.02054.pdf)
-
+>
 > <a id="5">[5]</a>
 [J. Ren, S. Rajbhandari, R. Aminabadi, O. Ruwase, S. Yang, M. Zhang, D. Li, Y. He. ZeRO-Offload: Democratizing Billion-Scale Model Training. (ATC'21)](https://www.usenix.org/system/files/atc21-ren-jie.pdf)
-
+>
 > <a id="1">[6]</a> 
 [S. Rajbhandari, O. Ruwase, J. Rasley, S. Smith, Y. He. ZeRO-Infinity: Breaking the GPU Memory Wall for Extreme Scale Deep Learning (SC'21)](https://arxiv.org/abs/2104.07857)
