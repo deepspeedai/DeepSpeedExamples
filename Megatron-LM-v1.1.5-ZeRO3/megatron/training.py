@@ -327,7 +327,7 @@ def train_step(forward_step_func, data_iterator,
     #see_memory_usage(f'before forward {model.global_steps}', force=True)
     # Forward model for one step.
     timers('forward').start()
-    loss, loss_reduced = forward_step_func(data_iterator, model, args.curriculum_learning)
+    loss, loss_reduced = forward_step_func(data_iterator, model)
     timers('forward').stop()
 
     #see_memory_usage(f'before backward {model.global_steps}', force=True)
