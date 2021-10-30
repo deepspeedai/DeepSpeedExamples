@@ -11,7 +11,7 @@ SEED=$8
 SAVE_INTERVAL=$9
 NUM_ITER=${10}
 NUM_TOKEN=${11}
-LR_DECAY_ITER=${12}
+LR_DECAY_TOKEN=${12}
 LR_WARMUP_ITER=${13}
 CONFIG_TEMPLATE=${14}
 CURRICULUM_STEP=${15}
@@ -74,7 +74,7 @@ else
 config_json="$script_dir/ds_zero_stage_${stage}_config_${CONFIG}.json"
 fi
 
-JOB_NAME="gpt2_${MODEL_SIZE}M_bsz${TOTAL_BATCHSIZE}_seq${SEQ_LEN}_lr${LR}_warmup${LR_WARMUP_ITER}_decay${LR_DECAY_ITER}_seed${SEED}_${TAG}_stage${stage}_n${NUM_WORKERS}_g${NUM_GPUS_PER_WORKER}_mp${MP_SIZE}"
+JOB_NAME="gpt2_${MODEL_SIZE}M_bsz${TOTAL_BATCHSIZE}_seq${SEQ_LEN}_lr${LR}_warmup${LR_WARMUP_ITER}_decay${LR_DECAY_TOKEN}_seed${SEED}_${TAG}_stage${stage}_n${NUM_WORKERS}_g${NUM_GPUS_PER_WORKER}_mp${MP_SIZE}"
 LOG_NAME="${JOB_NAME}_${host}_${current_time}"
 
 #Actication Checkpointing and Contigious Memory
@@ -102,7 +102,7 @@ gpt_options=" \
         --batch-size $BATCHSIZE \
         --train-iters $NUM_ITER \
         --train-tokens $NUM_TOKEN \
-        --lr-decay-iters $LR_DECAY_ITER \
+        --lr-decay-tokens $LR_DECAY_TOKEN \
         --save $CHECKPOINT_PATH \
         --load $CHECKPOINT_PATH \
         --data-path $DATA_PATH \

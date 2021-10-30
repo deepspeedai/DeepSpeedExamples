@@ -296,6 +296,8 @@ def _add_learning_rate_args(parser):
     group.add_argument('--lr-decay-iters', type=int, default=None,
                        help='number of iterations to decay learning rate over,'
                        ' If None defaults to `--train-iters`')
+    group.add_argument('--lr-decay-tokens', type=int, default=None,
+                       help='Learning rate decay tokens.')
     group.add_argument('--min-lr', type=float, default=0.0,
                        help='Minumum value for learning rate. The scheduler'
                        'clip values below this threshold.')

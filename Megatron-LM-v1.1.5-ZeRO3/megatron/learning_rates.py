@@ -17,7 +17,7 @@
 
 import math
 
-from megatron import print_rank_0
+from megatron import print_rank_0, get_args
 
 
 class AnnealingLR(object):
@@ -28,7 +28,7 @@ class AnnealingLR(object):
                  decay_style, last_iter, min_lr=0.0,
                  use_checkpoint_lr_scheduler=True,
                  override_lr_scheduler=False):
-
+        args = get_args()
         # Class values.
         self.optimizer = optimizer
         self.start_lr = start_lr
@@ -37,6 +37,9 @@ class AnnealingLR(object):
         self.num_iters = last_iter
         self.end_iter = total_iters
         assert self.end_iter > 0
+        self.lr_decay_tokens = args.lr_decay_tokens
+        self.num_tokens = 0
+        self.warmup_tokens = 0
         self.decay_style = decay_style
         self.override_lr_scheduler = override_lr_scheduler
         self.use_checkpoint_lr_scheduler = use_checkpoint_lr_scheduler
@@ -44,7 +47,7 @@ class AnnealingLR(object):
             assert not self.use_checkpoint_lr_scheduler, 'both override and '\
                 'use-checkpoint are set.'
         # Set the learning rate
-        self.step(self.num_iters)
+        self.step(self.num_iters, self.num_tokens)
 
         print_rank_0('> learning rate decay style: {}'.format(self.decay_style))
 
@@ -53,16 +56,26 @@ class AnnealingLR(object):
               https://openreview.net/pdf?id=BJYwwY9ll pg. 4"""
 
         # Warmup.
-        if self.warmup_iter > 0 and self.num_iters <= self.warmup_iter:
-            return float(self.start_lr) * self.num_iters / self.warmup_iter
+        if self.warmup_iter > 0:
+            if self.num_iters == self.warmup_iter and self.lr_decay_tokens is not None:
+                self.warmup_tokens = self.num_tokens
+            if self.num_iters <= self.warmup_iter:
+                return float(self.start_lr) * self.num_iters / self.warmup_iter
 
-        # For any iterations larger than `self.end_iter`, use `self.min_lr`.
-        if self.num_iters > self.end_iter:
-            return self.min_lr
-        # If we are done with the warmup period, use the decay style.
-        current_iter = self.num_iters - self.warmup_iter
-        decay_iter = self.end_iter - self.warmup_iter
-        decay_ratio = float(current_iter) / float(decay_iter)
+        if self.lr_decay_tokens is None:
+            # For any iterations larger than `self.end_iter`, use `self.min_lr`.
+            if self.num_iters > self.end_iter:
+                return self.min_lr
+            # If we are done with the warmup period, use the decay style.
+            current_iter = self.num_iters - self.warmup_iter
+            decay_iter = self.end_iter - self.warmup_iter
+            decay_ratio = float(current_iter) / float(decay_iter)
+        else:
+            if self.num_tokens > self.lr_decay_tokens:
+                return self.min_lr
+            current_tokens = self.num_tokens - self.warmup_tokens
+            decay_tokens = self.lr_decay_tokens - self.warmup_tokens
+            decay_ratio = float(current_tokens) / float(decay_tokens)
         assert decay_ratio >= 0.0
         assert decay_ratio <= 1.0
 
@@ -78,11 +91,15 @@ class AnnealingLR(object):
             lr = self.start_lr
         return max(lr, self.min_lr)
 
-    def step(self, step_num=None):
+    def step(self, step_num=None, token_num=None):
         """Set lr for all parameters groups."""
+        args = get_args()
         if step_num is None:
             step_num = self.num_iters + 1
+        if token_num is None:
+            token_num = args.tokens
         self.num_iters = step_num
+        self.num_tokens = token_num
         new_lr = self.get_lr()
         for group in self.optimizer.param_groups:
             group['lr'] = new_lr
@@ -92,6 +109,8 @@ class AnnealingLR(object):
             'start_lr': self.start_lr,
             'warmup_iter': self.warmup_iter,
             'num_iters': self.num_iters,
+            'warmup_tokens': self.warmup_tokens,
+            'num_tokens': self.num_tokens,
             'decay_style': self.decay_style,
             'end_iter': self.end_iter,
             'min_lr': self.min_lr
@@ -128,4 +147,8 @@ class AnnealingLR(object):
                                                'decay style')
 
         self.num_iters = sd['num_iters']
-        self.step(self.num_iters)
+        if 'warmup_tokens' in sd:
+            self.warmup_tokens = sd['warmup_tokens']
+        if 'num_tokens' in sd:
+            self.num_tokens = sd['num_tokens']
+        self.step(self.num_iters, self.num_tokens)
