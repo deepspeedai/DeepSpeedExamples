@@ -31,7 +31,7 @@ One of the most important parts of training ML models is for the experiments to 
 
 * Save all the hyperparameters associated with the experiment (be it taken from a config or parsed from the command line)
 
-* Seed your random generators
+* Seed your random generators. Some useful tips can be found [here](https://pytorch.org/docs/stable/notes/randomness.html?highlight=reproducibility).
 
 * Specify all the packages and their versions. This can be a `requirements.txt` file, a conda `env.yaml` file or a `pyproject.toml` file. If you want complete reproducibility, you can also include a `Dockerfile` to specify the environment to run the experiment in.
 

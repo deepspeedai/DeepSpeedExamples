@@ -10,6 +10,7 @@ import string
 from functools import partial
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 
+import random
 import datasets
 import fire
 import loguru
@@ -802,4 +803,7 @@ def train(
 
 
 if __name__ == "__main__":
+    torch.manual_seed(42)
+    np.random.seed(0)
+    random.seed(0)
     fire.Fire(train)
