@@ -211,26 +211,11 @@ net = Net()
 
 
 def create_moe_param_groups(model):
-    from deepspeed.moe.utils import is_moe_param
+    from deepspeed.moe.utils import split_params_into_different_moe_groups_for_optimizer
 
-    params_with_weight_decay = {'params': [], 'name': 'weight_decay_params'}
-    moe_params_with_weight_decay = {
-        'params': [],
-        'moe': True,
-        'name': 'weight_decay_moe_params'
-    }
+    parameters = {'params': model.parameters(), 'name': 'parameters'}
 
-    for module_ in model.modules():
-        moe_params_with_weight_decay['params'].extend([
-            p for n, p in list(module_._parameters.items())
-            if p is not None and is_moe_param(p)
-        ])
-        params_with_weight_decay['params'].extend([
-            p for n, p in list(module_._parameters.items())
-            if p is not None and not is_moe_param(p)
-        ])
-
-    return params_with_weight_decay, moe_params_with_weight_decay
+    return split_params_into_different_moe_groups_for_optimizer(parameters)
 
 
 parameters = filter(lambda p: p.requires_grad, net.parameters())
