@@ -22,6 +22,7 @@ generator = pipeline('text-generation',
 generator.model = deepspeed.init_inference(generator.model,
                                            mp_size=world_size,
                                            dtype=torch.float,
-                                           replace_method='auto')
+                                           replace_method='auto',
+                                           replace_with_kernel_inject=True)
 string = generator("DeepSpeed is", do_sample=True, min_length=50)
 print(string)
