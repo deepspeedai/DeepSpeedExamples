@@ -15,7 +15,6 @@ print(
     "***************** Creating model in RANK ({0}) with WORLD_SIZE = {1} *****************"
     .format(local_rank,
             world_size))
-
 generator = pipeline('text-generation',
                      model='EleutherAI/gpt-neo-2.7B',
                      device=local_rank)
