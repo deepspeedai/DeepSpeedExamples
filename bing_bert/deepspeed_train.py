@@ -382,7 +382,7 @@ def prepare_optimizer_parameters(args, model):
         weight_decay = 0.01
 
     if deepspeed_config["optimizer"]["type"] not in [
-            "OneBitAdam", "OneBitLamb"
+            "OneBitAdam", "OneBitLamb", "ZeroOneAdam"
     ]:
         optimizer_grouped_parameters = [{
             'params': [
@@ -414,7 +414,7 @@ def prepare_optimizer_parameters(args, model):
                 for position in range(args.max_seq_length):
                     for col in range(p.size()[1]):
                         mask[position][col] += 1
-                if deepspeed_config["optimizer"]["type"] == "OneBitAdam":
+                if deepspeed_config["optimizer"]["type"] in ["OneBitAdam", "ZeroOneAdam"]:
                     mask = torch.flatten(mask)
                 masks.append(mask)
                 need_mask_p.append(p)

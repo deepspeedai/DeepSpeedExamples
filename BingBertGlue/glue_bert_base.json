@@ -1,0 +1,19 @@
+{
+    "train_batch_size": 32,
+    "train_micro_batch_size_per_gpu": 1,
+    "steps_per_print": 10,
+    "optimizer": {
+      "type": "Adam",
+      "params": {
+        "lr": 2e-5,
+        "weight_decay": 0.0,
+        "bias_correction": true
+      }
+    },
+    "gradient_clipping": 1.0,
+    "fp16": {
+      "enabled": false
+    }
+  
+  }
+  
