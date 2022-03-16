@@ -30,19 +30,18 @@ logger = loguru.logger
 ############### Dataset Creation Related Functions ###################
 ######################################################################
 
-
 TokenizerType = Union[PreTrainedTokenizer, PreTrainedTokenizerFast]
 
 
-def collate_function(
-    batch: List[Tuple[List[int], List[int]]], pad_token_id: int
-) -> Dict[str, torch.Tensor]:
+def collate_function(batch: List[Tuple[List[int], List[int]]],
+                     pad_token_id: int) -> Dict[str, torch.Tensor]:
     """Collect a list of masked token indices, and labels, and
     batch them, padding to max length in the batch.
     """
     max_length = max(len(token_ids) for token_ids, _ in batch)
     padded_token_ids = [
-        token_ids + [pad_token_id for _ in range(0, max_length - len(token_ids))]
+        token_ids +
+        [pad_token_id for _ in range(0, max_length - len(token_ids))]
         for token_ids, _ in batch
     ]
     padded_labels = [
@@ -60,12 +59,12 @@ def collate_function(
 
 
 def masking_function(
-    text: str,
-    tokenizer: TokenizerType,
-    mask_prob: float,
-    random_replace_prob: float,
-    unmask_replace_prob: float,
-    max_length: int,
+        text: str,
+        tokenizer: TokenizerType,
+        mask_prob: float,
+        random_replace_prob: float,
+        unmask_replace_prob: float,
+        max_length: int,
 ) -> Tuple[List[int], List[int]]:
     """Given a text string, randomly mask wordpieces for Bert MLM
     training.
@@ -95,13 +94,12 @@ def masking_function(
     """
     # Note: By default, encode does add the BOS and EOS token
     # Disabling that behaviour to make this more clear
-    tokenized_ids = (
-        [tokenizer.bos_token_id]
-        + tokenizer.encode(
-            text, add_special_tokens=False, truncation=True, max_length=max_length - 2
-        )
-        + [tokenizer.eos_token_id]
-    )
+    tokenized_ids = ([tokenizer.bos_token_id] +
+                     tokenizer.encode(text,
+                                      add_special_tokens=False,
+                                      truncation=True,
+                                      max_length=max_length - 2) +
+                     [tokenizer.eos_token_id])
     seq_len = len(tokenized_ids)
     tokenized_ids = np.array(tokenized_ids)
     subword_mask = np.full(len(tokenized_ids), False)
@@ -110,10 +108,11 @@ def masking_function(
     low = 1
     high = len(subword_mask) - 1
     mask_choices = np.arange(low, high)
-    num_subwords_to_mask = max(int((mask_prob * (high - low)) + np.random.rand()), 1)
-    subword_mask[
-        np.random.choice(mask_choices, num_subwords_to_mask, replace=False)
-    ] = True
+    num_subwords_to_mask = max(
+        int((mask_prob * (high - low)) + np.random.rand()), 1)
+    subword_mask[np.random.choice(mask_choices,
+                                  num_subwords_to_mask,
+                                  replace=False)] = True
 
     # Create the labels first
     labels = np.full(seq_len, tokenizer.pad_token_id)
@@ -124,9 +123,8 @@ def masking_function(
     # Now of the masked tokens, choose how many to replace with random and how many to unmask
     rand_or_unmask_prob = random_replace_prob + unmask_replace_prob
     if rand_or_unmask_prob > 0:
-        rand_or_unmask = subword_mask & (
-            np.random.rand(len(tokenized_ids)) < rand_or_unmask_prob
-        )
+        rand_or_unmask = subword_mask & (np.random.rand(len(tokenized_ids)) <
+                                         rand_or_unmask_prob)
         if random_replace_prob == 0:
             unmask = rand_or_unmask
             rand_mask = None
@@ -145,9 +143,9 @@ def masking_function(
             weights[tokenizer.all_special_ids] = 0
             probs = weights / weights.sum()
             num_rand = rand_mask.sum()
-            tokenized_ids[rand_mask] = np.random.choice(
-                tokenizer.vocab_size, num_rand, p=probs
-            )
+            tokenized_ids[rand_mask] = np.random.choice(tokenizer.vocab_size,
+                                                        num_rand,
+                                                        p=probs)
     return tokenized_ids.tolist(), labels.tolist()
 
 
@@ -167,7 +165,6 @@ class WikiTextMLMDataset(Dataset):
             record
 
     """
-
     def __init__(
         self,
         dataset: datasets.arrow_dataset.Dataset,
@@ -206,12 +203,12 @@ class InfiniteIterator(object):
 
 
 def create_data_iterator(
-    mask_prob: float,
-    random_replace_prob: float,
-    unmask_replace_prob: float,
-    batch_size: int,
-    max_seq_length: int = 512,
-    tokenizer: str = "roberta-base",
+        mask_prob: float,
+        random_replace_prob: float,
+        unmask_replace_prob: float,
+        batch_size: int,
+        max_seq_length: int = 512,
+        tokenizer: str = "roberta-base",
 ) -> InfiniteIterator:
     """Create the dataloader.
 
@@ -235,10 +232,12 @@ def create_data_iterator(
             be able to continuously generate samples
 
     """
-    wikitext_dataset = datasets.load_dataset("wikitext", "wikitext-2-v1", split="train")
-    wikitext_dataset = wikitext_dataset.filter(lambda record: record["text"] != "").map(
-        lambda record: {"text": record["text"].rstrip("\n")}
-    )
+    wikitext_dataset = datasets.load_dataset("wikitext",
+                                             "wikitext-2-v1",
+                                             split="train")
+    wikitext_dataset = wikitext_dataset.filter(
+        lambda record: record["text"] != "").map(
+            lambda record: {"text": record["text"].rstrip("\n")})
     tokenizer = AutoTokenizer.from_pretrained(tokenizer)
     masking_function_partial = partial(
         masking_function,
@@ -249,10 +248,12 @@ def create_data_iterator(
         max_length=max_seq_length,
     )
     dataset = WikiTextMLMDataset(wikitext_dataset, masking_function_partial)
-    collate_fn_partial = partial(collate_function, pad_token_id=tokenizer.pad_token_id)
-    dataloader = DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn_partial
-    )
+    collate_fn_partial = partial(collate_function,
+                                 pad_token_id=tokenizer.pad_token_id)
+    dataloader = DataLoader(dataset,
+                            batch_size=batch_size,
+                            shuffle=True,
+                            collate_fn=collate_fn_partial)
 
     return InfiniteIterator(dataloader)
 
@@ -263,9 +264,9 @@ def create_data_iterator(
 
 
 class RobertaLMHeadWithMaskedPredict(RobertaLMHead):
-    def __init__(
-        self, config: RobertaConfig, embedding_weight: Optional[torch.Tensor] = None
-    ) -> None:
+    def __init__(self,
+                 config: RobertaConfig,
+                 embedding_weight: Optional[torch.Tensor] = None) -> None:
         super(RobertaLMHeadWithMaskedPredict, self).__init__(config)
         if embedding_weight is not None:
             self.decoder.weight = embedding_weight
@@ -295,8 +296,7 @@ class RobertaLMHeadWithMaskedPredict(RobertaLMHead):
         """
         if masked_token_indices is not None:
             features = torch.index_select(
-                features.view(-1, features.shape[-1]), 0, masked_token_indices
-            )
+                features.view(-1, features.shape[-1]), 0, masked_token_indices)
         return super().forward(features)
 
 
@@ -305,15 +305,14 @@ class RobertaMLMModel(RobertaPreTrainedModel):
         super().__init__(config)
         self.encoder = encoder
         self.lm_head = RobertaLMHeadWithMaskedPredict(
-            config, self.encoder.embeddings.word_embeddings.weight
-        )
+            config, self.encoder.embeddings.word_embeddings.weight)
         self.lm_head.apply(self._init_weights)
 
     def forward(
-        self,
-        src_tokens: torch.Tensor,
-        attention_mask: torch.Tensor,
-        tgt_tokens: torch.Tensor,
+            self,
+            src_tokens: torch.Tensor,
+            attention_mask: torch.Tensor,
+            tgt_tokens: torch.Tensor,
     ) -> torch.Tensor:
         """The forward pass for the MLM task
 
@@ -331,33 +330,31 @@ class RobertaMLMModel(RobertaPreTrainedModel):
                 The MLM loss
         """
         # shape: (batch, seq_len, h_dim)
-        sequence_output, *_ = self.encoder(
-            input_ids=src_tokens, attention_mask=attention_mask, return_dict=False
-        )
+        sequence_output, *_ = self.encoder(input_ids=src_tokens,
+                                           attention_mask=attention_mask,
+                                           return_dict=False)
 
         pad_token_id = self.config.pad_token_id
         # (labels have also been padded with pad_token_id)
         # filter out all masked labels
         # shape: (num_masked_tokens,)
         masked_token_indexes = torch.nonzero(
-            (tgt_tokens != pad_token_id).view(-1)
-        ).view(-1)
+            (tgt_tokens != pad_token_id).view(-1)).view(-1)
         # shape: (num_masked_tokens, vocab_size)
         prediction_scores = self.lm_head(sequence_output, masked_token_indexes)
         # shape: (num_masked_tokens,)
-        target = torch.index_select(tgt_tokens.view(-1), 0, masked_token_indexes)
+        target = torch.index_select(tgt_tokens.view(-1), 0,
+                                    masked_token_indexes)
 
         loss_fct = nn.CrossEntropyLoss(ignore_index=-1)
 
         masked_lm_loss = loss_fct(
-            prediction_scores.view(-1, self.config.vocab_size), target
-        )
+            prediction_scores.view(-1, self.config.vocab_size), target)
         return masked_lm_loss
 
 
-def create_model(
-    num_layers: int, num_heads: int, ff_dim: int, h_dim: int, dropout: float
-) -> RobertaMLMModel:
+def create_model(num_layers: int, num_heads: int, ff_dim: int, h_dim: int,
+                 dropout: float) -> RobertaMLMModel:
     """Create a Bert model with the specified `num_heads`, `ff_dim`,
     `h_dim` and `dropout`
 
@@ -418,13 +415,13 @@ def get_unique_identifier(length: int = 8) -> str:
     random characters from list of ascii characters and numbers
     """
     alphabet = string.ascii_lowercase + string.digits
-    uuid = "".join(alphabet[ix] for ix in np.random.choice(len(alphabet), length))
+    uuid = "".join(alphabet[ix]
+                   for ix in np.random.choice(len(alphabet), length))
     return uuid
 
 
-def create_experiment_dir(
-    checkpoint_dir: pathlib.Path, all_arguments: Dict[str, Any]
-) -> pathlib.Path:
+def create_experiment_dir(checkpoint_dir: pathlib.Path,
+                          all_arguments: Dict[str, Any]) -> pathlib.Path:
     """Create an experiment directory and save all arguments in it.
     Additionally, also store the githash and gitdiff. Finally create
     a directory for `Tensorboard` logs. The structure would look something
@@ -468,26 +465,22 @@ def create_experiment_dir(
         with (exp_dir / "githash.log").open("w") as handle:
             handle.write(gitlog.stdout.decode("utf-8"))
     except sh.ErrorReturnCode_128:
-        logger.info(
-            "Seems like the code is not running from"
-            " within a git repo, so hash will"
-            " not be stored. However, it"
-            " is strongly advised to use"
-            " version control."
-        )
+        logger.info("Seems like the code is not running from"
+                    " within a git repo, so hash will"
+                    " not be stored. However, it"
+                    " is strongly advised to use"
+                    " version control.")
     # And the git diff
     try:
         gitdiff = sh.git.diff(_fg=False, _tty_out=False)
         with (exp_dir / "gitdiff.log").open("w") as handle:
             handle.write(gitdiff.stdout.decode("utf-8"))
     except sh.ErrorReturnCode_129:
-        logger.info(
-            "Seems like the code is not running from"
-            " within a git repo, so diff will"
-            " not be stored. However, it"
-            " is strongly advised to use"
-            " version control."
-        )
+        logger.info("Seems like the code is not running from"
+                    " within a git repo, so diff will"
+                    " not be stored. However, it"
+                    " is strongly advised to use"
+                    " version control.")
     # Finally create the Tensorboard Dir
     tb_dir = exp_dir / "tb_dir"
     tb_dir.mkdir()
@@ -522,13 +515,14 @@ def load_model_checkpoint(
             optimizer with state_dict loaded
 
     """
-    logger.info(f"Loading model and optimizer checkpoint from {load_checkpoint_dir}")
+    logger.info(
+        f"Loading model and optimizer checkpoint from {load_checkpoint_dir}")
     checkpoint_files = list(
         filter(
-            lambda path: re.search(r"iter_(?P<iter_no>\d+)\.pt", path.name) is not None,
+            lambda path: re.search(r"iter_(?P<iter_no>\d+)\.pt", path.name) is
+            not None,
             load_checkpoint_dir.glob("*.pt"),
-        )
-    )
+        ))
     assert len(checkpoint_files) > 0, "No checkpoints found in directory"
     checkpoint_files = sorted(
         checkpoint_files,
@@ -538,10 +532,8 @@ def load_model_checkpoint(
     )
     latest_checkpoint_path = checkpoint_files[-1]
     checkpoint_step = int(
-        re.search(r"iter_(?P<iter_no>\d+)\.pt", latest_checkpoint_path.name).group(
-            "iter_no"
-        )
-    )
+        re.search(r"iter_(?P<iter_no>\d+)\.pt",
+                  latest_checkpoint_path.name).group("iter_no"))
 
     state_dict = torch.load(latest_checkpoint_path)
     model.load_state_dict(state_dict["model"], strict=True)
@@ -558,26 +550,26 @@ def load_model_checkpoint(
 
 
 def train(
-    checkpoint_dir: str = None,
-    load_checkpoint_dir: str = None,
-    # Dataset Parameters
-    mask_prob: float = 0.15,
-    random_replace_prob: float = 0.1,
-    unmask_replace_prob: float = 0.1,
-    max_seq_length: int = 512,
-    tokenizer: str = "roberta-base",
-    # Model Parameters
-    num_layers: int = 6,
-    num_heads: int = 8,
-    ff_dim: int = 512,
-    h_dim: int = 256,
-    dropout: float = 0.1,
-    # Training Parameters
-    batch_size: int = 8,
-    num_iterations: int = 10000,
-    checkpoint_every: int = 1000,
-    log_every: int = 10,
-    local_rank: int = -1,
+        checkpoint_dir: str = None,
+        load_checkpoint_dir: str = None,
+        # Dataset Parameters
+        mask_prob: float = 0.15,
+        random_replace_prob: float = 0.1,
+        unmask_replace_prob: float = 0.1,
+        max_seq_length: int = 512,
+        tokenizer: str = "roberta-base",
+        # Model Parameters
+        num_layers: int = 6,
+        num_heads: int = 8,
+        ff_dim: int = 512,
+        h_dim: int = 256,
+        dropout: float = 0.1,
+        # Training Parameters
+        batch_size: int = 8,
+        num_iterations: int = 10000,
+        checkpoint_every: int = 1000,
+        log_every: int = 10,
+        local_rank: int = -1,
 ) -> pathlib.Path:
     """Trains a [Bert style](https://arxiv.org/pdf/1810.04805.pdf)
     (transformer encoder only) model for MLM Task
@@ -633,19 +625,18 @@ def train(
         pathlib.Path: The final experiment directory
 
     """
-    device = (
-        torch.device("cuda", local_rank)
-        if (local_rank > -1) and torch.cuda.is_available()
-        else torch.device("cpu")
-    )
+    device = (torch.device("cuda", local_rank) if (local_rank > -1)
+              and torch.cuda.is_available() else torch.device("cpu"))
     ################################
     ###### Create Exp. Dir #########
     ################################
     if checkpoint_dir is None and load_checkpoint_dir is None:
-        logger.error("Need to specify one of checkpoint_dir" " or load_checkpoint_dir")
+        logger.error("Need to specify one of checkpoint_dir"
+                     " or load_checkpoint_dir")
         return
     if checkpoint_dir is not None and load_checkpoint_dir is not None:
-        logger.error("Cannot specify both checkpoint_dir" " and load_checkpoint_dir")
+        logger.error("Cannot specify both checkpoint_dir"
+                     " and load_checkpoint_dir")
         return
     if checkpoint_dir:
         logger.info("Creating Experiment Directory")
@@ -681,8 +672,10 @@ def train(
         # Dataset Params
         mask_prob = hparams.get("mask_prob", mask_prob)
         tokenizer = hparams.get("tokenizer", tokenizer)
-        random_replace_prob = hparams.get("random_replace_prob", random_replace_prob)
-        unmask_replace_prob = hparams.get("unmask_replace_prob", unmask_replace_prob)
+        random_replace_prob = hparams.get("random_replace_prob",
+                                          random_replace_prob)
+        unmask_replace_prob = hparams.get("unmask_replace_prob",
+                                          unmask_replace_prob)
         max_seq_length = hparams.get("max_seq_length", max_seq_length)
         # Model Params
         ff_dim = hparams.get("ff_dim", ff_dim)
@@ -738,14 +731,15 @@ def train(
     start_step = 1
     if load_checkpoint_dir is not None:
         checkpoint_step, model, optimizer = load_model_checkpoint(
-            load_checkpoint_dir, model, optimizer
-        )
+            load_checkpoint_dir, model, optimizer)
         start_step = checkpoint_step + 1
 
     ################################
     ####### The Training Loop ######
     ################################
-    logger.info(f"Total number of model parameters: {sum([p.numel() for p in model.parameters()]):,d}")
+    logger.info(
+        f"Total number of model parameters: {sum([p.numel() for p in model.parameters()]):,d}"
+    )
     model.train()
     losses = []
     for step, batch in enumerate(data_iterator, start=start_step):
@@ -770,20 +764,20 @@ def train(
                 "model": model.state_dict(),
                 "optimizer": optimizer.state_dict(),
             }
-            torch.save(obj=state_dict, f=str(exp_dir / f"checkpoint.iter_{step}.pt"))
-            logger.info(
-                "Saved model to {0}".format((exp_dir / f"checkpoint.iter_{step}.pt"))
-            )
+            torch.save(obj=state_dict,
+                       f=str(exp_dir / f"checkpoint.iter_{step}.pt"))
+            logger.info("Saved model to {0}".format(
+                (exp_dir / f"checkpoint.iter_{step}.pt")))
     # Save the last checkpoint if not saved yet
     if step % checkpoint_every != 0:
         state_dict = {
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
         }
-        torch.save(obj=state_dict, f=str(exp_dir / f"checkpoint.iter_{step}.pt"))
-        logger.info(
-            "Saved model to {0}".format((exp_dir / f"checkpoint.iter_{step}.pt"))
-        )
+        torch.save(obj=state_dict,
+                   f=str(exp_dir / f"checkpoint.iter_{step}.pt"))
+        logger.info("Saved model to {0}".format(
+            (exp_dir / f"checkpoint.iter_{step}.pt")))
 
     return exp_dir
 

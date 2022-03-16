@@ -75,7 +75,7 @@ def test_masking_stats(tol: float = 1e-3):
 
 The main idea behind the MLM task is to get the model to fill in the blanks based on contextual clues present **both before and after** the blank. Consider, for example, the following sentence:
 
-> In the beautiful season of ____ the ____ shed their leaves. 
+> In the beautiful season of ____ the ____ shed their leaves.
 
 Given the left context `season` and the right context `shed their leaves`, one can guess that the blanks are `Autumn` and `trees` respectively. This is exactly what we want the model to do: utilize both the left and right context to fill in the blanks.
 
@@ -99,7 +99,7 @@ A Transformer model repeatedly applies a (Multi-Headed) Self-Attention block and
 3. The number of Self Attention Heads
 4. The size of the intermediate representation between the FeedForward block
 
-Check out the `create_model` function in [train_bert.py](./train_bert.py) to see how this is done in code. In this example, we create a Roberta model[3](#3)
+Check out the `create_model` function in [train_bert.py](./train_bert.py) to see how this is done in code. In this example, we create a Roberta model [[3](#3)]
 
 ---
 📌 **Note:** You can check out [[1](#1), [2](#2)] as a starting point for better understanding Transformers. Additionally, there are a number of blogs that do a nice deep dive into the workings of these models (eg: [this](https://nlp.seas.harvard.edu/2018/04/03/attention.html), [this](https://jalammar.github.io/illustrated-bert/) and [this](https://jalammar.github.io/illustrated-transformer/)).
@@ -108,7 +108,7 @@ Check out the `create_model` function in [train_bert.py](./train_bert.py) to see
 
 ### 1.3 Training the Model
 
-In order to train the model, you can run the following command 
+In order to train the model, you can run the following command
 
 ```bash
 python train_bert.py --checkpoint_dir ./experiments
@@ -171,8 +171,8 @@ ds_config = {
       }
   },
 }
-model, _, _, _ = deepspeed.initialize(model=model, 
-                                      model_parameters=model.parameters(), 
+model, _, _, _ = deepspeed.initialize(model=model,
+                                      model_parameters=model.parameters(),
                                       config=ds_config)
 ```
 
@@ -207,6 +207,11 @@ __Checkpoint loading__: The checkpoint loading is happening right before the tra
 _, client_state = model.load_checkpoint(load_dir=load_checkpoint_dir)
 checkpoint_step = client_state['checkpoint_step']
 ```
+
+---
+📌 **Note:** You may also want/need to make additional changes to your code if you run on multiple GPUs as DeepSpeed will launch multiple processes. You will want to avoid potential race conditions with creating directories or writing to file and restrict logging to a single process. Take a look at `train_bert_ds.py` for an example of how to do this.
+
+---
 
 ## 2.1 Launching Training
 
@@ -280,8 +285,8 @@ deepspeed train_bert.py --checkpoint_dir . --num_layers 24 --h_dim 4096
 ---
 
 ## References
-> <a id="1">[1]</a> 
-[Vaswani et al. Attention is all you need. 
+> <a id="1">[1]</a>
+[Vaswani et al. Attention is all you need.
 In Proceedings of the 31st International Conference on Neural Information Processing Systems (NIPS'17)](https://arxiv.org/pdf/1706.03762.pdf)
 >
 > <a id="2">[2]</a>
@@ -296,5 +301,5 @@ In Proceedings of the 31st International Conference on Neural Information Proces
 > <a id="5">[5]</a>
 [J. Ren, S. Rajbhandari, R. Aminabadi, O. Ruwase, S. Yang, M. Zhang, D. Li, Y. He. ZeRO-Offload: Democratizing Billion-Scale Model Training. (ATC'21)](https://www.usenix.org/system/files/atc21-ren-jie.pdf)
 >
-> <a id="1">[6]</a> 
+> <a id="1">[6]</a>
 [S. Rajbhandari, O. Ruwase, J. Rasley, S. Smith, Y. He. ZeRO-Infinity: Breaking the GPU Memory Wall for Extreme Scale Deep Learning (SC'21)](https://arxiv.org/abs/2104.07857)
