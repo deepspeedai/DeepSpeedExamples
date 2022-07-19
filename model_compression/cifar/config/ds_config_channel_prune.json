@@ -1,0 +1,128 @@
+{
+    "train_batch_size" : 32,
+    "train_micro_batch_size_per_gpu": 32,
+    "steps_per_print": 50,
+  
+    "optimizer": {
+      "type": "Adam",
+      "params": {
+        "lr": 0.001,
+        "betas": [
+          0.8,
+          0.999
+        ],
+        "eps": 1e-8,
+        "weight_decay": 3e-7
+      }
+    },
+
+    "zero_optimization": {
+      "stage": 0
+    },
+
+    "fp16":{
+      "enabled": true
+    },
+
+    "gradient_clipping": 1.0,
+    "prescale_gradients": true,
+  
+    "wall_clock_breakdown" : false,
+    "compression_training": {
+      "weight_quantization": {
+        "shared_parameters":{
+          "enabled": false,
+          "quantizer_kernel": false,
+          "schedule_offset": 0,
+          "quantize_groups": 1,
+          "quantize_verbose": true,
+          "quantization_type": "asymmetric",
+          "quantize_weight_in_forward": false,
+          "rounding": "nearest",
+          "fp16_mixed_quantize":{
+            "enabled": false,
+            "quantize_change_ratio": 0.001
+          }
+        },
+        "different_groups":{
+          "wq1": {
+            "params": {
+                "start_bits": 12, 
+                "target_bits": 8,
+                "quantization_period": 50
+            },
+            "modules": [
+              "conv1"
+            ]
+          },
+          "wq2": {
+            "params": {
+                "start_bits": 12, 
+                "target_bits": 4,
+                "quantization_period": 50
+            },
+            "modules": [
+              "conv2"
+            ]
+          }
+        }
+      },
+      "activation_quantization": {
+        "shared_parameters":{
+          "enabled": false,
+          "quantization_type": "asymmetric",
+          "range_calibration": "dynamic",
+          "schedule_offset": 0
+        },
+        "different_groups":{
+          "aq1": {
+            "params": { 
+                "bits": 8
+            },
+            "modules": [
+              "conv1"
+            ]
+          }
+        }
+      },
+      "sparse_pruning":{
+        "shared_parameters":{
+          "enabled": false,
+          "schedule_offset": 0,
+          "method": "l1"
+        },
+        "different_groups":{
+          "sp1": {
+            "params": { 
+                "dense_ratio": 0.5
+            },
+            "modules": [
+              "conv1", 
+              "conv2"
+            ]
+          }
+        }
+      },
+      "channel_pruning":{
+        "shared_parameters":{
+          "enabled": true,
+          "schedule_offset": 0,
+          "method": "topk"
+        },
+        "different_groups":{
+          "cp1": {
+            "params": { 
+                "dense_ratio": 0.5
+            },
+            "modules": [
+              "layer....conv1"
+            ],
+            "related_modules": [
+              ["layer....conv2", "layer....bn1"]
+            ]
+          }
+        }
+      }
+    }
+  }
+

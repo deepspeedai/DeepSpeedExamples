@@ -1,0 +1,9 @@
+accelerate
+transformers == 4.15.0
+datasets >= 1.8.0
+sentencepiece != 0.1.92
+scipy
+scikit-learn
+protobuf
+gpustat
+torch >= 1.3

@@ -1,0 +1,90 @@
+{
+    "train_batch_size" : 8,
+    "train_micro_batch_size_per_gpu": 4,
+    "steps_per_print": 50,
+    
+    "optimizer": {
+      "type": "Adam",
+      "params": {
+        "lr": 0.001,
+        "betas": [
+          0.8,
+          0.999
+        ],
+        "eps": 1e-8,
+        "weight_decay": 3e-7
+      }
+    },
+    
+    "zero_optimization": {
+      "stage": 0
+    },
+    
+    "fp16":{
+      "enabled": true
+    },
+    
+    "gradient_clipping": 1.0,
+    "prescale_gradients": true,
+    
+    "wall_clock_breakdown" : false,
+    
+    "compression_training": {
+      "weight_quantization": {
+        "shared_parameters":{
+          "enabled": true,
+          "quantizer_kernel": false,
+          "schedule_offset": 0,
+          "quantize_groups": 64,
+          "quantize_verbose": false,
+          "quantization_type": "symmetric",
+          "quantize_weight_in_forward": false,
+          "rounding": "nearest",
+          "fp16_mixed_quantize":{
+            "enabled": false,
+            "quantize_change_ratio": 1
+          }
+        },
+        "different_groups":{
+          "wq1": {
+            "params": {
+                "start_bits": 4, 
+                "target_bits": 4,
+                "quantization_period": 0
+            },
+            "modules": [
+             "mlp.c_fc", "mlp.c_proj"
+            ]
+          },
+          "wq2": {
+            "params": {
+                "start_bits": 8, 
+                "target_bits": 8,
+                "quantization_period": 0
+            },
+            "modules": [
+              "attn.c_attn", "attn.c_proj"
+            ]
+          }          
+        }
+      },
+      "activation_quantization": {
+        "shared_parameters":{
+          "enabled": true,
+          "quantization_type": "symmetric",
+          "range_calibration": "dynamic",
+          "schedule_offset": 0
+        },
+        "different_groups":{
+          "aq1": {
+            "params": { 
+                "bits": 8
+            },
+            "modules": [
+              "attn.c_attn", "attn.c_proj", "mlp.c_fc", "mlp.c_proj"
+            ]
+          }
+        }
+      }
+    }
+    }
