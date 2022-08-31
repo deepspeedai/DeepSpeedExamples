@@ -23,14 +23,13 @@ model = AutoModelForCausalLM.from_pretrained("EleutherAI/gpt-j-6B")
 inp_tokens = tokenizer("DeepSpeed is", return_tensors="pt",)
 model = deepspeed.init_inference(model,
                                  mp_size=world_size,
-                                 dtype=torch.float,
-                                 injection_policy={GPTJBlock: ('attn.out_proj','mlp.fc_out')},
-                                 replace_with_kernel_inject=False)
+                                 dtype=torch.half,
+                                 replace_with_kernel_inject=True)
                                  
 for token in inp_tokens:
     if torch.is_tensor(inp_tokens[token]):
         inp_tokens[token] = inp_tokens[token].to(f'cuda:{local_rank}')
         
 model.cuda().to(f'cuda:{local_rank}')
-string = tokenizer.batch_decode(model.generate(**inp_tokens,min_length=50,))[0]
+string = tokenizer.batch_decode(model.generate(**inp_tokens,min_length=50,max_length=50,do_sample=True))[0]
 print(string)
