@@ -7,7 +7,7 @@
     "stage3_max_live_parameters": 1e9,
     "stage3_max_reuse_distance": 1e9,
     "stage3_prefetch_bucket_size": 1e7,
-    "stage3_param_persitence_threshold": 1e5,
+    "stage3_param_persistence_threshold": 1e5,
     "reduce_bucket_size": 1e7,
     "contiguous_gradients": true
   },
