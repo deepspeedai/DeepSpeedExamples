@@ -1,10 +1,9 @@
-# Megatron-DeepSpeed
+# Not maintained / deprecated
 
-The 3 Megatron-LM snapshots in this repo. are no longer being maintained. 
+> __Warning__
+> all future/current changes are now in new [Megatron-DeepSpeed](https://github.com/microsoft/Megatron-DeepSpeed). 
 
-Please use the new [Megatron-DeepSpeed fork](https://github.com/microsoft/Megatron-DeepSpeed). 
-
-## Notes on 3 deprecated Megatron folders in this repository
+### Notes on 3 deprecated Megatron folders in this repository
 
 Megatron-LM : This is a fairly old snapshot of Megatron-LM , and we have been using it show case the earlier features of DeepSpeed. This does not contain ZeRO-3 or 3D parallelism.
 
