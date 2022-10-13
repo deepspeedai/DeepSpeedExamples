@@ -1,0 +1,6 @@
+deepspeed
+torch
+transformers==4.21.2
+numpy
+sentencepiece
+protobuf

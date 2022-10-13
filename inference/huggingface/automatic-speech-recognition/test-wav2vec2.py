@@ -4,7 +4,6 @@ import soundfile as sf
 import torch
 from jiwer import wer
 import os
-import torch
 import deepspeed
 from deepspeed import module_inject
 from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2EncoderLayer
