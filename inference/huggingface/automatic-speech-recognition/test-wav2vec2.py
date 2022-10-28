@@ -27,7 +27,7 @@ model = deepspeed.init_inference(model,
                                  dtype=torch.float,
                                  injection_policy={Wav2Vec2EncoderLayer: ('attention.out_proj','feed_forward.output_dense')},
                                  replace_with_kernel_inject=False)
-model.to(f'cuda:{local_rank}')                                 
+model.to(f'cuda:{local_rank}')
 def map_to_array(batch):
     speech, _ = sf.read(batch["file"])
     batch["speech"] = speech

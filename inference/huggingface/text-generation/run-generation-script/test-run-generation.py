@@ -193,7 +193,7 @@ def main():
         required=False,
         help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(MODEL_CLASSES.keys()),
     )
-    
+
     parser.add_argument("--prompt", type=str, default="")
     parser.add_argument("--length", type=int, default=20)
     parser.add_argument("--stop_token", type=str, default=None, help="Token at which text generation is stopped")
@@ -214,7 +214,7 @@ def main():
     parser.add_argument("--padding_text", type=str, default="", help="Deprecated, the use of `--prefix` is preferred.")
     parser.add_argument("--xlm_language", type=str, default="", help="Optional language when used with the XLM model.")
 
-    parser.add_argument("--local_rank", type=int, default=0, help="local rank")  
+    parser.add_argument("--local_rank", type=int, default=0, help="local rank")
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
     parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
     parser.add_argument("--num_return_sequences", type=int, default=1, help="The number of samples to generate.")
@@ -235,7 +235,7 @@ def main():
         args.n_gpu,
         args.fp16,
     )
-    
+
     set_seed(args)
 
     # Initialize the model and tokenizer
@@ -256,9 +256,9 @@ def main():
     if args.ds_inference:
         import deepspeed.module_inject as module_inject
         import deepspeed
-        injection_policy={gpt2_transformer: 
+        injection_policy={gpt2_transformer:
                           module_inject.replace_policy.HFGPT2LayerPolicy}
-        model = deepspeed.init_inference(model, 
+        model = deepspeed.init_inference(model,
                                          mp_size=1,
                                          dtype=(torch.half if args.fp16 else torch.float),
                                          injection_policy=injection_policy,
@@ -293,7 +293,7 @@ def main():
         prefix = args.prefix if args.prefix else args.padding_text
         for ppt in prompt_text:
             eprompt.append(tokenizer.encode(prefix + ppt, add_special_tokens=False, return_tensors="pt"))
-    
+
     latencies = []
     for encoded_prompt, ppt in zip(eprompt, prompt_text):
         encoded_prompt = encoded_prompt.to(args.device)
@@ -302,10 +302,10 @@ def main():
             input_ids = None
         else:
             input_ids = encoded_prompt
-            
+
         torch.cuda.synchronize()
         t0 = time.time()
-        
+
         output_sequences = model.generate(
             input_ids=input_ids,
             max_length=args.length + len(encoded_prompt[0]),

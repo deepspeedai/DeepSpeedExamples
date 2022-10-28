@@ -27,6 +27,6 @@ generator.model = deepspeed.init_inference(generator.model,
                                  mp_size=world_size,
                                  dtype=torch.half,
                                  replace_with_kernel_inject=True)
-                                 
+
 string = generator("DeepSpeed is", min_length=50, max_length=50, do_sample=True, use_cache=True)
 print(string)
