@@ -2,6 +2,7 @@
 Helper classes and functions for examples
 '''
 
+import os
 import io
 from pathlib import Path
 import json
@@ -19,15 +20,19 @@ class Pipeline():
                  ):
         self.model_name = model_name
         self.dtype = dtype
+
+        # the Deepspeed team made these so it's super fast to load (~1 minute), rather than wait 10-20min loading time.
+        self.tp_presharded_models = ["microsoft/bloom-deepspeed-inference-int8", "microsoft/bloom-deepspeed-inference-fp16"]
+
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         if (is_meta):
             '''When meta tensors enabled, use checkpoints'''
             self.config = AutoConfig.from_pretrained(self.model_name)
-            self.repo_root, self.checkpoints_json = self.generate_json()
+            self.repo_root, self.checkpoints_json = self._generate_json()
 
-            with deepspeed.OnDevice(dtype=self.dtype, device="meta"):
-                self.model = AutoModelForCausalLM.from_config(self.config, torch_dtype=self.dtype)
+            with deepspeed.OnDevice(dtype=torch.float16, device="meta"):
+                self.model = AutoModelForCausalLM.from_config(self.config)
         else:
             self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
 
@@ -47,15 +52,19 @@ class Pipeline():
         return outputs
 
 
-    def generate_json(self):
+    def _generate_json(self):
         repo_root = snapshot_download(self.model_name, allow_patterns=["*"], local_files_only=False, revision=None)
 
-        checkpoints_json = "checkpoints.json"
+        if (self.model_name in self.tp_presharded_models):
+            # tp presharded repos come with their own checkpoints config file
+            checkpoints_json = os.path.join(repo_root, "ds_inference_config.json")
+        else:
+            checkpoints_json = "checkpoints.json"
 
-        with io.open(checkpoints_json, "w", encoding="utf-8") as f:
-            file_list = [str(entry) for entry in Path(repo_root).rglob("*.[bp][it][n]") if entry.is_file()]
-            data = {"type": self.config.model_type, "checkpoints": file_list, "version": 1.0}
-            json.dump(data, f)
+            with io.open(checkpoints_json, "w", encoding="utf-8") as f:
+                file_list = [str(entry) for entry in Path(repo_root).rglob("*.[bp][it][n]") if entry.is_file()]
+                data = {"type": self.config.model_type, "checkpoints": file_list, "version": 1.0}
+                json.dump(data, f)
 
         return repo_root, checkpoints_json
 
