@@ -16,10 +16,20 @@ class Pipeline():
     def __init__(self,
                  model_name='bigscience/bloom-3b',
                  dtype=torch.float16,
-                 is_meta=True
+                 is_meta=True,
+                 device=-1
                  ):
         self.model_name = model_name
         self.dtype = dtype
+
+        if isinstance(device, torch.device):
+            self.device = device
+        elif isinstance(device, str):
+            self.device = torch.device(device)
+        elif device < 0:
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device(f"cuda:{device}")
 
         # the Deepspeed team made these so it's super fast to load (~1 minute), rather than wait 10-20min loading time.
         self.tp_presharded_models = ["microsoft/bloom-deepspeed-inference-int8", "microsoft/bloom-deepspeed-inference-fp16"]
@@ -78,7 +88,9 @@ class Pipeline():
         input_tokens = self.tokenizer.batch_encode_plus(inputs, return_tensors="pt", padding=True)
         for t in input_tokens:
             if torch.is_tensor(input_tokens[t]):
-                input_tokens[t] = input_tokens[t].to(torch.cuda.current_device())
+                input_tokens[t] = input_tokens[t].to(self.device)
+
+        self.model.cuda().to(self.device)
 
         outputs = self.model.generate(**input_tokens, **generate_kwargs)
         outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
