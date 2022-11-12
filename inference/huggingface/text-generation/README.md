@@ -1,6 +1,13 @@
 
 # DeepSpeed Huggingface Text Generation Examples
 
+# Contents
+   * [Setup](#setup)
+   * [Usage](#usage)
+   * [Single-batch Example](#single-batch-example)
+   * [Multi-batch Example](#multi-batch-example)
+   * [`DSPipeline` utility class](#dspipeline-utility-class)
+
 # Setup
 Python dependencies:
 <pre>
@@ -9,12 +16,13 @@ pip install -r requirements.txt
 
 # Usage
 Examples can be run as follows:
-<pre>deepspeed --num_gpus [number of GPUs] inference_test.py --name [model name/path] --batch_size [batch] --dtype [data type] 
+<pre>deepspeed --num_gpus [number of GPUs] inference-test.py --name [model name/path] --batch_size [batch] --dtype [data type]
 </pre>
+
 # Single-batch Example
 Command:
 <pre>
-deepspeed --num_gpus 1 inference_test.py --name facebook/opt-125m
+deepspeed --num_gpus 1 inference-test.py --name facebook/opt-125m
 </pre>
 
 Output:
@@ -27,7 +35,7 @@ out=DeepSpeed is a machine learning framework based on TensorFlow. It was first 
 # Multi-batch Example
 Command:
 <pre>
-deepspeed --num_gpus 1 inference_test.py --name bigscience/bloom-3b --batch_size 2
+deepspeed --num_gpus 1 inference-test.py --name bigscience/bloom-3b --batch_size 2
 </pre>
 
 Output:
@@ -41,3 +49,15 @@ out=He is working on the new video game 'Bloodborne's' expansion pack. Check out
  to bring Blood
 ------------------------------------------------------------     
 </pre>
+
+# `DSPipeline` utility class
+The text-generation examples make use of the [`DSPipeline`](utils.py) utility class, a class that helps with loading DeepSpeed meta tensors and is meant to mimic the Hugging Face transformer pipeline.
+
+The BLOOM model is quite large and the way DeepSpeed loads checkpoints for this model is a little different than other HF models. Specifically, we use meta tensors to initialize the model before loading the weights:
+
+<pre>
+with deepspeed.OnDevice(dtype=self.dtype, device="meta"):
+</pre>
+
+This reduces the total system/GPU memory needed to load the model across multiple GPUs and makes the checkpoint loading faster.
+The DSPipeline class helps to load the model and run inference on it, given these differences.

@@ -11,8 +11,11 @@ import torch
 from huggingface_hub import snapshot_download
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
-class Pipeline():
-    '''Example helper class, meant to mimic HF pipelines'''
+class DSPipeline():
+    '''
+    Example helper class for comprehending DeepSpeed Meta Tensors, meant to mimic HF pipelines.
+    The DSPipeline can run with and without meta tensors.
+    '''
     def __init__(self,
                  model_name='bigscience/bloom-3b',
                  dtype=torch.float16,
