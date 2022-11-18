@@ -1,0 +1,156 @@
+{
+    "train_batch_size": 32,
+    "train_micro_batch_size_per_gpu": 32,
+    "steps_per_print": 200,
+    "zero_optimization": {
+      "stage": 0
+    },
+    "fp16": {
+      "enabled": false
+    },
+    "gradient_clipping": 1.0,
+    "prescale_gradients": true,
+    "wall_clock_breakdown": false,
+    "compression_training": {
+      "layer_reduction": {
+        "enabled": false,
+        "keep_number_layer": 5,
+        "module_name_prefix": "bert.encoder.layer",
+        "teacher_layer": [
+          2,
+          4,
+          6,
+          8,
+          10
+        ],
+        "other_module_name": [
+          "bert.pooler",
+          "bert.embeddings",
+          "classifier"
+        ]
+      },
+      "weight_quantization": {
+        "shared_parameters": {
+          "enabled": true,
+          "quantizer_kernel": false,
+          "schedule_offset": 0,
+          "quantize_groups": 48,
+          "quantize_verbose": false,
+          "quantization_type": "symmetric",
+          "quantize_weight_in_forward": true,
+          "rounding": "nearest",
+          "fp16_mixed_quantize": {
+            "enabled": false,
+            "quantize_change_ratio": 0.1
+          }
+        },
+        "different_groups": {
+          "wq1": {
+            "params": {
+              "start_bits": 8,
+              "target_bits": 8,
+              "quantization_period": 0
+            },
+            "modules": [
+              "attention.self",
+              "attention.output.dense"
+            ]
+          },
+          "wq2": {
+            "params": {
+              "start_bits": 4,
+              "target_bits": 4,
+              "quantization_period": 0
+            },
+            "modules": [
+              "intermediate",
+              "layer.\\w+.output.dense"
+            ]
+          }
+        }
+      },
+      "activation_quantization": {
+        "shared_parameters": {
+          "enabled": true,
+          "quantization_type": "symmetric",
+          "range_calibration": "dynamic",
+          "schedule_offset": 0
+        },
+        "different_groups": {
+          "aq1": {
+            "params": {
+              "bits": 8
+            },
+            "modules": [
+              "attention.self",
+              "attention.output.dense"
+            ]
+          }
+        }
+      },
+      "sparse_pruning": {
+        "shared_parameters": {
+          "enabled": false,
+          "schedule_offset": 2000,
+          "method": "l1"
+        },
+        "different_groups": {
+          "sp1": {
+            "params": {
+              "dense_ratio": 0.5
+            },
+            "modules": [
+              "attention.self"
+            ]
+          }
+        }
+      },
+      "row_pruning": {
+        "shared_parameters": {
+          "enabled": false,
+          "schedule_offset": 2000,
+          "method": "topk"
+        },
+        "different_groups": {
+          "rp1": {
+            "params": {
+              "dense_ratio": 0.5
+            },
+            "modules": [
+              "intermediate.dense"
+            ],
+            "related_modules": [
+              [
+                "layer.\\w+.output.dense"
+              ]
+            ]
+          }
+        }
+      },
+      "head_pruning": {
+        "shared_parameters": {
+          "enabled": false,
+          "schedule_offset": 2000,
+          "method": "topk",
+          "num_heads": 12
+        },
+        "different_groups": {
+          "rp1": {
+            "params": {
+              "dense_ratio": 0.5
+            },
+            "modules": [
+              "attention.output.dense"
+            ],
+            "related_modules": [
+              [
+                "self.query",
+                "self.key",
+                "self.value"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
