@@ -14,7 +14,7 @@ pipe.model = deepspeed.init_inference(
     pipe.model,
     mp_size=world_size,
     dtype=torch.float,
-    injection_policy={BertLayer : ('output.dense')}
+    replace_with_kernel_inject=True
 )
 
 pipe.device = torch.device(f'cuda:{local_rank}')
