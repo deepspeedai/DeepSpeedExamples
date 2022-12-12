@@ -4,7 +4,7 @@
 
 ``pip install -r requirement.txt``
 
-You will also need to install updated DeepSpeed version (>=0.7.7), which contains the random-ltd library.
+You will also need to install updated DeepSpeed version (>=0.8.0), which contains the random-ltd library.
 
 #### Key File: run_clm_no_trainer.py
 
