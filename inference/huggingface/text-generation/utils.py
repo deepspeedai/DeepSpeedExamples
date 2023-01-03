@@ -20,7 +20,8 @@ class DSPipeline():
                  model_name='bigscience/bloom-3b',
                  dtype=torch.float16,
                  is_meta=True,
-                 device=-1
+                 device=-1,
+                 checkpoint_path=None
                  ):
         self.model_name = model_name
         self.dtype = dtype
@@ -43,7 +44,7 @@ class DSPipeline():
         if (is_meta):
             '''When meta tensors enabled, use checkpoints'''
             self.config = AutoConfig.from_pretrained(self.model_name)
-            self.repo_root, self.checkpoints_json = self._generate_json()
+            self.repo_root, self.checkpoints_json = self._generate_json(checkpoint_path)
 
             with deepspeed.OnDevice(dtype=torch.float16, device="meta"):
                 self.model = AutoModelForCausalLM.from_config(self.config)
@@ -66,18 +67,27 @@ class DSPipeline():
         return outputs
 
 
-    def _generate_json(self):
-        repo_root = snapshot_download(self.model_name, allow_patterns=["*"], local_files_only=False, revision=None)
-
-        if (self.model_name in self.tp_presharded_models):
+    def _generate_json(self, checkpoint_path=None):
+        if checkpoint_path is None:
+            repo_root = snapshot_download(self.model_name,
+                                      allow_patterns=["*"],
+                                      cache_dir=os.getenv("TRANSFORMERS_CACHE", None),
+                                      ignore_patterns=["*.safetensors"],
+                                      local_files_only=False,
+                                      revision=None)
+        else:
+            repo_root = checkpoint_path
+        if os.path.exists(os.path.join(repo_root, "ds_inference_config.json")):
+            checkpoints_json = os.path.join(repo_root, "ds_inference_config.json")
+        elif (self.model_name in self.tp_presharded_models):
             # tp presharded repos come with their own checkpoints config file
             checkpoints_json = os.path.join(repo_root, "ds_inference_config.json")
         else:
             checkpoints_json = "checkpoints.json"
 
             with io.open(checkpoints_json, "w", encoding="utf-8") as f:
-                file_list = [str(entry) for entry in Path(repo_root).rglob("*.[bp][it][n]") if entry.is_file()]
-                data = {"type": self.config.model_type, "checkpoints": file_list, "version": 1.0}
+                file_list = [str(entry).split('/')[-1] for entry in Path(repo_root).rglob("*.[bp][it][n]") if entry.is_file()]
+                data = {"type": "BLOOM", "checkpoints": file_list, "version": 1.0}
                 json.dump(data, f)
 
         return repo_root, checkpoints_json
