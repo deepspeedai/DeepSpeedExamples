@@ -17,13 +17,36 @@ parser.add_argument("--batch_size", default=1, type=int, help="batch size")
 parser.add_argument("--dtype", default="float16", type=str, choices=["float32", "float16", "int8"], help="data-type")
 parser.add_argument("--ds_inference", action='store_true', help="enable ds-inference")
 parser.add_argument("--use_kernel", action='store_true', help="enable kernel-injection")
+parser.add_argument("--replace_method", required=False, default='', type=str, help="replace method['', 'auto']")
 parser.add_argument("--max_tokens", default=1024, type=int, help="maximum tokens used for the text-generation KV-cache")
 parser.add_argument("--max_new_tokens", default=50, type=int, help="maximum new tokens to generate")
 parser.add_argument("--greedy", action='store_true', help="greedy generation mode")
 parser.add_argument("--use_meta_tensor", action='store_true', help="use the meta tensors to initialize model")
 parser.add_argument("--use_cache", default=True, type=bool, help="use cache for generation")
+parser.add_argument("--test_performance", action='store_true', help="enable latency, bandwidth, and throughout testing")
 parser.add_argument("--local_rank", type=int, default=0, help="local rank")
 args = parser.parse_args()
+
+def print_perf_stats(latency_set, config, warmup=3):
+    # trim warmup queries
+    latency_set = list(latency_set)
+    latency_set = latency_set[warmup:]
+    count = len(latency_set)
+
+    if count > 0:
+        latency_set.sort()
+        avg = sum(latency_set) / count
+        num_layers = getattr(config, "num_layers", config.num_hidden_layers)
+        num_parameters = num_layers * config.hidden_size * config.hidden_size * 12
+        if args.dtype == "float16":
+            num_bytes = 2
+        elif args.dtype == "float32":
+            num_bytes = 4
+        else:
+            num_bytes = 1
+        print("Avg Per Token Latency: {0:8.2f} ms".format(avg * 1000))
+        print("Avg BW: {0:8.2f} GB/s".format(1/avg * num_parameters * num_bytes / 1e9))
+        print("Avg flops: {0:8.2f} TFlops/s".format(1/avg * num_parameters * num_bytes * args.batch_size / 1e12))
 
 world_size = int(os.getenv('WORLD_SIZE', '1'))
 local_rank = int(os.getenv('LOCAL_RANK', '0'))
@@ -52,7 +75,7 @@ if args.ds_inference:
                                     dtype=data_type,
                                     mp_size=world_size,
                                     replace_with_kernel_inject=args.use_kernel,
-                                    replace_method='auto',
+                                    replace_method=args.replace_method,
                                     max_tokens=args.max_tokens,
                                     save_mp_checkpoint_path=args.save_mp_checkpoint_path,
                                     **ds_kwargs
@@ -78,23 +101,22 @@ if args.batch_size > len(input_sentences):
 
 inputs = input_sentences[:args.batch_size]
 
-# warmup
-outputs = pipe(inputs,
-              num_tokens=args.max_new_tokens,
-              do_sample=(not args.greedy))
-
-torch.cuda.synchronize()
-start = time.time()
-
-outputs = pipe(inputs,
-              num_tokens=args.max_new_tokens,
-              do_sample=(not args.greedy))
-
-torch.cuda.synchronize()
-end = time.time()
-print(f'generation time is {end-start} sec')
+iters = 30 if args.test_performance else 2 #warmup
+times = []
+for i in range(iters):
+    torch.cuda.synchronize()
+    start = time.time()
+    outputs = pipe(inputs,
+            num_tokens=args.max_new_tokens,
+            do_sample=(not args.greedy))
+    torch.cuda.synchronize()
+    end = time.time()
+    times.append(end - start)
+print(f"generation time is {times[1]} sec")
 
 if args.local_rank == 0:
     for i, o in zip(inputs, outputs):
         print(f"\nin={i}\nout={o}\n{'-'*60}")
+    if args.test_performance:
+        print_perf_stats(map(lambda t: t / args.max_new_tokens, times), pipe.model.config)
 
