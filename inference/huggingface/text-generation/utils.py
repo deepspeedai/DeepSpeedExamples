@@ -76,7 +76,9 @@ class DSPipeline():
                                       local_files_only=False,
                                       revision=None)
         else:
+            assert os.path.exists(checkpoint_path), f"Checkpoint path {checkpoint_path} does not exist"
             repo_root = checkpoint_path
+
         if os.path.exists(os.path.join(repo_root, "ds_inference_config.json")):
             checkpoints_json = os.path.join(repo_root, "ds_inference_config.json")
         elif (self.model_name in self.tp_presharded_models):
