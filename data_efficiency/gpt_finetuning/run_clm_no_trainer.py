@@ -18,7 +18,7 @@ Fine-tuning the library models for causal language modeling (GPT, GPT-2, CTRL, .
 on a text file or a dataset without using HuggingFace Trainer.
 
 Here is the full list of checkpoints on the hub that can be fine-tuned by this script:
-https://huggingface.co/models?filter=causal-lm
+https://huggingface.co/models?filter=text-generation
 """
 # You can also adapt this script on your own causal language modeling task. Pointers for this are left as comments.
 
@@ -27,6 +27,7 @@ import logging
 import math
 import os
 import random
+import time
 from pathlib import Path
 from re import L
 
@@ -58,6 +59,7 @@ import deepspeed
 from deepspeed.runtime.data_pipeline.data_routing.helper import convert_to_random_ltd, save_without_random_ltd
 
 import numpy as np
+from learning_rates import AnnealingLR
 
 
 logger = logging.getLogger(__name__)
@@ -98,12 +100,6 @@ def parse_args():
         type=str,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
         required=True,
-    )
-    parser.add_argument(
-        "--path-to-model",
-        type=str,
-        help="Path to fine-tuned model or model identifier from huggingface.co/models.",
-        default=None,
     )
     parser.add_argument(
         "--config_name",
@@ -164,7 +160,16 @@ def parse_args():
     parser.add_argument(
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
     )
-    parser.add_argument("--output_dir", type=str, default=None, help="Where to store the model.")
+    parser.add_argument(
+        "--warmup_ratio", type=float, default=None, help="lr schedule warmup ratio."
+    )
+    parser.add_argument(
+        "--decay_style", type=str, default=None, help="lr schedule decay style."
+    )
+    parser.add_argument(
+        "--token_based_lr_decay", action="store_true", help="Use token-based LR decay"
+    )
+    parser.add_argument("--output_dir", type=str, default=None, help="Where to store the final model.")
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
     parser.add_argument(
         "--model_type",
@@ -177,10 +182,12 @@ def parse_args():
         "--block_size",
         type=int,
         default=None,
-        help="Optional input sequence length after tokenization. The training dataset will be truncated in block of this size for training. Default to the model max input length for single sentence inputs (take into account special tokens).",
+        help=(
+            "Optional input sequence length after tokenization. The training dataset will be truncated in block of"
+            " this size for training. Default to the model max input length for single sentence inputs (take into"
+            " account special tokens)."
+        ),
     )
-    
-
     parser.add_argument(
         "--preprocessing_num_workers",
         type=int,
@@ -188,7 +195,7 @@ def parse_args():
         help="The number of processes to use for the preprocessing.",
     )
     parser.add_argument(
-        "--overwrite_cache", type=bool, default=False, help="Overwrite the cached training and evaluation sets"
+        "--overwrite_cache", action="store_true", help="Overwrite the cached training and evaluation sets"
     )
     parser.add_argument(
         "--no_keep_linebreaks", action="store_true", help="Do not keep line breaks when using TXT files."
@@ -196,6 +203,8 @@ def parse_args():
     parser.add_argument("--not_tie_wre", action="store_true", help="tie the last layer and embedding or not."
     )
     parser.add_argument("--random_ltd", action="store_true", help="enable random-ltd or not."
+    )
+    parser.add_argument("--curriculum_learning", action="store_true", help="enable curriculum learning or not."
     )
     parser.add_argument("--eval_step", type=int, default=10, help="eval step."
     )
@@ -231,9 +240,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    # Initialize the accelerator. We will let the accelerator handle device placement for us in this example.
-
     # Make one log on every process with the configuration for debugging.
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -308,7 +314,6 @@ def main():
     else:
         config = CONFIG_MAPPING[args.model_type]()
         logger.warning("You are instantiating a new config instance from scratch.")
-    #print (config)
     if args.not_tie_wre:
         config.tie_word_embeddings=False    
 
@@ -343,13 +348,13 @@ def main():
         return tokenizer(examples[text_column_name])
 
     tokenized_datasets = raw_datasets.map(
-            tokenize_function,
-            batched=True,
-            num_proc=args.preprocessing_num_workers,
-            remove_columns=column_names,
-            load_from_cache_file=not args.overwrite_cache,
-            desc="Running tokenizer on dataset",
-        )
+        tokenize_function,
+        batched=True,
+        num_proc=args.preprocessing_num_workers,
+        remove_columns=column_names,
+        load_from_cache_file=not args.overwrite_cache,
+        desc="Running tokenizer on dataset",
+    )
 
     if args.block_size is None:
         block_size = tokenizer.model_max_length
@@ -366,6 +371,7 @@ def main():
                 f"({tokenizer.model_max_length}). Using block_size={tokenizer.model_max_length}."
             )
         block_size = min(args.block_size, tokenizer.model_max_length)
+    args.block_size = block_size
 
     # Main data processing function that will concatenate all texts from our dataset and generate chunks of block_size.
     def group_texts(examples):
@@ -385,22 +391,15 @@ def main():
         return result
 
     lm_datasets = tokenized_datasets.map(
-            group_texts,
-            batched=True,
-            num_proc=args.preprocessing_num_workers,
-            load_from_cache_file=not args.overwrite_cache,
-            desc=f"Grouping texts in chunks of {block_size}",
-        )
+        group_texts,
+        batched=True,
+        num_proc=args.preprocessing_num_workers,
+        load_from_cache_file=not args.overwrite_cache,
+        desc=f"Grouping texts in chunks of {block_size}",
+    )
 
     train_dataset = lm_datasets["train"]
     eval_dataset = lm_datasets["validation"]
-
-    # train_dataset = torch.load(f'{args.data_folder}/train_dataset.pt') #lm_datasets["train"]
-    # eval_dataset = torch.load(f'{args.data_folder}/eval_dataset.pt') #lm_datasets["validation"]
-
-    # Log a few random samples from the training set:
-    # for index in random.sample(range(len(train_dataset)), 3):
-    #     print_rank_0(f"Sample {index} of the training set: {train_dataset[index]}.")
 
     # DataLoaders creation:
     if args.local_rank == -1:
@@ -432,6 +431,7 @@ def main():
     print_rank_0(f"  Instantaneous batch size per device = {args.per_device_train_batch_size}")
     print_rank_0(f"  Gradient Accumulation steps = {args.gradient_accumulation_steps}")
     print_rank_0(f"  Total optimization steps = {args.max_train_steps}")
+    print_rank_0(f"  Block size (seqlen) = {args.block_size}")
 
 
     num_p = sum([p.numel() for p in model.parameters()])
@@ -464,10 +464,39 @@ def main():
             perplexity = float("inf")
         return perplexity
 
+    def data_post_process(data, data_sampler_state_dict):
+        print(data)
+        if 'seqlen_truncate' in data_sampler_state_dict['current_difficulties']:
+            args.data_efficiency_curriculum_learning_seqlen_type = 'seqlen_truncate'
+            current_seqlen = data_sampler_state_dict['current_difficulties']['seqlen_truncate']
+            if current_seqlen < args.block_size:
+                data['attention_mask'] = data['attention_mask'][:, :current_seqlen].contiguous()
+                data['input_ids'] = data['input_ids'][:, :current_seqlen].contiguous()
+                data['labels'] = data['labels'][:, :current_seqlen].contiguous()
+        elif 'seqlen_reshape' in data_sampler_state_dict['current_difficulties']:
+            args.data_efficiency_curriculum_learning_seqlen_type = 'seqlen_reshape'
+            current_seqlen = data_sampler_state_dict['current_difficulties']['seqlen_reshape']
+            if current_seqlen < args.block_size:
+                orig_num_token = torch.numel(data['input_ids'])
+                reshape_len = (data['input_ids'].size()[1] // current_seqlen) * current_seqlen
+                data['input_ids'] = torch.cat((data['input_ids'][:, :reshape_len].contiguous().view(-1, current_seqlen),
+                    data['input_ids'][:, -(current_seqlen):]), 0).contiguous()
+                data['attention_mask'] = torch.cat((data['attention_mask'][:, :reshape_len].contiguous().view(-1, current_seqlen),
+                    data['attention_mask'][:, -(current_seqlen):]), 0).contiguous()
+                data['labels'] = torch.cat((data['labels'][:, :reshape_len].contiguous().view(-1, current_seqlen),
+                    data['labels'][:, -(current_seqlen):]), 0).contiguous()
+                num_row = math.ceil(orig_num_token / current_seqlen)
+                num_row = min(num_row, data['input_ids'].size()[0])
+                data['input_ids'] = data['input_ids'][:num_row, :].contiguous()
+                data['attention_mask'] = data['attention_mask'][:num_row, :].contiguous()
+                data['labels'] = data['labels'][:num_row, :].contiguous()
+        else:
+            args.data_efficiency_curriculum_learning_seqlen_type = None
+        return data
 
-    def training(model, train_dataloader, eval_dataloader, num_train_epochs, args):
+    def training(model, train_dataloader, train_dataset, eval_dataloader, num_train_epochs, args):
+        start = time.time()
         # Optimizer
-        previous_best = None
         # Split weights in two groups, one with weight decay and the other not.
         no_decay = ["bias", "LayerNorm.weight"]
         optimizer_grouped_parameters = [
@@ -480,57 +509,120 @@ def main():
                 "weight_decay": 0.0,
             },
         ]
-        optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)    
+        optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
+
+        world_size = torch.distributed.get_world_size()
+        if args.warmup_ratio is not None:
+            args.num_warmup_steps = int(args.max_train_steps*args.warmup_ratio)
+        print_rank_0 (f"world_size {world_size} num_warmup_steps {args.num_warmup_steps}")
+        total_tokens = args.max_train_steps*args.per_device_train_batch_size*args.gradient_accumulation_steps*args.block_size*world_size
         
-        lr_scheduler = get_scheduler(
+        if args.token_based_lr_decay:
+            lr_scheduler = AnnealingLR(
+                optimizer,
+                max_lr=args.learning_rate,
+                min_lr=0,
+                warmup_steps=args.num_warmup_steps,
+                decay_tokens=total_tokens,
+                decay_style=args.decay_style)
+        else:
+            lr_scheduler = get_scheduler(
                 name=args.lr_scheduler_type,
                 optimizer=optimizer,
                 num_warmup_steps=args.num_warmup_steps,
                 num_training_steps=args.max_train_steps,
             )
-        print ("what is this lr_scheduler")
         
-        model, optimizer, _, lr_scheduler = deepspeed.initialize(
-            model=model,
-            optimizer=optimizer,
-            args=args,
-            lr_scheduler=lr_scheduler,
-            dist_init_required=True)
+        if args.curriculum_learning:
+            model, optimizer, train_dataloader, lr_scheduler = deepspeed.initialize(
+                model=model,
+                optimizer=optimizer,
+                args=args,
+                lr_scheduler=lr_scheduler,
+                training_data=train_dataset,
+                collate_fn=default_data_collator,
+                dist_init_required=True)
+            model.set_data_post_process_func(data_post_process)
+        else:
+            model, optimizer, _, lr_scheduler = deepspeed.initialize(
+                model=model,
+                optimizer=optimizer,
+                args=args,
+                lr_scheduler=lr_scheduler,
+                dist_init_required=True)
         if args.random_ltd:
-            model = convert_to_random_ltd(model, GPT2Block) 
+            model = convert_to_random_ltd(model, GPT2Block)
+            random_ltd_layer_num = model.random_ltd_scheduler.get_random_ltd_layer_num()
+            total_layer_num = model.random_ltd_scheduler.model_layer_num
            
-        
-        # Only show the progress bar once on each machine.
+        epoch = 0
         global_step = 0
-        for epoch in range(num_train_epochs):
+        micro_step = 0
+        current_best = float("inf")
+        consumed_token = 0
+        args.eval_step = max(1, args.max_train_steps // 100)
+        while consumed_token < total_tokens:
+        # for epoch in range(num_train_epochs):
             if epoch == 0:
                 perplexity = evaluation(model, eval_dataloader)
-                print_rank_0 (f"*************************initialization with {perplexity}***********************************")            
+                current_best = min(current_best, perplexity)
+                print_rank_0 (f"*************************initialization with perplexity {perplexity}***********************************")            
             model.train()
             for step, batch in enumerate(train_dataloader):
                 model.train()
+                if args.curriculum_learning:
+                    curriculum_seqlen = batch['input_ids'].size()[1]
+                    if hasattr(args, 'data_efficiency_curriculum_learning_seqlen_type') and \
+                        args.data_efficiency_curriculum_learning_seqlen_type == 'seqlen_reshape':
+                        args.data_efficiency_curriculum_learning_numel = torch.numel(batch['input_ids'])
                 batch = to_device(batch)                
                 outputs = model(**batch)
                 loss = outputs.loss
-                # loss = loss / args.gradient_accumulation_steps
+                # loss = loss / args.gradient_accumulation_steps # DeepSpeed engine will handle this loss scaling (_scale_loss_by_gas), thus no need to do so on user side
                 model.backward(loss)
-                model.step()
-                perplexity = evaluation(model, eval_dataloader)
-                
-                # Evaluate perplexity on the validation set.
-                if global_step%args.eval_step==0 or step == len(train_dataloader)-1:
-                    print_rank_0(f"***** Evaluating perplexity, Epoch {epoch+1}/{num_train_epochs} *****")
-                    perplexity = evaluation(model, eval_dataloader)
-                    if args.random_ltd:
-                        consumed_tokens = model.random_ltd_scheduler.state["consumed_layer_tokens"]
-                        reserved_length = model.random_ltd_scheduler.get_current_seq()
-                        print_rank_0(f"'step':{global_step}, 'ppl': {perplexity}, 'seq_len': {reserved_length}, 'consume layer-tokens': {consumed_tokens}")
+
+                actual_seq_length = args.block_size
+                if args.curriculum_learning:
+                    actual_seq_length = curriculum_seqlen
+                if args.random_ltd:
+                    reserved_length = model.random_ltd_scheduler.get_current_seq()
+                    if reserved_length < actual_seq_length:
+                        actual_seq_length = (actual_seq_length * (total_layer_num - random_ltd_layer_num) + reserved_length * random_ltd_layer_num) // total_layer_num
+                if args.curriculum_learning:
+                    if hasattr(args, 'data_efficiency_curriculum_learning_numel'):
+                        act_mbsz = args.data_efficiency_curriculum_learning_numel / curriculum_seqlen
+                        act_token = act_mbsz * actual_seq_length
+                        consumed_token += act_token * world_size
                     else:
-                        print_rank_0(f"'step': {global_step}, 'ppl': {perplexity}")
-                global_step += 1
-        print_rank_0(f"***** Evaluating perplexity, Epoch {args.num_train_epochs}/{num_train_epochs} *****")
-        perplexity = evaluation(model, eval_dataloader)
-        print_rank_0(f"Before cleaning, Epoch at {args.num_train_epochs} with Perplexity: {perplexity}")
+                        consumed_token += actual_seq_length * args.per_device_train_batch_size * world_size
+                else:
+                    consumed_token += actual_seq_length * args.per_device_train_batch_size * world_size
+
+                if args.token_based_lr_decay:
+                    model.step(lr_kwargs={'increment': 1, 'consumed_tokens': consumed_token})
+                else:
+                    model.step()
+                micro_step += 1
+                if micro_step % args.gradient_accumulation_steps == 0:
+                    global_step += 1
+                    # Evaluate perplexity on the validation set.
+                    if global_step%args.eval_step==0 or step == len(train_dataloader)-1:
+                        perplexity = evaluation(model, eval_dataloader)
+                        current_best = min(current_best, perplexity)
+                        log_text = f"At epoch {epoch+1} step {global_step} consumed_token {consumed_token} perplexity {perplexity} current best {current_best}"
+                        if args.random_ltd:
+                            log_text = f"{log_text} random-ltd reserved_length {reserved_length}"
+                        print_rank_0(log_text)
+                if consumed_token >= total_tokens:
+                    break
+            perplexity = evaluation(model, eval_dataloader)
+            current_best = min(current_best, perplexity)
+            print_rank_0(f"End of epoch {epoch+1} step {global_step} consumed_token {consumed_token} perplexity {perplexity} current best {current_best}")
+            if consumed_token >= total_tokens:
+                break
+            epoch += 1
+        duration = (time.time() - start) / 3600.0
+        print_rank_0(f"End of training epoch {epoch+1} step {global_step} consumed_token {consumed_token} best perplexity {current_best} time {duration} hr")
         if args.output_dir is not None:
             print_rank_0('saving model ...')
             if not os.path.isdir(args.output_dir):
@@ -548,8 +640,7 @@ def main():
                 tokenizer.save_vocabulary(args.output_dir)
 
 
-    
-    training(model, train_dataloader, eval_dataloader, args.num_train_epochs, args)
+    training(model, train_dataloader, train_dataset, eval_dataloader, args.num_train_epochs, args)
     
 if __name__ == "__main__":
     main()
