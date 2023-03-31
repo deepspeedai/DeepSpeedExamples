@@ -11,6 +11,8 @@ pip install -r requirements.txt
 Examples can be run as follows:
 <pre>deepspeed --num_gpus [number of GPUs] test-[model].py</pre>
 
+NOTE: Local CUDA graphs for replaced SD modules will only be enabled when `mp_size==1`.
+
 # Example Output
 Command:
 <pre>
