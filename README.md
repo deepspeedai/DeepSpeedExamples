@@ -1,15 +1,17 @@
-
 # DeepSpeed Examples
-This repository contains various example models that use [DeepSpeed](https://github.com/microsoft/DeepSpeed) for training and inference.
+This repository contains various examples including training, inference, compression, benchmarks, and applications that use [DeepSpeed](https://github.com/microsoft/DeepSpeed).
 
-# Inference Examples
+## 1. Training
+There are several training and finetuning examples so please see the individual folders for specific instructions.
+
+## 2. Inference
 The DeepSpeed Huggingface inference [README](./inference/huggingface/README.md) explains how to get started with running DeepSpeed Huggingface inference examples.
 
-# Training Examples
-There are several trianing examples in this repository. Please see the individual folders. 
+## 3. Compression
+Model compression examples.
 
-## Note on Megatron examples
-Please use the latest [Megatron-DeepSpeed fork](https://github.com/microsoft/Megatron-DeepSpeed) instead of the deprecated/old megatron forks in the megatron folder.
+## 4. Benchmarks
+TODO: Move the DeepSpeed benchmarks folder here.
 
 # Contributing
 
