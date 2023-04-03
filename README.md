@@ -11,7 +11,8 @@ The DeepSpeed Huggingface inference [README](./inference/huggingface/README.md) 
 Model compression examples.
 
 ## 4. Benchmarks
-TODO: Move the DeepSpeed benchmarks folder here.
+All benchmarks that use the DeepSpeed library are maintained in this folder.
+
 
 # Contributing
 
