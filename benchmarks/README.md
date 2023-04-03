@@ -1,1 +1,1 @@
-The new home for DeepSpeed benchmarks. TODO: Move DS benchmarks to this repo. 
+All benchmarks that use the DeepSpeed library are maintained in this folder. We welcome contributions in this space! 
