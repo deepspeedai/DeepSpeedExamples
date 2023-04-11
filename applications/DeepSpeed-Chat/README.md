@@ -347,7 +347,7 @@ Figure 4. Superior generation phase acceleration from DeepSpeed Chat’s Hybrid 
 
 </p>
 
-For other detailed results and in-depth analysis, including effective throughput and scalability of DeepSpeed-Chat, please refer to our [Blog Post(url).
+For other detailed results and in-depth analysis, including effective throughput and scalability of DeepSpeed-Chat, please refer to our [Blog Post](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat).
 
 ## 😽 Supported Models 😽
 
