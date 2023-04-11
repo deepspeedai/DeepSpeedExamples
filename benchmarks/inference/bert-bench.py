@@ -70,7 +70,7 @@ br = pipe(f"Hello I'm a {mask} model")
 if args.deepspeed:
     pipe.model = deepspeed.init_inference(pipe.model,
                                           dtype=dtype,
-                                          mp_size=1,
+                                          tensor_parallel={"tp_size": 1},
                                           replace_with_kernel_inject=args.kernel_inject,
                                           enable_cuda_graph=args.graphs)
     pipe.model.profile_model_time()
@@ -90,6 +90,7 @@ for i in range(args.trials):
         mtimes += pipe.model.model_times()
 
 print_latency(times, "e2e latency")
-print_latency(mtimes, "model latency")
+if args.deepspeed:
+    print_latency(mtimes, "model latency")
 
 print(responses[0:3])

@@ -79,7 +79,7 @@ if args.deepspeed:
     pipe.model = deepspeed.init_inference(
         pipe.model,
         dtype=dtype,
-        mp_size=args.world_size,
+        tensor_parallel={"tp_size": args.world_size},
         replace_with_kernel_inject=args.kernel_inject,
         enable_cuda_graph=args.graphs,
     )
@@ -101,7 +101,8 @@ for i in range(args.trials):
 
 if args.local_rank == 0:
     print_latency(times, "(e2e) latency")
-    print_latency(mtimes, "(model-only) latency")
+    if args.deepspeed:
+        print_latency(mtimes, "(model-only) latency")
     print_latency(map(lambda t: t / (args.max_tokens - 3), times), "(e2e) per token latency")
     print(f"RESPONSE 0:")
     print("-" * 30)
