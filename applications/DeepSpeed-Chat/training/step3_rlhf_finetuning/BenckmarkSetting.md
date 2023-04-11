@@ -1,8 +1,8 @@
-# 🚩Benchmark setting used in [Blog](https://www.deepspeed.ai/2023/04/10/deepspeed-chat.html) and [Landing Page](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat/README.md)
+# 🚩Benchmark setting used in [Blog](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat) and [Landing Page](../../README.md)
 
-As stated in [Blog](https://www.deepspeed.ai/2023/04/10/deepspeed-chat.html),
+As stated in [Blog](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat),
 
-> ***Very Important Details***: The numbers in both Table 1 and 2 of the blog are for Step 3 of the training and based on actual measured training throughput on DeepSpeed-RLHF curated dataset and training recipe which trains for one epoch on a total of 135M tokens. We have in total 67.5M query tokens (131.9k queries with sequence length 256) and 67.5M generated tokens (131.9k answers with sequence length 256), and a maximum global batch size per step of 0.5M tokens (1024 query-answer pairs).  We urge readers to pay attention to these specifications before making any cost and e2e time comparisons with DeepSpeed-RLHF. See our [benchmark settings](https://github.com/microsoft/DeepSpeedExamples-internal/blob/staging-deepspeed-chat-v2/applications/DeepSpeed-Chat/training/step3_rlhf_finetuning/BenckmarkSetting.md) page for more details.
+> ***Very Important Details***: The numbers in both Table 1 and 2 of the blog are for Step 3 of the training and based on actual measured training throughput on DeepSpeed-RLHF curated dataset and training recipe which trains for one epoch on a total of 135M tokens. We have in total 67.5M query tokens (131.9k queries with sequence length 256) and 67.5M generated tokens (131.9k answers with sequence length 256), and a maximum global batch size per step of 0.5M tokens (1024 query-answer pairs).  We urge readers to pay attention to these specifications before making any cost and e2e time comparisons with DeepSpeed-RLHF. See our [benchmark settings](./BenckmarkSetting.md) page for more details.
 
 an apple-to-apple comparison is critical for the machine learning community, particularly for benchmarking. Therefore, we here elaborate more on details.
 
