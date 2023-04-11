@@ -39,7 +39,7 @@ step_dirs = {
     2: "training/step2_reward_model_finetuning",
     3: "training/step3_rlhf_finetuning",
 }
-model_type = {1: "actor", 2: "reward"}
+model_type = {1: "actor", 2: "reward", 3: "step3"}
 default_zero_stage = {
     "single_node": {
         "1.3b": 2,
@@ -123,6 +123,8 @@ def parse_args():
 
 
 def get_model_size(args, step_num):
+    if step_num == 3:
+        return get_model_size(args, 1)
     return getattr(args, f"{model_type[step_num]}_model")
 
 
@@ -177,7 +179,7 @@ def get_cmd(args, step_num):
         verify_model(args, 2)  # Verify step 2 model exists
         s1_dir, s1_zs = get_output_dir(args, 1), get_zero_stage(args, 1)
         s2_dir, s2_zs = get_output_dir(args, 2), get_zero_stage(args, 2)
-        cmd = f"bash {script} {s1_dir} {s2_dir} {s1_zs} {s2_zs} {output_dir}"
+        cmd = f"bash {script} {s1_dir} {s2_dir} '{s1_zs}' '{s2_zs}' {output_dir}"
 
     return cmd
 
