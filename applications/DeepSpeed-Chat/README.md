@@ -56,8 +56,7 @@ A fast, affordable, scalable and open system framework for enabling end-to-end R
 
 ## 📰 Latest News 📰
 
--[April 11th, 2023] Release of DeepSpeed-Chat, try it today! Check out our [blog for more details](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat).
-
+* ***[2023/04] 🚀 [DeepSpeed Chat: Easy, Fast and Affordable RLHF Training of ChatGPT-like Models at All Scales](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat)*** 🚀
 
 ## 🚀 What is DeepSpeed Chat 🚀
 
