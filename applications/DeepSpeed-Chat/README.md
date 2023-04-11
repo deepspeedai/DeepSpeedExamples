@@ -90,7 +90,7 @@ A summary of DeepSpeed Chat includes:
 + **Easy-breezy Training Experience**: A single script capable of taking a pre-trained Huggingface model and running it though all three steps of the RLHF training.  
 + **A Universal System Support for Today’s ChatGPT-like Model Training**: DeepSpeed Chat can serve as the system backend for not only the 3-step instruct-base RLHF pipeline, but also the current single model finetuning exploration (e.g., LLaMA-centric finetuning) and generic RLHF training for various models and scenarios.
 
-Please check out our [Blog Release]([url](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat)) and [Documentation and Tutorial](#-documentation-and-tutorial-) for more details on our training methodology and new system technologies.
+Please check out our [Blog Release](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat) and [Documentation and Tutorial](#-documentation-and-tutorial-) for more details on our training methodology and new system technologies.
 
 
 ## ☕ Quick Start ☕
@@ -174,7 +174,7 @@ Want to try different model sizes and configurations? You got it! With DeepSpeed
 
 The train.py script has an easy-to-use command-line interface and can be launched with several arguments including model type, model size, and number of GPUs to run. Considering users who would like to use DeepSpeed-Chat to only fine-tune their pretrained models in Step 1 or 2, or just use their own actor and reward model checkpoints directly to perform Step 3 in our RLHF pipeline, DeepSpeed-Chat provides greater configurability and flexibility to accommodate individual step fine-tuning:
 
-#### 🕐 Step 1 - [Supervised Fine-Tuning](https://github.com/microsoft/DeepSpeedExamples-internal/tree/Leon/chatgpt/ChatGPT_RLHF_Example/step1_supervised_finetuning)
+#### 🕐 Step 1 - [Supervised Fine-Tuning](./training/step1_supervised_finetuning)
 
 <details><summary> Expand </summary><p>
 
@@ -191,7 +191,7 @@ bash evaluation_scripts/run_prompt.sh
 
 </p></details>
 
-#### 🕑 Step 2 - [Reward Model](url)
+#### 🕑 Step 2 - [Reward Model](./training/step2_reward_model_finetuning)
 
 <details><summary> Expand </summary><p>
 
@@ -208,7 +208,7 @@ bash evaluation_scripts/run_eval.sh
 
 </p></details>
 
-#### 🕒 Step 3 - [Reinforcement Learning with Human Feedback](url)
+#### 🕒 Step 3 - [Reinforcement Learning with Human Feedback](./training/step3_rlhf_finetuning)
 
 <p align="center">
 
@@ -219,7 +219,7 @@ Figure 1: The illustration of DeepSpeed Chat’s RLHF training pipeline with opt
 
 </p>
 
-As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Chat's ***Hyrbid Engine*** has enabled sufficient acceleration to aovid large training time (cost) implications. Refer to [Step3: Reinforcement Learning Human Feedback (RLHF)](./step3_rlhf_finetuning/README.md) for more information. If you already have your fine-tuned actor and reward model checkpoints, you can simply run the following scripts to enable the PPO training.
+As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Chat's ***Hyrbid Engine*** has enabled sufficient acceleration to aovid large training time (cost) implications. Refer to [Step3: Reinforcement Learning Human Feedback (RLHF)](./training/step3_rlhf_finetuning) for more information. If you already have your fine-tuned actor and reward model checkpoints, you can simply run the following scripts to enable the PPO training.
 
 <details><summary> Expand </summary><p>
 
@@ -347,7 +347,7 @@ Figure 4. Superior generation phase acceleration from DeepSpeed Chat’s Hybrid 
 
 </p>
 
-For other detailed results and in-depth analysis, including effective throughput and scalability of DeepSpeed-Chat, please refer to our [Blog Post](url).
+For other detailed results and in-depth analysis, including effective throughput and scalability of DeepSpeed-Chat, please refer to our [Blog Post(url).
 
 ## 😽 Supported Models 😽
 
