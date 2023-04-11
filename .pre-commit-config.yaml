@@ -1,0 +1,35 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v1.2.3
+    hooks:
+    -   id: trailing-whitespace
+        exclude: "Megatron-LM/"
+        files: ^applications/DeepSpeed-Chat/.+
+    -   id: check-yaml
+        exclude: "Megatron-LM/"
+        files: ^applications/DeepSpeed-Chat/.+
+    -   id: end-of-file-fixer
+        exclude: "Megatron-LM/"
+        files: ^applications/DeepSpeed-Chat/.+
+
+
+-   repo: https://github.com/google/yapf
+    rev: v0.32.0
+    hooks:
+    -   id: yapf
+        files: ^applications/DeepSpeed-Chat/.+
+
+-   repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+    -   id: flake8
+        args: ['--ignore=E,F403,F405,F541,F841,W', '--select=E9,F,W6', '--per-file-ignores=__init__.py:F401']
+        files: ^applications/DeepSpeed-Chat/.+
+
+-   repo: local
+    hooks:
+    -   id: check-license
+        name: check-license
+        entry: ./scripts/check-license.py
+        language: script
+        files: ^applications/DeepSpeed-Chat/.+\.(py|c|cpp|cu|cc|h|hpp|cuh|hip|tr|sh)$

@@ -1,0 +1,32 @@
+name: Formatting
+
+on:
+  push:
+    branches:
+      - 'staging**'
+  pull_request:
+    branches:
+      '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # formatting and basic install on cpu-only machine
+  formatting:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: environment
+        run: |
+          which python
+          python --version
+          pip install pre-commit>=2.20.0
+
+      - name: Formatting checks
+        run: |
+           pre-commit run --all-files

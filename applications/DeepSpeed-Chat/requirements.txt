@@ -1,0 +1,7 @@
+datasets==2.11.0
+sentencepiece==0.1.97
+protobuf==4.22.1
+accelerate==0.18.0
+torch==1.12.1
+git+https://github.com/microsoft/deepspeed.git
+git+https://github.com/huggingface/transformers
