@@ -116,7 +116,7 @@ pip install -r requirements.txt
 If you only have around **1-2 hour** for coffee or lunch break, you can also try to train a small/toy model with DeepSpeed-Chat. For example, we prepared a training example for a **1.3B** model with a single dataset to test our framework on your consumer-grade GPUs. The best part is that you will have your model checkpoint ready to play with when you are back from your lunch break!
 
   ```bash
-  python train.py --actor-model facebook/opt-1.3b --reward-model facebook/opt-350m --num-gpus 1
+  python train.py --actor-model facebook/opt-1.3b --reward-model facebook/opt-350m --deployment-type single_gpu
   ```
 
   See the following table for the E2E time breakdown for training a 1.3 billion parameter ChatGPT model via DeepSpeed-Chat on a single commodity NVIDIA A6000 GPU with 48GB memory.
@@ -136,7 +136,7 @@ If you only have around **1-2 hour** for coffee or lunch break, you can also try
 If you only have around **half a day** and only a single server node, we suggest to use an example of pretrained **OPT-13B** as the actor model and OPT-350M as the reward model in the following single script to generate a final 13B ChatGPT-style model:
 
   ```bash
-  python train.py --actor-model facebook/opt-13b --reward-model facebook/opt-350m --num-gpus 8
+  python train.py --actor-model facebook/opt-13b --reward-model facebook/opt-350m --deployment-type single_node
   ```
 
   See the following table for the E2E time breakdown for training a 13 billion parameter ChatGPT model via DeepSpeed-Chat on a single DGX node with 8 NVIDIA A100-40G GPUs.
@@ -155,7 +155,7 @@ If you only have around **half a day** and only a single server node, we suggest
 Want to try different model sizes and configurations? You got it! With DeepSpeed-Chat, users can easily do that. For example, if you have access to multi-nodes cluster or cloud resources and prefer to train a larger and higher-quality model for your research or business, you can simply use a similar script with your desired model sizes, e.g., **66B** and GPU counts=64:
 
   ```bash
-  python train.py --actor-model facebook/opt-66b --reward-model facebook/opt-350m --num-gpus 64
+  python train.py --actor-model facebook/opt-66b --reward-model facebook/opt-350m --deployment-type multi_node
   ```
 
   See the following table for E2E time breakdown for training a 66 billion parameter ChatGPT model via DeepSpeed-Chat on 8 DGX nodes with 8 NVIDIA A100-80G GPUs/node.

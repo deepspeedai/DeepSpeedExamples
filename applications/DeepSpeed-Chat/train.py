@@ -40,16 +40,7 @@ step_dirs = {
     3: "training/step3_rlhf_finetuning",
 }
 model_type = {1: "actor", 2: "reward", 3: "step3"}
-default_zero_stage = {
-    "single_node": {
-        "1.3b": 2,
-        "6.7b": 3,
-        "13b": 3
-    },
-    "multi_node": {
-        "66b": 3
-    },
-}
+dse_url = "https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat/"
 
 
 def parse_args():
@@ -97,10 +88,10 @@ def parse_args():
         help="Directory for output of each step",
     )
     parser.add_argument(
-        "--num-gpus",
-        type=int,
-        default=1,
-        choices=(1, 8, 64),
+        "--deployment-type",
+        type=str,
+        default="single_gpu",
+        choices=("single_gpu", "single_node", "multi_node"),
         help="Number of GPUs to run the actor/reward models on",
     )
     args = parser.parse_args()
@@ -110,15 +101,6 @@ def parse_args():
             "Non-default zero stages may result in OOM errors or worse performance."
         )
 
-    if args.num_gpus == 1:
-        args.script_type = "single_gpu"
-    elif args.num_gpus == 8:
-        args.script_type = "single_node"
-    elif args.num_gpus == 64:
-        args.script_type = "multi_node"
-    else:
-        raise NotImplementedError(
-            f"{args.num_gpus} GPUs not supported by this script")
     return args
 
 
@@ -146,7 +128,7 @@ def get_script(args, step_num):
         os.getcwd(),
         step_dirs[step_num],
         "training_scripts",
-        args.script_type,
+        args.deployment_type,
         f"run_{model_size}.sh",
     )
     assert os.path.isfile(
@@ -184,13 +166,23 @@ def get_cmd(args, step_num):
     return cmd
 
 
-def launch_cmd(cmd, step_num):
+def launch_cmd(args, step_num, cmd):
     working_dir = step_dirs[step_num]
+    print(f"Running:\n{cmd}")
     p = subprocess.Popen(cmd, cwd=working_dir, shell=True)
     p.wait()
     if p.returncode != 0:
-        raise RuntimeError(
-            f"Step {step_num} exited with non-zero status {p.returncode}")
+        raise RuntimeError('\n\n'.join((
+            f"Step {step_num} exited with non-zero status {p.returncode}",
+            f"Launch command: {cmd}",
+            f"Log output: {os.path.join(get_output_dir(args, step_num), 'training.log')}",
+            f"Please see our tutorial at {dse_url}{step_dirs[step_num]}",
+            "Please check that you have installed our requirements: `pip install -r requirements.txt`",
+            f"If you are seeing an OOM error, try modifying {get_script(args, step_num)}:",
+            "  - Reduce `--per_device_*_batch_size`",
+            "  - Increase `--zero_stage {0,1,2,3}` on multi-gpu setups",
+            "  - Enable `--gradient_checkpointing` or `--only_optimizer_lora`"
+        )))
 
 
 def main(args):
@@ -200,7 +192,7 @@ def main(args):
         step_start_time = time.time()
 
         cmd = get_cmd(args, step_num)
-        launch_cmd(cmd, step_num)
+        launch_cmd(args, step_num, cmd)
 
         step_time = int(time.time() - start_time)
         time_str = str(datetime.timedelta(seconds=step_time))
