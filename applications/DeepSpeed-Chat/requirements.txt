@@ -3,5 +3,5 @@ sentencepiece>=0.1.97
 protobuf==3.20.3
 accelerate>=0.15.0
 torch>=1.12.0
-git+https://github.com/microsoft/deepspeed.git
+deepspeed>=0.9.0
 git+https://github.com/huggingface/transformers
