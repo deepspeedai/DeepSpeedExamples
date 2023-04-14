@@ -243,15 +243,17 @@ def create_prompt_dataset(local_rank,
                           seed,
                           tokenizer,
                           max_seq_len,
-                          end_of_conversation_token="<|endoftext|>"):
+                          end_of_conversation_token="<|endoftext|>",
+                          sft_only_data_path=[]):
     """
     Creates the prompt dataset
     """
     os.makedirs(output_path, exist_ok=True)
-    fname = '_'.join(data_path)
-    tokenizer_name = tokenizer.init_kwargs['name_or_path'].replace('/', '_')
-    fname = f"{fname}_split{data_split}_phase{train_phase}_seed{seed}_tokenizer{tokenizer_name}_seqlen{max_seq_len}"
-    fname = '_'.join(fname.split('/'))
+    fname = "_".join(data_path)
+    sft_cache_key = "_".join(sft_only_data_path)
+    tokenizer_name = tokenizer.init_kwargs["name_or_path"].replace("/", "_")
+    fname = f"{fname}_split{data_split}_phase{train_phase}_seed{seed}_tokenizer{tokenizer_name}_seqlen{max_seq_len}_sft{sft_cache_key}"
+    fname = "_".join(fname.split("/"))
     fname = str(hash(fname))  # hash the file name to avoid too long file name
     train_fname = f"{output_path}/traindata_{fname}.pt"
     eval_fname = f"{output_path}/evaldata_{fname}.pt"
@@ -287,6 +289,41 @@ def create_prompt_dataset(local_rank,
             eval_dataset = ConcatDataset(eval_datasets)
             shuffle_idx = get_shuffle_idx(seed, eval_size)
             eval_dataset = Subset(eval_dataset, shuffle_idx.tolist())
+
+        # Append the SFT-only dataset if it exists, and current phase is 1(SFT).
+        if train_phase == 1 and sft_only_data_path:
+            sft_train_datasets = []
+            sft_eval_datasets = []
+            sft_train_size = 0
+            sft_eval_size = 0
+            for sft_path in sft_only_data_path:
+                sft_train_dataset, sft_eval_dataset = create_dataset(
+                    local_rank,
+                    sft_path,
+                    "10,0,0",
+                    output_path,
+                    train_phase,
+                    seed,
+                    tokenizer,
+                    end_of_conversation_token,
+                    max_seq_len,
+                )
+                sft_train_datasets.append(sft_train_dataset)
+                sft_eval_datasets.append(sft_eval_dataset)
+                sft_train_size += len(sft_train_dataset)
+                sft_eval_size += len(sft_eval_dataset)
+            if sft_train_datasets:  # Check if sft_train_datasets is not empty
+                sft_train_dataset = ConcatDataset(sft_train_datasets)
+                train_dataset = ConcatDataset(
+                    [train_dataset, sft_train_dataset])
+                shuffle_idx = get_shuffle_idx(seed, len(train_dataset))
+                train_dataset = Subset(train_dataset, shuffle_idx.tolist())
+            if sft_eval_datasets:  # Check if sft_eval_datasets is not empty
+                sft_eval_dataset = ConcatDataset(sft_eval_datasets)
+                eval_dataset = ConcatDataset([eval_dataset, sft_eval_dataset])
+                shuffle_idx = get_shuffle_idx(seed, len(eval_dataset))
+                eval_dataset = Subset(eval_dataset, shuffle_idx.tolist())
+
         if local_rank <= 0:
             torch.save(train_dataset, train_fname)
             torch.save(eval_dataset, eval_fname)
