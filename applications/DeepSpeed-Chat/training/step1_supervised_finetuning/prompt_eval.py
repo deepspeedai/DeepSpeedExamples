@@ -5,12 +5,18 @@
 import argparse
 import logging
 import torch
+import sys
+import os
 
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
 )
+
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+from utils.model.model_utils import create_hf_model
 
 logger = logging.getLogger(__name__)
 
@@ -73,23 +79,6 @@ def parse_args():
     args = parser.parse_args()
 
     return args
-
-
-def get_model(config, model_path, tokenizer):
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path,
-        from_tf=bool(".ckpt" in model_path),
-        config=config,
-    )
-    model.resize_token_embeddings(len(tokenizer))
-
-    # prepare the tokenizer and model config
-    tokenizer.pad_token = tokenizer.eos_token
-    model.config.end_token_id = tokenizer.eos_token_id
-    model.config.pad_token_id = model.config.eos_token_id
-
-    return model
 
 
 def generate(model,
@@ -212,10 +201,12 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path_baseline,
                                               fast_tokenizer=True)
 
-    model_baseline = get_model(config, args.model_name_or_path_baseline,
-                               tokenizer)
-    model_fintuned = get_model(config, args.model_name_or_path_finetune,
-                               tokenizer)
+    model_baseline = create_hf_model(AutoModelForCausalLM,
+                                     args.model_name_or_path_baseline,
+                                     tokenizer, None)
+    model_fintuned = create_hf_model(AutoModelForCausalLM,
+                                     args.model_name_or_path_finetune,
+                                     tokenizer, None)
 
     model_baseline.to(device)
     model_fintuned.to(device)
