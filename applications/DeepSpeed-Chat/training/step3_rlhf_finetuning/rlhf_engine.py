@@ -72,7 +72,9 @@ class DeepSpeedRLHFEngine():
             inference_tp_size=self.args.inference_tp_size,
             release_inference_cache=self.args.release_inference_cache,
             pin_parameters=(not self.args.unpin_actor_parameters),
-            tp_gather_partition_size=self.args.tp_gather_partition_size)
+            tp_gather_partition_size=self.args.tp_gather_partition_size,
+            max_out_tokens=self.args.max_prompt_seq_len +
+            self.args.max_answer_seq_len)
         ds_config[
             'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
         #TODO(jeff): we should probably set grad accumlation steps here as well for clarity
