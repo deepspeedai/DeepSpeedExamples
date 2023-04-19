@@ -291,7 +291,7 @@ python chat.py --path  ${PATH-to-your-actor-model}
 A comprehensive view of the scale and end-to-end training times enabled by DeepSpeed-RLHF system are presented in Table 1. It also demonstrates the most cost-effective way to train models in Azure Cloud along with the associated cost.
 
 
-| GPU SKUs      | OPT-1.3B      | OPT-6.7B       | OPT-13.2B       | OPT-30B       | OPT-66B           | Bloom-175B      |
+| GPU SKUs      | OPT-1.3B      | OPT-6.7B       | OPT-13.2B       | OPT-30B       | OPT-66B           | OPT-175B      |
 |---------------|---------------|----------------|-----------------|---------------|-------------------|-----------------|
 | 1x V100 32G   | 1.8 days      |                |                 |               |                   |                 |
 | 1x A6000 48G  | 1.1 days      | 5.6 days       |                 |               |                   |                 |
