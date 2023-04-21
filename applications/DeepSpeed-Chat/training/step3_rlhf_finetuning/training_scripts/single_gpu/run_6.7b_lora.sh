@@ -20,7 +20,7 @@ Critic_Lr=5e-6
 mkdir -p $OUTPUT
 
 deepspeed --num_gpus 1 main.py \
-   --data_path Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets openai/webgpt_comparisons stanfordnlp/SHP \
+   --data_path Dahoas/rm-static \
    --data_split 2,4,4 \
    --actor_model_name_or_path $ACTOR_MODEL_PATH \
    --critic_model_name_or_path $CRITIC_MODEL_PATH \
@@ -34,8 +34,6 @@ deepspeed --num_gpus 1 main.py \
    --ppo_epochs 1 \
    --actor_learning_rate ${Actor_Lr} \
    --critic_learning_rate ${Critic_Lr} \
-   --actor_weight_decay 0.1 \
-   --critic_weight_decay 0.1 \
    --num_train_epochs 1 \
    --lr_scheduler_type cosine \
    --gradient_accumulation_steps 16 \
@@ -46,6 +44,7 @@ deepspeed --num_gpus 1 main.py \
    --actor_lora_dim 128 \
    --actor_gradient_checkpointing \
    --critic_gradient_checkpointing \
+   --disable_actor_dropout \
    --enable_hybrid_engine \
    --output_dir $OUTPUT \
     &> $OUTPUT/training.log

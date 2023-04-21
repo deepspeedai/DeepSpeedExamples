@@ -87,7 +87,8 @@ class DeepSpeedRLHFEngine():
             model_class=AutoModelForCausalLM,
             model_name_or_path=actor_model_name_or_path,
             tokenizer=self.tokenizer,
-            ds_config=ds_config)
+            ds_config=ds_config,
+            disable_dropout=self.args.disable_actor_dropout)
 
         # LoRA
         if self.args.actor_lora_dim > 0:
@@ -159,6 +160,12 @@ class DeepSpeedRLHFEngine():
             zero_stage = 0
         ds_config = get_eval_ds_config(self.args.offload_reference_model,
                                        zero_stage)
+        ds_config[
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+        #TODO(jeff): we should probably set grad accumlation steps here as well for clarity
+        ds_config[
+            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            ) * self.args.gradient_accumulation_steps_actor
 
         actor_model_ema = create_hf_model(AutoModelForCausalLM,
                                           actor_model_name_or_path,
@@ -195,7 +202,8 @@ class DeepSpeedRLHFEngine():
             tokenizer=self.tokenizer,
             ds_config=ds_eval_config,
             num_padding_at_beginning=self.args.num_padding_at_beginning,
-            rlhf_training=True)
+            rlhf_training=True,
+            disable_dropout=self.args.disable_critic_dropout)
 
         # LoRA
         if self.args.critic_lora_dim > 0:

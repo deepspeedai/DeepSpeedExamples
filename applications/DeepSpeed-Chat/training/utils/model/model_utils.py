@@ -19,9 +19,11 @@ def create_hf_model(model_class,
                     model_name_or_path,
                     tokenizer,
                     ds_config=None,
-                    rlhf_training=False):
+                    rlhf_training=False,
+                    disable_dropout=False):
     model_config = AutoConfig.from_pretrained(model_name_or_path)
-    model_config.dropout = 0.0
+    if disable_dropout:
+        model_config.dropout = 0.0
     # Note: dschf is defined in function scope to avoid global effects
     # https://huggingface.co/docs/transformers/main_classes/deepspeed#nontrainer-deepspeed-integration
     if ds_config is not None and ds_config["zero_optimization"]["stage"] == 3:
@@ -50,11 +52,12 @@ def create_critic_model(model_name_or_path,
                         tokenizer,
                         ds_config,
                         num_padding_at_beginning=0,
-                        rlhf_training=False):
+                        rlhf_training=False,
+                        disable_dropout=False):
     # OPT model family always put a padding token at the beginning of the sequence,
     # we did not see this in other models but not sure if it is a general rule
     critic_model = create_hf_model(AutoModel, model_name_or_path, tokenizer,
-                                   ds_config, rlhf_training)
+                                   ds_config, rlhf_training, disable_dropout)
     critic_model = RewardModel(
         critic_model,
         tokenizer,

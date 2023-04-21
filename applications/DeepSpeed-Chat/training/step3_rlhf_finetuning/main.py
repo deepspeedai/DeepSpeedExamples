@@ -149,11 +149,11 @@ def parse_args():
     )
     parser.add_argument("--actor_weight_decay",
                         type=float,
-                        default=0.1,
+                        default=0.,
                         help="Weight decay to use.")
     parser.add_argument("--critic_weight_decay",
                         type=float,
-                        default=0.1,
+                        default=0.,
                         help="Weight decay to use.")
     parser.add_argument("--num_train_epochs",
                         type=int,
@@ -256,6 +256,12 @@ def parse_args():
         '--critic_gradient_checkpointing',
         action='store_true',
         help='Enable HF gradient checkpointing for Critic model.')
+    parser.add_argument('--disable_actor_dropout',
+                        action='store_true',
+                        help='Disable the dropout of the actor model.')
+    parser.add_argument('--disable_critic_dropout',
+                        action='store_true',
+                        help='Disable the dropout of the critical model.')
     ## LoRA for efficient training setting
     parser.add_argument("--actor_lora_dim",
                         type=int,

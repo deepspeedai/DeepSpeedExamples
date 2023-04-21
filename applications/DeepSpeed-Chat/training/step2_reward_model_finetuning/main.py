@@ -94,7 +94,7 @@ def parse_args():
     )
     parser.add_argument("--weight_decay",
                         type=float,
-                        default=0.1,
+                        default=0.,
                         help="Weight decay to use.")
     parser.add_argument("--num_train_epochs",
                         type=int,
@@ -138,6 +138,9 @@ def parse_args():
         '--gradient_checkpointing',
         action='store_true',
         help='Enable HF gradient checkpointing for Actor model.')
+    parser.add_argument('--disable_dropout',
+                        action='store_true',
+                        help='Disable the dropout of the model.')
     # deepspeed features
     parser.add_argument('--offload',
                         action='store_true',
@@ -203,8 +206,11 @@ def main():
                                               fast_tokenizer=True)
     tokenizer.pad_token = tokenizer.eos_token
 
-    rm_model = create_critic_model(args.model_name_or_path, tokenizer,
-                                   ds_config, args.num_padding_at_beginning)
+    rm_model = create_critic_model(args.model_name_or_path,
+                                   tokenizer,
+                                   ds_config,
+                                   args.num_padding_at_beginning,
+                                   disable_dropout=args.disable_dropout)
 
     if args.lora_dim > 0:
         rm_model = convert_linear_layer_to_lora(rm_model,

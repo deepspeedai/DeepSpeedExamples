@@ -25,7 +25,7 @@ Actor_Lr=9.65e-6
 Critic_Lr=5e-6
 
 deepspeed --master_port 12346 main.py \
-   --data_path Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets openai/webgpt_comparisons stanfordnlp/SHP \
+   --data_path Dahoas/rm-static \
    --data_split 2,4,4 \
    --actor_model_name_or_path $ACTOR_MODEL_PATH \
    --critic_model_name_or_path $CRITIC_MODEL_PATH \
@@ -43,6 +43,8 @@ deepspeed --master_port 12346 main.py \
    --num_train_epochs 1 \
    --lr_scheduler_type cosine \
    --gradient_accumulation_steps 1 \
+   --actor_gradient_checkpointing \
+   --disable_actor_dropout \
    --num_warmup_steps 100 \
    --deepspeed --seed 1234 \
    --enable_hybrid_engine \
