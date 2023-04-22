@@ -1,4 +1,4 @@
-# Training Instability
+# Training Experiences
 It's important to note that training large language models (LLMs) and Reinforcement Learning from Human Feedback (RLHF) are still open problems with many unknowns. DeepSpeed-Chat aims to provide an end-to-end RLHF training pipeline with efficient and fast system support, rather than a comprehensive solution for RLHF training. As this field is relatively new, there are various unknowns for both users and developers.
 
 Users are encouraged to experiment with the pipeline, provide feedback, and make suggestions. Contributions to the project are welcome when users find something useful and tested for their use cases. By working together, we can advance the development of this project and improve our understanding of LLMs and RLHF training.
@@ -49,6 +49,12 @@ We did most of our accuracy/quality testing on OPT-1.3B (SFT and Actor model) an
 The hyperparameters included in our scripts are based on our own testing. Therefore, it may not work for you case when (but not limited to): (1) a different number of GPUs, (2) different model sizes, (3) different model families, etc.
 
 Also note that, you could find even better training configurations/recipes than what we provided. We did not extensively tested all hyperparameter combinations due to resouces constraints.
+
+### Training logs
+We are sharing our training logs for all three steps for an OPT-1.3b actor and OPT-350m critic:
+* Step 1: [opt-1.3b-globalBatchSize128.log](https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/step1_supervised_finetuning/training_log_output/opt-1.3b-globalBatchSize128.log)
+* Step 2: [opt-350m_globalBatchSize-64.log](https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/step2_reward_model_finetuning/training_log_output/opt-350m_globalBatchSize-64.log)
+* Step 3: [actor_opt-1.3b_critic_opt-350m_globalBatchSize64.log](https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/step3_rlhf_finetuning/training_log_output/actor_opt-1.3b_critic_opt-350m_globalBatchSize64.log)
 
 ### Others
 RLHF (Reinforcement Learning for Human Feedback) training is still an open problem, and DeepSpeed-Chat is designed to be a starting point for researchers and practitioners to work on it with an efficient and fast training experience. The Hybrid-Engine and other efficient components, like LoRA, can be inherited from DeepSpeed-Chat, allowing you to develop your own RLHF training pipeline for exploration, research, and other purposes.
