@@ -198,7 +198,7 @@ bash evaluation_scripts/run_prompt.sh
 cd training/step2_reward_model_finetuning
 
 # Run the training script
-bash training_scripts/run_350m.sh
+bash training_scripts/single_gpu/run_350m.sh
 
 # Evaluate the model
 bash evaluation_scripts/run_eval.sh
