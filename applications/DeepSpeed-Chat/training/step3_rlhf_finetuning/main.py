@@ -296,7 +296,7 @@ def parse_args():
                                              and args.critic_lora_dim > 0):
         assert (
             not args.only_optimize_lora
-        ), "--{actor,critic}_gradient_checkpointing and --only_optimizer_lora cannot be enabled at the same time."
+        ), "--{actor,critic}_gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
 
     if args.inference_tp_size > 1:
         assert (

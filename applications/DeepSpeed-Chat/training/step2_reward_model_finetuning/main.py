@@ -169,7 +169,7 @@ def parse_args():
     if args.gradient_checkpointing and args.lora_dim > 0:
         assert (
             not args.only_optimize_lora
-        ), "--gradient_checkpointing and --only_optimizer_lora cannot be enabled at the same time."
+        ), "--gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
 
     return args
 
