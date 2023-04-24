@@ -217,7 +217,7 @@ Figure 1: The illustration of DeepSpeed Chat’s RLHF training pipeline with opt
 
 </p>
 
-As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Chat's ***Hyrbid Engine*** has enabled sufficient acceleration to aovid large training time (cost) implications. Refer to [Step3: Reinforcement Learning Human Feedback (RLHF)](./training/step3_rlhf_finetuning) for more information. If you already have your fine-tuned actor and reward model checkpoints, you can simply run the following scripts to enable the PPO training.
+As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Chat's ***Hybrid Engine*** has enabled sufficient acceleration to avoid large training time (cost) implications. Refer to [Step3: Reinforcement Learning Human Feedback (RLHF)](./training/step3_rlhf_finetuning) for more information. If you already have your fine-tuned actor and reward model checkpoints, you can simply run the following scripts to enable the PPO training.
 
 <details><summary> Expand </summary><p>
 
@@ -314,7 +314,7 @@ The numbers in the table above are for Stage 3 of the training and based on actu
 
 ### 🐲 Throughput and Model Size Scalability Comparisons with Existing RLHF Systems
 
-&nbsp;&nbsp;***(I) Single-GPU's Model Scale and Throughput Comparision***
+&nbsp;&nbsp;***(I) Single-GPU's Model Scale and Throughput Comparison***
 
 &nbsp;&nbsp;With over an order of magnitude higher throughput, DeepSpeed-Chat unlocks the ability to train significantly larger actor models under the same latency budget or train models of similar size at much lower cost, compared to the existing systems like Colossal-AI or HuggingFace-DDP. For example, on a single GPU, DeepSpeed enables over **10X** throughput improvement for RLHF training on a single GPU. While both CAI-Coati and HF-DDP can run a max model size of 1.3B, DeepSpeed can run 6.5B model on the same hardware, **5x** higher.  
 
@@ -325,7 +325,7 @@ Figure 2: Step 3 throughput comparison against two other system frameworks (Colo
 
 </p>
 
-&nbsp;&nbsp;***(II) Single-Node Multi-GPU Model Scale and Throughput Comparision***
+&nbsp;&nbsp;***(II) Single-Node Multi-GPU Model Scale and Throughput Comparison***
 
 On multi-GPUs of a single node, DeepSpeed-Chat enables **6-19X** speedup over CAI-Coati and **1.4-10.5X** speedup over HF-DDP (Figure 3) with respect to system throughput.  
 
@@ -338,7 +338,7 @@ Figure 3. End-to-end training throughput comparison for step 3 of the training p
 
 &nbsp;&nbsp;***(III) Superior Generation Phase Acceleration in Step3***
 
-One of the key reasons that result in Figure 3 is our Hyrbid Engine's superior generation phase acceleration, shown below.
+One of the key reasons that result in Figure 3 is our Hybrid Engine's superior generation phase acceleration, shown below.
 
 <p align="center">
 
