@@ -78,7 +78,7 @@ class RewardModel(nn.Module):
             c_inds = (chosen_id == self.PAD_ID).nonzero()
             c_ind = c_inds[self.num_padding_at_beginning].item() if len(
                 c_inds
-            ) > self.num_padding_at_beginning else seq_len  # OPT model pads the first token, so we need to use the seoncd padding token as the end of the sequence
+            ) > self.num_padding_at_beginning else seq_len  # OPT model pads the first token, so we need to use the second padding token as the end of the sequence
             check_divergence = (chosen_id != rejected_id).nonzero()
 
             if len(check_divergence) == 0:
@@ -96,7 +96,7 @@ class RewardModel(nn.Module):
             c_truncated_reward = chosen_reward[divergence_ind:end_ind]
             r_truncated_reward = rejected_reward[divergence_ind:end_ind]
             chosen_mean_scores.append(
-                chosen_reward[c_ind - 1])  #use the end score for refrnence
+                chosen_reward[c_ind - 1])  #use the end score for reference
             rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
             loss += -torch.log(
@@ -140,7 +140,7 @@ class RewardModel(nn.Module):
             bs = values.size(0)
             seq_len = input_ids.shape[1]
             chosen_end_scores = [
-            ]  # we use this name for consistency with the original forwad function
+            ]  # we use this name for consistency with the original forward function
             for i in range(bs):
                 input_id = input_ids[i]
                 value = values[i]

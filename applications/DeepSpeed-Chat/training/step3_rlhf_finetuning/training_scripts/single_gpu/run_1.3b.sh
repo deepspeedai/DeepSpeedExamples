@@ -19,7 +19,7 @@ if [ "$CRITIC_ZERO_STAGE" == "" ]; then
 fi
 mkdir -p $OUTPUT
 
-deepspeed main.py \
+deepspeed --num_gpus 1 main.py \
    --actor_model_name_or_path $ACTOR_MODEL_PATH --critic_model_name_or_path $CRITIC_MODEL_PATH \
    --actor_zero_stage $ACTOR_ZERO_STAGE --critic_zero_stage $CRITIC_ZERO_STAGE \
    --num_padding_at_beginning 1 --gradient_accumulation_steps 2 \
