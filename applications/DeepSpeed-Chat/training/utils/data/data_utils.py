@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from datasets import load_dataset
 import numpy as np
 import os
+import hashlib
 from itertools import chain
 from . import raw_datasets
 
@@ -75,7 +76,7 @@ def get_raw_dataset_split_index(local_rank, output_path, dataset_name, seed,
                                 split_name, data_split, split_index,
                                 data_size):
     index_file_name = f"{output_path}/{dataset_name}_seed{seed}_{split_name}_{data_split}_{split_index}.npy"
-    if not os.path.isfile(index_file_name) and local_rank <= 0:
+    if not os.path.isfile(index_file_name):
         splits = [float(s) for s in data_split.split(',')]
         splits_sum = sum(splits)
         splits = [split / splits_sum for split in splits]
@@ -96,7 +97,6 @@ def get_raw_dataset_split_index(local_rank, output_path, dataset_name, seed,
             np.save(shuffle_idx_split_file_name,
                     shuffle_idx_split,
                     allow_pickle=True)
-    torch.distributed.barrier()
     index = np.load(index_file_name, allow_pickle=True)
     return index.tolist()
 
@@ -254,7 +254,8 @@ def create_prompt_dataset(local_rank,
     tokenizer_name = tokenizer.init_kwargs["name_or_path"].replace("/", "_")
     fname = f"{fname}_split{data_split}_phase{train_phase}_seed{seed}_tokenizer{tokenizer_name}_seqlen{max_seq_len}_sft{sft_cache_key}"
     fname = "_".join(fname.split("/"))
-    fname = str(hash(fname))  # hash the file name to avoid too long file name
+    fname = hashlib.sha256(fname.encode()).hexdigest(
+    )  # hash the file name to avoid too long file name
     train_fname = f"{output_path}/traindata_{fname}.pt"
     eval_fname = f"{output_path}/evaldata_{fname}.pt"
 
@@ -262,10 +263,7 @@ def create_prompt_dataset(local_rank,
     buf_create_cache = torch.ByteTensor([not cache_found]).cuda()
     torch.distributed.all_reduce(buf_create_cache)
 
-    # Skip creating cache if we found it on all the nodes.
-    if buf_create_cache.item() == 0:
-        return torch.load(train_fname), torch.load(eval_fname)
-    else:
+    if local_rank <= 0 and buf_create_cache.item() != 0:
         if len(data_path) == 1:  # Single dataset.
             train_dataset, eval_dataset = create_dataset(
                 local_rank, data_path[0], data_split, output_path, train_phase,
@@ -323,11 +321,10 @@ def create_prompt_dataset(local_rank,
                 eval_dataset = ConcatDataset([eval_dataset, sft_eval_dataset])
                 shuffle_idx = get_shuffle_idx(seed, len(eval_dataset))
                 eval_dataset = Subset(eval_dataset, shuffle_idx.tolist())
-
-        if local_rank <= 0:
-            torch.save(train_dataset, train_fname)
-            torch.save(eval_dataset, eval_fname)
-        return train_dataset, eval_dataset
+        torch.save(train_dataset, train_fname)
+        torch.save(eval_dataset, eval_fname)
+    torch.distributed.barrier()
+    return torch.load(train_fname), torch.load(eval_fname)
 
 
 class DataCollatorReward:
