@@ -47,8 +47,7 @@ def save_hf_format(model, tokenizer, args, sub_folder=""):
     CONFIG_NAME = "config.json"
     WEIGHTS_NAME = "pytorch_model.bin"
     output_dir = os.path.join(args.output_dir, sub_folder)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
     output_model_file = os.path.join(output_dir, WEIGHTS_NAME)
     output_config_file = os.path.join(output_dir, CONFIG_NAME)
     save_dict = model_to_save.state_dict()
