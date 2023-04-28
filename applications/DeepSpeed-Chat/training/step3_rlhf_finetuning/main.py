@@ -57,9 +57,9 @@ def parse_args():
     parser.add_argument(
         '--data_split',
         type=str,
-        default='6,2,2',
+        default='2,4,4',
         help=
-        'Comma-separated list of proportions for training phase 1, 2, and 3 data. For example the split `6,2,2` '
+        'Comma-separated list of proportions for training phase 1, 2, and 3 data. For example the split `2,4,4` '
         'will use 60% of data for phase 1, 20% for phase 2 and 20% for phase 3.'
     )
     parser.add_argument(
