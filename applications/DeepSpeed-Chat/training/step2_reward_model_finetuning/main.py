@@ -258,8 +258,8 @@ def main():
             scores += outputs["chosen_mean_scores"].mean().float()
             if step == 99:  # For faster evaluation and debugging
                 break
-            acc = correct_predictions / total_predictions
-            scores = scores / (step + 1)
+        acc = correct_predictions / total_predictions
+        scores = scores / (step + 1)
         try:
             acc = get_all_reduce_mean(acc).item()
             scores = get_all_reduce_mean(scores).item()
