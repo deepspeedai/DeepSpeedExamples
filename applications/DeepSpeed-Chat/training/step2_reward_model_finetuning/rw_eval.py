@@ -7,13 +7,13 @@ import argparse
 import os
 import torch
 
-from transformers import AutoTokenizer
 import sys
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from utils.model.model_utils import create_critic_model
 from utils.utils import to_device
+from utils.utils import load_hf_tokenizer
 
 
 def parse_args():
@@ -40,8 +40,7 @@ def parse_args():
 
 def load_stuff(model_name_or_path, num_padding_at_beginning):
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
-                                              fast_tokenizer=True)
+    tokenizer = load_hf_tokenizer(model_name_or_path, fast_tokenizer=True)
     tokenizer.pad_token = tokenizer.eos_token
     model = create_critic_model(model_name_or_path, tokenizer, None,
                                 num_padding_at_beginning, True)

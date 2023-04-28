@@ -9,14 +9,12 @@ import sys
 import os
 
 from transformers import (
-    AutoConfig,
-    AutoModelForCausalLM,
-    AutoTokenizer,
-)
+    AutoModelForCausalLM, )
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from utils.model.model_utils import create_hf_model
+from utils.utils import load_hf_tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -197,9 +195,9 @@ def main():
     args = parse_args()
 
     device = torch.device("cuda:0")
-    config = AutoConfig.from_pretrained(args.model_name_or_path_baseline)
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path_baseline,
-                                              fast_tokenizer=True)
+
+    tokenizer = load_hf_tokenizer(args.model_name_or_path_baseline,
+                                  fast_tokenizer=True)
 
     model_baseline = create_hf_model(AutoModelForCausalLM,
                                      args.model_name_or_path_baseline,
