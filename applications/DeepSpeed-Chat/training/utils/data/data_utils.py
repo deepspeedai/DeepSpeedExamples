@@ -367,11 +367,11 @@ class DataCollatorRLHF:
         pad_length = self.max_token_len - length
         if pad_length > 0:
             batch["prompt"] = F.pad(prompt,
-                                    pad=(pad_length, 0),
+                                    pad=(0, pad_length),
                                     mode='constant',
                                     value=pad_token_id)
             batch["prompt_att_mask"] = F.pad(prompt_mask,
-                                             pad=(pad_length, 0),
+                                             pad=(0, pad_length),
                                              mode='constant',
                                              value=0)
         else:
