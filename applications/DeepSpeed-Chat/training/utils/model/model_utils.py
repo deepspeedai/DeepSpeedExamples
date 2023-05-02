@@ -9,7 +9,7 @@ from transformers import (
     AutoConfig,
     AutoModel,
 )
-
+from huggingface_hub import snapshot_download
 from transformers.deepspeed import HfDeepSpeedConfig
 
 from .reward_model import RewardModel
@@ -64,6 +64,8 @@ def create_critic_model(model_name_or_path,
         num_padding_at_beginning=num_padding_at_beginning)
 
     if rlhf_training:
+        if not os.path.isdir(model_name_or_path):
+            model_name_or_path = snapshot_download(model_name_or_path)
         # critic model needs to load the weight here
         model_ckpt_path = os.path.join(model_name_or_path, 'pytorch_model.bin')
         assert os.path.exists(
