@@ -1,0 +1,161 @@
+{
+    "train_batch_size": 32,
+    "train_micro_batch_size_per_gpu": BATCH_SIZE_PER_GPU,
+    "steps_per_print": 200,
+    "zero_optimization": {
+      "stage": 0
+    },
+    "fp16": {
+      "enabled": FP16_ENABLE
+    },
+    "gradient_clipping": 1.0,
+    "prescale_gradients": true,
+    "wall_clock_breakdown": false,
+    "compression_training": {
+      "layer_reduction": {
+            "enabled": LAYER_REDUCTION_ENABLE,
+            "keep_number_layer": 5,
+            "module_name_prefix": "bert.encoder.layer",
+            "teacher_layer": [
+              2,
+              4,
+              6,
+              8,
+              10
+            ],
+            "other_module_name": [
+              "bert.pooler",
+              "bert.embeddings",
+              "classifier"
+            ]
+      },
+      "weight_quantization": {
+        "shared_parameters": {
+          "enabled": WEIGHT_QUANT_ENABLE,
+          "quantizer_kernel": false,
+          "schedule_offset": 0,
+          "quantize_groups": Q_GROUP,
+          "quantize_verbose": false,
+          "quantization_type": "symmetric",
+          "quantize_weight_in_forward": QuantW_FORWARD,
+          "rounding": "nearest",
+          "fp16_mixed_quantize": {
+            "enabled": false,
+            "quantize_change_ratio": 0.1
+          }
+        },
+        "different_groups": {
+          "wq1": {
+            "params": {
+              "start_bits": W_BIT1,
+              "target_bits": W_BIT1,
+              "quantization_period": 0
+            },
+            "modules": [
+              "attention.self",
+              "word_embeddings"
+            ]
+          },
+          "wq2": {
+            "params": {
+              "start_bits": W_BIT2,
+              "target_bits": W_BIT2,
+              "quantization_period": 0
+            },
+            "modules": [
+              "output.dense",
+              "intermediate"
+            ]
+          }
+        }
+      },
+      "activation_quantization": {
+        "shared_parameters": {
+          "enabled": ACTIVATION_QUANT_ENABLE,
+          "quantization_type": "symmetric",
+          "range_calibration": "dynamic",
+          "schedule_offset": 0
+        },
+        "different_groups": {
+          "aq1": {
+            "params": {
+              "bits": A_BIT1
+            },
+            "modules": [
+              "attention.self"
+            ]
+          },
+          "aq2": {
+            "params": {
+              "bits": A_BIT2
+            },
+            "modules": [
+              "output.dense",
+              "intermediate"
+            ]
+          }
+        }
+      },
+      "sparse_pruning": {
+        "shared_parameters": {
+          "enabled": SPARSE_PRUNING_ENABLE,
+          "schedule_offset": SPARSE_PRUNING_OFFSET,
+          "schedule_offset_end": SPARSE_PRUNING_OFFSET_END,
+	  "schedule_offset_stride": SPARSE_PRUNING_OFFSET_STRIDE,
+          "method": "snip_momentum",
+	  "block_pattern": SPARSE_PRUNING_BLOCK_PATTERN,
+	  "dense_ratio": S_DENSE_RATIO,
+	  "excluded_modules": SPARSE_PRUNING_EXCLUDED_MODULES
+        },
+        "different_groups": {
+	}
+      },
+      "row_pruning": {
+        "shared_parameters": {
+          "enabled": ROW_PRUNING_ENABLE,
+          "schedule_offset": 2000,
+          "method": "topk"
+        },
+        "different_groups": {
+          "rp1": {
+            "params": {
+              "dense_ratio": R_DENSE_RATIO
+            },
+            "modules": [
+              "intermediate.dense"
+            ],
+            "related_modules": [
+              [
+                "layer.\\w+.output.dense"
+              ]
+            ]
+          }
+        }
+      },
+      "head_pruning": {
+        "shared_parameters": {
+          "enabled": HEAD_PRUNING_ENABLE,
+          "schedule_offset": 2000,
+          "method": "topk",
+          "num_heads": 12
+        },
+        "different_groups": {
+          "rp1": {
+            "params": {
+              "dense_ratio": H_DENSE_RATIO
+            },
+            "modules": [
+              "attention.output.dense"
+            ],
+            "related_modules": [
+              [
+                "self.query",
+                "self.key",
+                "self.value"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
