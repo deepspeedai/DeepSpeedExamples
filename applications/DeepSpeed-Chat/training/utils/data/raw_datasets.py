@@ -297,6 +297,51 @@ class StanfordnlpSHPDataset(PromptRawDataset):
         return " Human: " + sample['history'] + " Assistant: " + response
 
 
+# English dataset
+class PvduySharegptalpacaoavicunaformatDataset(PromptRawDataset):
+
+    def __init__(self, output_path, seed, local_rank, dataset_name):
+        super().__init__(output_path, seed, local_rank, dataset_name)
+        self.dataset_name = "pvduy/sharegpt_alpaca_oa_vicuna_format"
+        self.dataset_name_clean = "pvduy_sharegpt_alpaca_oa_vicuna_format"
+
+    def get_train_data(self):
+        return self.raw_datasets["train"]
+
+    def get_eval_data(self):
+        return self.raw_datasets["test"]
+
+    def get_prompt(self, sample):
+        if sample['prompt'] is not None and len(sample['prompt']) > 0:
+            return sample['prompt'].replace("USER", "Human").replace(
+                "ASSISTANT", "Assistant")
+        return None
+
+    def get_chosen(self, sample):
+        if sample['label'] is not None and len(sample['label']) > 0:
+            return " " + sample['label']
+        return None
+
+    def get_rejected(self, sample):
+        print(
+            f"Warning: dataset {self.dataset_name} does not include rejected response."
+        )
+        return None
+
+    def get_prompt_and_chosen(self, sample):
+        if sample['prompt'] is not None and sample['label'] is not None and len(
+                sample['prompt']) > 0 and len(sample['label']) > 0:
+            return sample['prompt'].replace("USER", "Human").replace(
+                "ASSISTANT", "Assistant") + " " + sample['label']
+        return None
+
+    def get_prompt_and_rejected(self, sample):
+        print(
+            f"Warning: dataset {self.dataset_name} does not include rejected response."
+        )
+        return None
+
+
 # Chinese dataset
 class Wangrui6ZhihuKOLDataset(PromptRawDataset):
 
