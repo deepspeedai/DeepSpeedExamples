@@ -198,8 +198,6 @@ def main():
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
 
-    assert not args.offload, "zero-offload is not currently supported but coming soon!"
-
     torch.distributed.barrier()
 
     tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=True)

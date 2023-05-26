@@ -187,8 +187,6 @@ def main():
 
     args.global_rank = torch.distributed.get_rank()
 
-    assert not args.offload, "zero-offload is not currently supported but coming soon!"
-
     ds_config = get_train_ds_config(offload=args.offload,
                                     stage=args.zero_stage)
     ds_config[
