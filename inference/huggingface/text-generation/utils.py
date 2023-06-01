@@ -53,6 +53,9 @@ class DSPipeline():
 
         self.model.eval()
 
+        if self.dtype == torch.float16:
+            self.model.half()
+
 
     def __call__(self,
                 inputs=["test"],
