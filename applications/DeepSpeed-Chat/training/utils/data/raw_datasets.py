@@ -689,8 +689,10 @@ class CohereMiracljaqueries2212Dataset(PromptRawDataset):
             'positive_passages'][0]['text']
 
     def get_prompt_and_rejected(self, sample):
-        return " Human: " + sample['query'] + " Assistant: " + sample[
-            'negative_passages'][0]['text']
+        if len(sample['negative_passages']) > 0:
+            return " Human: " + sample['query'] + " Assistant: " + sample[
+                'negative_passages'][0]['text']
+        return None
 
 
 # Japanese dataset
