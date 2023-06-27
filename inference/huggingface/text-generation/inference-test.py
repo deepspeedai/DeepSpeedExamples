@@ -24,7 +24,8 @@ parser.add_argument("--greedy", action='store_true', help="greedy generation mod
 parser.add_argument("--use_meta_tensor", action='store_true', help="use the meta tensors to initialize model")
 parser.add_argument("--use_cache", default=True, type=bool, help="use cache for generation")
 parser.add_argument("--test_performance", action='store_true', help="enable latency, bandwidth, and throughout testing")
-parser.add_argument("--local_rank", type=int, default=0, help="local rank")
+parser.add_argument("--local_rank", type=int, default=int(os.getenv("LOCAL_RANK", "0")), help="local rank")
+parser.add_argument("--world_size", type=int, default=int(os.getenv("WORLD_SIZE", "1")), help="world_size")
 args = parser.parse_args()
 
 def print_perf_stats(latency_set, config, warmup=3):
@@ -48,12 +49,12 @@ def print_perf_stats(latency_set, config, warmup=3):
         print("Avg BW: {0:8.2f} GB/s".format(1/avg * num_parameters * num_bytes / 1e9))
         print("Avg flops: {0:8.2f} TFlops/s".format(1/avg * num_parameters * num_bytes * args.batch_size / 1e12))
 
-world_size = int(os.getenv('WORLD_SIZE', '1'))
-local_rank = int(os.getenv('LOCAL_RANK', '0'))
+if not args.ds_inference and args.world_size > 1:
+    raise RuntimeError("Only `--num_gpus 1` supported for non-DeepSpeed uses")
 
 data_type = getattr(torch, args.dtype)
 
-if local_rank == 0:
+if args.local_rank == 0:
     see_memory_usage("before init", True)
 
 t0 = time.time()
@@ -62,7 +63,7 @@ pipe = DSPipeline(model_name=args.name,
                   is_meta=args.use_meta_tensor,
                   device=args.local_rank,
                   checkpoint_path=args.checkpoint_path)
-if local_rank == 0:
+if args.local_rank == 0:
     print(f"initialization time: {(time.time()-t0) * 1000}ms")
     see_memory_usage("after init", True)
 if args.use_meta_tensor:
@@ -73,14 +74,14 @@ else:
 if args.ds_inference:
     pipe.model = deepspeed.init_inference(pipe.model,
                                     dtype=data_type,
-                                    mp_size=world_size,
+                                    mp_size=args.world_size,
                                     replace_with_kernel_inject=args.use_kernel,
                                     replace_method=args.replace_method,
                                     max_tokens=args.max_tokens,
                                     save_mp_checkpoint_path=args.save_mp_checkpoint_path,
                                     **ds_kwargs
                                     )
-if local_rank == 0:
+if args.local_rank == 0:
     see_memory_usage("after init_inference", True)
 
 
