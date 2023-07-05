@@ -44,8 +44,8 @@ def parse_args():
                         default='2,4,4',
                         help='Comma-separated list of proportions for training'
                         'phase 1, 2, and 3 data. For example the split `2,4,4`'
-                        'will use 60% of data for phase 1, 20% for phase 2'
-                        'and 20% for phase 3.')
+                        'will use 60%% of data for phase 1, 20%% for phase 2'
+                        'and 20%% for phase 3.')
     parser.add_argument(
         '--data_output_path',
         type=str,
