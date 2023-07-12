@@ -14,7 +14,7 @@ OUTPUT="./output"
 
 Num_Padding_at_Beginning=1 # this is model related
 
-Actor_Lr=5e-4
+Actor_Lr=9.65e-6
 Critic_Lr=5e-6
 
 mkdir -p $OUTPUT
