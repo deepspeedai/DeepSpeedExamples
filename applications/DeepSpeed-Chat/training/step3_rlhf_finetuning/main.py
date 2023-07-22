@@ -23,6 +23,8 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 
+from torch.utils.tensorboard import SummaryWriter
+
 from transformers import (
     SchedulerType,
     default_data_collator,
@@ -41,8 +43,11 @@ from utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollat
 from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model, load_hf_tokenizer
 from utils.module.lora import convert_lora_to_linear_layer
 
+writer = None
+
 
 def parse_args():
+    global writer
     parser = argparse.ArgumentParser(
         description="(Step 3) RLHF training arguments")
 
@@ -285,9 +290,32 @@ def parse_args():
     parser.add_argument('--enable_ema',
                         action='store_true',
                         help='Enable EMA checkpoint for the model.')
+    ## Tensorboard logging
+    parser.add_argument('--enable_tensorboard',
+                        action='store_true',
+                        help='Enable tensorboard logging')
+    parser.add_argument('--tensorboard_path',
+                        type=str,
+                        default="step3_tensorboard")
+    ## Actor/critic model overflow alignment
+    parser.add_argument(
+        '--align_overflow',
+        action='store_true',
+        help='Align loss scale overflow between actor and critic')
+    ## Print actor model answers during training
+    parser.add_argument('--print_answers',
+                        action='store_true',
+                        help='Print prompt and answers during training')
 
     parser = deepspeed.add_config_arguments(parser)
     args = parser.parse_args()
+
+    if args.enable_tensorboard:
+        print(
+            f"Tensorboard logs going to: {args.tensorboard_path}/step3_tensorboard_logs"
+        )
+        writer = SummaryWriter(
+            f"{args.tensorboard_path}/step3_tensorboard_logs")
 
     # Validate settings
     if (args.actor_gradient_checkpointing
@@ -427,7 +455,8 @@ def main():
             #     raise ValueError("Prompt length is too long")
 
             out = trainer.generate_experience(batch_prompt['prompt'],
-                                              batch_prompt['prompt_att_mask'])
+                                              batch_prompt['prompt_att_mask'],
+                                              step)
             exp_dataset = exp_mini_dataset.add(out)
 
             if exp_dataset is not None:
@@ -470,6 +499,24 @@ def main():
                 print_rank_0(
                     "-------------------------------------------------------------------------------------",
                     args.global_rank)
+                if args.enable_tensorboard and torch.distributed.get_rank(
+                ) == 0:
+                    writer.add_scalar('reward',
+                                      average_reward / inner_iter,
+                                      global_step=step)
+                    writer.add_scalar('actor_loss',
+                                      actor_loss,
+                                      global_step=step)
+                    writer.add_scalar('actor_loss_sum',
+                                      actor_loss_sum,
+                                      global_step=step)
+                    writer.add_scalar('critic_loss',
+                                      critic_loss,
+                                      global_step=step)
+                    writer.add_scalar('critic_loss_sum',
+                                      critic_loss_sum,
+                                      global_step=step)
+                    writer.flush()
 
             if args.actor_gradient_checkpointing:
                 rlhf_engine.actor.gradient_checkpointing_disable()
