@@ -91,11 +91,11 @@ def convert_linear_layer_to_lora(model,
                                  lora_dim=0,
                                  lora_scaling=1,
                                  lora_droppout=0):
-    repalce_name = []
+    replace_name = []
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear) and part_module_name in name:
-            repalce_name.append(name)
-    for name in repalce_name:
+            replace_name.append(name)
+    for name in replace_name:
         module = recursive_getattr(model, name)
         tmp = LinearLayer_LoRA(
             module.weight, lora_dim, lora_scaling, lora_droppout,
@@ -114,11 +114,11 @@ def _z3_params_to_fetch(param_list):
 
 # convert the LoRA layer to linear layer
 def convert_lora_to_linear_layer(model):
-    repalce_name = []
+    replace_name = []
     for name, module in model.named_modules():
         if isinstance(module, LinearLayer_LoRA):
-            repalce_name.append(name)
-    for name in repalce_name:
+            replace_name.append(name)
+    for name in replace_name:
         module = recursive_getattr(model, name)
         zero_stage_3 = hasattr(module.weight, 'ds_id')
         with deepspeed.zero.GatheredParameters(_z3_params_to_fetch([
