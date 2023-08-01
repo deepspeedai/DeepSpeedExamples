@@ -201,7 +201,14 @@ class DeepSpeedRLHFEngine():
 
         #TODO(jeff): should not be needed, we should be able to use ds_config above
         #TODO(jeff): it means we never create the critic w. zero.init context if we are using ZeRO-3
+        # ds_eval_config = get_eval_ds_config(offload=False, stage=self.args.critic_zero_stage)
         ds_eval_config = get_eval_ds_config(offload=False, stage=0)
+        #Minjia: We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
+        ds_eval_config[
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+        ds_eval_config[
+            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            ) * self.args.gradient_accumulation_steps
 
         # Model
         critic_model = create_critic_model(
@@ -263,7 +270,14 @@ class DeepSpeedRLHFEngine():
 
         #TODO(jeff): should not be needed, we should be able to use ds_config above
         #TODO(jeff): it means we never create the critic w. zero.init context if we are using ZeRO-3
+        # ds_eval_config = get_eval_ds_config(offload=False, stage=zero_stage)
         ds_eval_config = get_eval_ds_config(offload=False, stage=0)
+        #Minjia: We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
+        ds_eval_config[
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+        ds_eval_config[
+            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            ) * self.args.gradient_accumulation_steps
 
         # Model
         reward_model = create_critic_model(
