@@ -9,11 +9,11 @@ do
     do
         for lora in true false
         do
-            cmd="bash training_scripts/single_node/sweep/run_1.3b_lora_swp.sh \
+            cmd="bash training_scripts/single_node/sweep/run_single.sh \
                 ${z} \
                 ${offload} \
                 ${lora} \
-                step1_z${z}_offload_${offload}_lora_${lora}"
+                z${z}_offload_${offload}_lora_${lora}"
             echo "----------------------------- CALLING SHELL SCRIPT -----------------------------"
             echo $cmd
             $cmd

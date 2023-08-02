@@ -14,7 +14,7 @@ do
         do
             for lora in true false
             do
-                cmd="bash training_scripts/single_node/sweep/run_1.3b_lora_swp.sh \
+                cmd="bash training_scripts/single_node/sweep/run_single.sh \
                     $ACTOR_MODEL_PATH \
                     $CRITIC_MODEL_PATH \
                     ${z} \

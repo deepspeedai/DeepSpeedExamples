@@ -60,12 +60,13 @@ We are sharing our training logs for all three steps for an OPT-1.3b actor and O
 | 3 | [single_node/run_1.3b.sh](https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/step3_rlhf_finetuning/training_scripts/single_node/run_1.3b.sh) | [actor_opt-1.3b_critic_opt-350m_globalBatchSize64.log](https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/step3_rlhf_finetuning/training_log_output/actor_opt-1.3b_critic_opt-350m_globalBatchSize64.log) |
 
 ### Characterization Scripts
-Scripts for sweeping training across various parameters (Zero Stage, Offload, Lora, etc) are available for Step 1 and 3. These scripts can be further extended to sweep across additional parameters such as learning rate.
+Scripts for sweeping training across various parameters (Zero Stage, Offload, Lora, etc) are available for Step 1, 2, and 3. These scripts can be further extended to sweep across additional parameters such as learning rate.
 
 | Step         | Sweep Script     | README |
 |--------------|-----------|-----------|
-| 1 | [run_step1_opt_sweep.sh](./step1_supervised_finetuning/training_scripts/single_node/sweep/run_step1_opt_sweep.sh) | [README](./step1_supervised_finetuning/training_scripts/single_node/sweep/README.md) |
-| 3 | [run_step3_opt_sweep.sh](./step3_rlhf_finetuning/training_scripts/single_node/sweep/run_step3_opt_sweep.sh) | [README](./step3_rlhf_finetuning/training_scripts/single_node/sweep/README.md) |
+| 1 | [run_step1_sweep.sh](./step1_supervised_finetuning/training_scripts/single_node/sweep/run_step1_sweep.sh) | [README](./step1_supervised_finetuning/training_scripts/single_node/sweep/README.md) |
+| 2 | [run_step2_sweep.sh](./step2_reward_model_finetuning/training_scripts/single_node/sweep/run_step2_sweep.sh) | [README](./step2_reward_model_finetuning/training_scripts/single_node/sweep/README.md) |
+| 3 | [run_step3_sweep.sh](./step3_rlhf_finetuning/training_scripts/single_node/sweep/run_step3_sweep.sh) | [README](./step3_rlhf_finetuning/training_scripts/single_node/sweep/README.md) |
 
 ### Others
 RLHF (Reinforcement Learning for Human Feedback) training is still an open problem, and DeepSpeed-Chat is designed to be a starting point for researchers and practitioners to work on it with an efficient and fast training experience. The Hybrid-Engine and other efficient components, like LoRA, can be inherited from DeepSpeed-Chat, allowing you to develop your own RLHF training pipeline for exploration, research, and other purposes.
