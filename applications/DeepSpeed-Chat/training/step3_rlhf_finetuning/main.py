@@ -318,17 +318,20 @@ def parse_args():
             f"{args.tensorboard_path}/step3_tensorboard_logs")
 
     # Validate settings
-    if (args.actor_gradient_checkpointing
-            and args.actor_lora_dim > 0) or (args.critic_gradient_checkpointing
-                                             and args.critic_lora_dim > 0):
-        assert (
-            not args.only_optimize_lora
-        ), "--{actor,critic}_gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
-
     if args.inference_tp_size > 1:
         assert (
             args.actor_zero_stage == 3
         ), "Zero stage 3 must be used to do Tensor sharding in the hybrid engine"
+
+    if args.actor_zero_stage == 2 and args.critic_zero_stage == 2 and args.enable_hybrid_engine and args.offload and args.actor_lora_dim == 0:
+        raise ValueError(
+            "The combination of [actor_zero_stage==2, critic_zero_stage==2, enable_hybrid_engine=True, offload=True, lora=False] is currently unsupported due to training instability!"
+        )
+
+    if args.actor_zero_stage == 3 and args.critic_zero_stage == 3 and args.enable_hybrid_engine and args.offload and args.actor_lora_dim > 0:
+        raise ValueError(
+            "The combination of [actor_zero_stage==3, critic_zero_stage==3, enable_hybrid_engine=True, offload=True, lora=True] is currently unsupported due to training instability!"
+        )
 
     return args
 

@@ -139,3 +139,17 @@ def only_optimize_lora_parameters(model):
         else:
             param.requires_grad = False
     return model
+
+
+def make_model_gradient_checkpointing_compatible(model):
+    # Higgingface added this enable input require grads function to make gradient checkpointing work for lora-only optimization
+    if hasattr(model, "enable_input_require_grads"):
+        model.enable_input_require_grads()
+    elif hasattr(model, "get_input_embeddings"):
+
+        def make_inputs_require_grad(module, input, output):
+            output.requires_grad_(True)
+
+        model.get_input_embeddings().register_forward_hook(
+            make_inputs_require_grad)
+    return model

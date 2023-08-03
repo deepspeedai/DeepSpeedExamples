@@ -10,7 +10,7 @@ from deepspeed.ops.adam import DeepSpeedCPUAdam
 from transformers import AutoModelForCausalLM, get_scheduler
 
 from utils.ds_utils import get_train_ds_config, get_eval_ds_config
-from utils.module.lora import convert_linear_layer_to_lora, only_optimize_lora_parameters
+from utils.module.lora import convert_linear_layer_to_lora, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
 from utils.model.model_utils import create_hf_model, create_critic_model
 from utils.utils import get_optimizer_grouped_parameters
 """
@@ -100,6 +100,8 @@ class DeepSpeedRLHFEngine():
                 self.args.actor_lora_dim)
             if self.args.only_optimize_lora:
                 actor_model = only_optimize_lora_parameters(actor_model)
+                actor_model = make_model_gradient_checkpointing_compatible(
+                    actor_model)
 
         # Optimizer
         AdamOptimizer = DeepSpeedCPUAdam if self.args.offload else FusedAdam
@@ -226,6 +228,8 @@ class DeepSpeedRLHFEngine():
                 self.args.critic_lora_dim)
             if self.args.only_optimize_lora:
                 critic_model = only_optimize_lora_parameters(critic_model)
+                critic_model = make_model_gradient_checkpointing_compatible(
+                    critic_model)
 
         # Optimizer
         AdamOptimizer = DeepSpeedCPUAdam if self.args.offload else FusedAdam

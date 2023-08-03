@@ -27,7 +27,7 @@ sys.path.append(
 from utils.data.data_utils import create_prompt_dataset
 from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, get_optimizer_grouped_parameters, save_zero_three_model, load_hf_tokenizer
 from utils.ds_utils import get_train_ds_config
-from utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters
+from utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
 from utils.model.model_utils import create_hf_model
 
 
@@ -175,12 +175,6 @@ def parse_args():
     parser = deepspeed.add_config_arguments(parser)
     args = parser.parse_args()
 
-    # Validate settings
-    if args.gradient_checkpointing and args.lora_dim > 0:
-        assert (
-            not args.only_optimize_lora
-        ), "--gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
-
     return args
 
 
@@ -240,6 +234,7 @@ def main():
                                              args.lora_dim)
         if args.only_optimize_lora:
             model = only_optimize_lora_parameters(model)
+            model = make_model_gradient_checkpointing_compatible(model)
 
     # Prepare the data
     train_phase = 1
