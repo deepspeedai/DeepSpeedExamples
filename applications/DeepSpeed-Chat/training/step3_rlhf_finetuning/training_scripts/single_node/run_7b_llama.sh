@@ -7,7 +7,7 @@ ACTOR_MODEL_PATH=$1
 CRITIC_MODEL_PATH=$2
 ACTOR_ZERO_STAGE=$3
 CRITIC_ZERO_STAGE=$4
-OUTPUT=$3
+OUTPUT=$5
 if [ "$OUTPUT" == "" ]; then
     OUTPUT=./output_step3_llama
 fi
