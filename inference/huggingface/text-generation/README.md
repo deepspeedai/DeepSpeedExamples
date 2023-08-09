@@ -15,6 +15,13 @@ Python dependencies:
 <pre>
 pip install -r requirements.txt
 </pre>
+If you are using conda, the following works:
+<pre>
+conda create -c conda-forge -n deepspeed python=3.10
+conda activate deepspeed
+pip install -r requirements.txt
+deepspeed --num_gpus 1 inference-test.py --name bigscience/bloom-3b --batch_size 2
+</pre>
 
 # Inference Test
 
