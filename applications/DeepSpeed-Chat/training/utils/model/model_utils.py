@@ -13,6 +13,7 @@ from huggingface_hub import snapshot_download
 from transformers.deepspeed import HfDeepSpeedConfig
 
 from .reward_model import RewardModel
+from ..utils import load_state_dict_into_model
 
 
 def create_hf_model(model_class,
@@ -53,25 +54,50 @@ def create_critic_model(model_name_or_path,
                         ds_config,
                         num_padding_at_beginning=0,
                         rlhf_training=False,
-                        disable_dropout=False):
+                        disable_dropout=False,
+                        zero_stage=0):
     # OPT model family always put a padding token at the beginning of the sequence,
     # we did not see this in other models but not sure if it is a general rule
+
+    import time
+
+    start = time.time()
     critic_model = create_hf_model(AutoModel, model_name_or_path, tokenizer,
                                    ds_config, rlhf_training, disable_dropout)
+    end = time.time()
+    if torch.distributed.get_rank() == 0:
+        print(f"> Creating model from_config took {end - start} seconds")
+
     critic_model = RewardModel(
         critic_model,
         tokenizer,
         num_padding_at_beginning=num_padding_at_beginning)
 
     if rlhf_training:
+        # load critic model from checkpoint
+
         if not os.path.isdir(model_name_or_path):
             model_name_or_path = snapshot_download(model_name_or_path)
-        # critic model needs to load the weight here
         model_ckpt_path = os.path.join(model_name_or_path, 'pytorch_model.bin')
         assert os.path.exists(
             model_ckpt_path
         ), f"Cannot find model checkpoint at {model_ckpt_path}"
-        critic_model.load_state_dict(
-            torch.load(model_ckpt_path, map_location='cpu'))
+
+        start = time.time()
+        model_ckpt_state_dict = torch.load(model_ckpt_path, map_location='cpu')
+        end = time.time()
+        if torch.distributed.get_rank() == 0:
+            print(f"> torch.load took {end - start} seconds")
+
+        # load critic model from checkpoint with zero-stage 3 compatibility
+        # this functionality may be moved to DS checkpoint load API in future
+        start = time.time()
+        load_state_dict_into_model(critic_model,
+                                   model_ckpt_state_dict,
+                                   "",
+                                   zero_stage=zero_stage)
+        end = time.time()
+        if torch.distributed.get_rank() == 0:
+            print(f"> Loading model state dict took {end - start} seconds")
 
     return critic_model

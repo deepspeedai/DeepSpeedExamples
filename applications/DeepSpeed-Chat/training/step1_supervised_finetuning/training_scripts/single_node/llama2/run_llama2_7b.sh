@@ -6,17 +6,17 @@
 OUTPUT=$1
 ZERO_STAGE=$2
 if [ "$OUTPUT" == "" ]; then
-    OUTPUT=./output_step1_llama_7b_epoch4_lr9.65e-6_test
+    OUTPUT=./output_step1_llama2_7b
 fi
 if [ "$ZERO_STAGE" == "" ]; then
     ZERO_STAGE=3
 fi
 mkdir -p $OUTPUT
 
-deepspeed --include="worker-1" main.py \
+deepspeed main.py \
    --data_path Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets \
    --data_split 2,4,4 \
-   --model_name_or_path decapoda-research/llama-7b-hf \
+   --model_name_or_path meta-llama/Llama-2-7b-hf \
    --per_device_train_batch_size 4 \
    --per_device_eval_batch_size 4 \
    --max_seq_len 512 \

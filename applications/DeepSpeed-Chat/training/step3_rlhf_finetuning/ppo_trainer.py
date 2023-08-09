@@ -70,13 +70,22 @@ class DeepSpeedPPOTrainer():
 
         max_min_length = self.max_answer_seq_len + prompts.shape[1]
 
+        # This has been added due to a probability/nan error that happens after
+        # meta-llama/Llama-2-7b-hf enabled do_sample:
+        # https://huggingface.co/meta-llama/Llama-2-7b-hf/commit/6fdf2e60f86ff2481f2241aaee459f85b5b0bbb9
+        if self.actor_model.model.config.model_type == "llama":
+            kwargs = dict(do_sample=False)
+        else:
+            kwargs = dict()
+
         with torch.no_grad():
             seq = self.actor_model.module.generate(
                 prompts,
                 attention_mask=mask,
                 max_length=max_min_length,
                 pad_token_id=self.tokenizer.pad_token_id,
-                synced_gpus=self.z3_enabled)
+                synced_gpus=self.z3_enabled,
+                **kwargs)
 
         # Filter out seq with no answers (or very short). This happens when users directly use the pre-training ckpt without supervised finetuning
         # NOTE: this will causes each GPU has different number of examples

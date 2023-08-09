@@ -17,6 +17,15 @@ fi
 if [ "$CRITIC_ZERO_STAGE" == "" ]; then
     CRITIC_ZERO_STAGE=2
 fi
+
+# if actor and critic model names are not provided, then use the publicly available AdamG012/chat-opt-1.3b-sft-deepspeed and AdamG012/chat-opt-350m-reward-deepspeed
+if [ "$ACTOR_MODEL_PATH" == "" ]; then
+    ACTOR_MODEL_PATH=AdamG012/chat-opt-1.3b-sft-deepspeed
+fi
+if [ "$CRITIC_MODEL_PATH" == "" ]; then
+    CRITIC_MODEL_PATH=AdamG012/chat-opt-350m-reward-deepspeed
+fi
+
 mkdir -p $OUTPUT
 
 Num_Padding_at_Beginning=1 # this is model related

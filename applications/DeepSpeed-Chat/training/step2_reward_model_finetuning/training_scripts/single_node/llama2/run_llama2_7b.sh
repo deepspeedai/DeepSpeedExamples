@@ -14,9 +14,9 @@ fi
 mkdir -p $OUTPUT
 
 deepspeed main.py \
-   --data_path Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets \
+   --data_path Dahoas/rm-static \
    --data_split 2,4,4 \
-   --model_name_or_path decapoda-research/llama-7b-hf \
+   --model_name_or_path meta-llama/Llama-2-7b-hf \
    --per_device_train_batch_size 8 \
    --per_device_eval_batch_size 8 \
    --max_seq_len 512 \
@@ -31,5 +31,6 @@ deepspeed main.py \
    --gradient_checkpointing \
    --zero_stage $ZERO_STAGE \
    --deepspeed \
+   --offload \
    --output_dir $OUTPUT \
    &> $OUTPUT/training.log

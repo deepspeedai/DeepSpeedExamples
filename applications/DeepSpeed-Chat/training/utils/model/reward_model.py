@@ -44,13 +44,18 @@ class RewardModel(nn.Module):
                 use_cache=False):
         loss = None
 
+        if self.config.model_type == "llama":
+            kwargs = dict()
+        else:
+            kwargs = dict(head_mask=head_mask)
+
         transformer_outputs = self.rwtranrsformer(
             input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
-            head_mask=head_mask,
             inputs_embeds=inputs_embeds,
-            use_cache=use_cache)
+            use_cache=use_cache,
+            **kwargs)
 
         hidden_states = transformer_outputs[0]
         rewards = self.v_head(hidden_states).squeeze(-1)
@@ -122,13 +127,18 @@ class RewardModel(nn.Module):
                       prompt_length=0,
                       use_cache=False):
 
+        if self.config.model_type == "llama":
+            kwargs = dict()
+        else:
+            kwargs = dict(head_mask=head_mask)
+
         transformer_outputs = self.rwtranrsformer(
             input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
-            head_mask=head_mask,
             inputs_embeds=inputs_embeds,
-            use_cache=use_cache)
+            use_cache=use_cache,
+            **kwargs)
         hidden_states = transformer_outputs[0]
         values = self.v_head(hidden_states).squeeze(-1)
         if return_value_only:
