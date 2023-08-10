@@ -192,7 +192,7 @@ The train.py script has an easy-to-use command-line interface and can be launche
 cd training/step1_supervised_finetuning/
 
 # Run the training script
-bash training_scripts/single_gpu/run_1.3b.sh
+bash training_scripts/opt/single_gpu/run_1.3b.sh
 
 # Evaluate the model
 bash evaluation_scripts/run_prompt.sh
@@ -209,7 +209,7 @@ bash evaluation_scripts/run_prompt.sh
 cd training/step2_reward_model_finetuning
 
 # Run the training script
-bash training_scripts/single_gpu/run_350m.sh
+bash training_scripts/opt/single_gpu/run_350m.sh
 
 # Evaluate the model
 bash evaluation_scripts/run_eval.sh
@@ -237,7 +237,7 @@ As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Ch
 cd training/step3_rlhf_finetuning/
 
 # Run the training script
-bash training_scripts/single_gpu/run_1.3b.sh
+bash training_scripts/opt/single_gpu/run_1.3b.sh
 ```
 </p></details>
 

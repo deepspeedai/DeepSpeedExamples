@@ -7,7 +7,7 @@ for z in {2..3}
 do
     for offload in true false
     do
-        cmd="bash training_scripts/single_node/sweep/run_single.sh \
+        cmd="bash training_scripts/opt/single_node/sweep/run_single.sh \
             ${z} \
             ${offload} \
             z${z}_offload_${offload}"

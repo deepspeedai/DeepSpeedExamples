@@ -127,7 +127,7 @@ def get_script(args, step_num):
     script = os.path.join(
         os.getcwd(),
         step_dirs[step_num],
-        "training_scripts",
+        "training_scripts/opt/",
         args.deployment_type,
         f"run_{model_size}.sh",
     )

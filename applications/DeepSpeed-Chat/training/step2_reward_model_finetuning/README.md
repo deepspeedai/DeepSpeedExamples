@@ -22,7 +22,7 @@ We also provide an evaluation script, ``rw_eval.py``, for users to perform simpl
 
 We provide the script for OPT-350m, which you can test by launching the command
  ```
-bash training_scripts/single_gpu/run_350m.sh
+bash training_scripts/opt/single_gpu/run_350m.sh
 ```
 
  You can train larger models by simply replacing the model candidate with your preferred one and enabling other efficient training features as described in Step 1 of the SFT finetuning process.

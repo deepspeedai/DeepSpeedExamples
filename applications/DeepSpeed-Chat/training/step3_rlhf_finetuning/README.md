@@ -30,7 +30,7 @@ To overcome both challenges, we are introducing the DeepSpeed Hybrid Engine (Dee
 We provide multiple actor training scripts in the 'training_scripts' folder, all using a fixed OPT-350m reward model. However, users are encouraged to experiment with different reward model sizes based on their preferences. For example, if you have a single GPU and want to train an OPT-1.3B model, you can simply run the following bash script to initiate the training process.
 
 ```bash
-training_scripts/single_gpu/run_1.3b.sh
+training_scripts/opt/single_gpu/run_1.3b.sh
 ```
 
 ## 🎵 Some arguments explanation and largest model training on your own system

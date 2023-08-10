@@ -5,7 +5,7 @@ Supervised finetuning (SFT) is very similar to standard language model finetunin
 We provide multiple scripts for training on single GPUs (e.g., a single A6000-48G, V100-32G, A100-40G, etc.), single nodes (e.g., 8/16x V100-32G, 8 A100-40G/80G), and multiple nodes setting (e.g., 64x A100-80G), which can be found in the 'training_scripts' directory. For example, if you have a single A6000-48G, you can simply run the corresponding script.
 
 ```bash
- training_scripts/single_gpu/run_1.3b.sh
+ training_scripts/opt/single_gpu/run_1.3b.sh
  ```
 
 to train a OPT-1.3b model. It is easy to extend our single-node script to multi-node system.

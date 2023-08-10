@@ -16,5 +16,5 @@ The `run_step2_sweep.sh` script passes configuration arguments to `run_single.sh
 # Usage
 The sweep script can be run as follows:
 <pre>
-DeepSpeedExamples/applications/DeepSpeed-Chat/training/step2_reward_model_finetuning$ bash training_scripts/single_node/sweep/run_step2_sweep.sh
+DeepSpeedExamples/applications/DeepSpeed-Chat/training/step2_reward_model_finetuning$ bash training_scripts/opt/single_node/sweep/run_step2_sweep.sh
 </pre>
