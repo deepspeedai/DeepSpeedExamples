@@ -286,6 +286,20 @@ def parse_args():
     parser.add_argument('--only_optimize_lora',
                         action='store_true',
                         help='Only optimize the LoRA parameters.')
+    parser.add_argument(
+        "--actor_lora_learning_rate",
+        type=float,
+        default=5e-4,
+        help=
+        "Initial actor LoRA learning rate (after the potential warmup period) to use."
+    )
+    parser.add_argument(
+        "--critic_lora_learning_rate",
+        type=float,
+        default=5e-4,
+        help=
+        "Initial critic LoRA learning rate (after the potential warmup period) to use."
+    )
     ## Make EMA as an optional feature
     parser.add_argument('--enable_ema',
                         action='store_true',
