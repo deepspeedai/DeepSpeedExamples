@@ -24,6 +24,8 @@ from transformers.models.roberta.modeling_roberta import (
     RobertaPreTrainedModel,
 )
 
+from deepspeed.accelerator import get_accelerator
+
 logger = loguru.logger
 
 ######################################################################
@@ -625,8 +627,8 @@ def train(
         pathlib.Path: The final experiment directory
 
     """
-    device = (torch.device("cuda", local_rank) if (local_rank > -1)
-              and torch.cuda.is_available() else torch.device("cpu"))
+    device = (torch.device(get_accelerator().device_name(), local_rank) if (local_rank > -1)
+              and get_accelerator().is_available() else torch.device("cpu"))
     ################################
     ###### Create Exp. Dir #########
     ################################

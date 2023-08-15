@@ -3,6 +3,7 @@ import torchvision
 import torchvision.transforms as transforms
 import argparse
 import deepspeed
+from deepspeed.accelerator import get_accelerator
 
 
 def add_argument():
@@ -87,6 +88,22 @@ def add_argument():
         action='store_true',
         help=
         '(moe) create separate moe param groups, required when using ZeRO w. MoE'
+    )
+    parser.add_argument(
+        '--dtype',
+        default='fp16',
+        type=str,
+        choices=['bf16', 'fp16', 'fp32'],
+        help=
+        'Datatype used for training'
+    )
+    parser.add_argument(
+        '--stage',
+        default=0,
+        type=int,
+        choices=[0, 1, 2, 3],
+        help=
+        'Datatype used for training'
     )
 
     # Include DeepSpeed configuration arguments
@@ -243,11 +260,68 @@ if args.moe_param_group:
 # 1) Distributed model
 # 2) Distributed data loader
 # 3) DeepSpeed optimizer
-model_engine, optimizer, trainloader, __ = deepspeed.initialize(
-    args=args, model=net, model_parameters=parameters, training_data=trainset)
+ds_config = {
+  "train_batch_size": 16,
+  "steps_per_print": 2000,
+  "optimizer": {
+    "type": "Adam",
+    "params": {
+      "lr": 0.001,
+      "betas": [
+        0.8,
+        0.999
+      ],
+      "eps": 1e-8,
+      "weight_decay": 3e-7
+    }
+  },
+  "scheduler": {
+    "type": "WarmupLR",
+    "params": {
+      "warmup_min_lr": 0,
+      "warmup_max_lr": 0.001,
+      "warmup_num_steps": 1000
+    }
+  },
+  "gradient_clipping": 1.0,
+  "prescale_gradients": False,
+  "bf16": {
+      "enabled": args.dtype == "bf16"
+  },
+  "fp16": {
+      "enabled": args.dtype == "fp16",
+      "fp16_master_weights_and_grads": False,
+      "loss_scale": 0,
+      "loss_scale_window": 500,
+      "hysteresis": 2,
+      "min_loss_scale": 1,
+      "initial_scale_power": 15
+  },
+  "wall_clock_breakdown": False,
+  "zero_optimization": {
+      "stage": args.stage,
+      "allgather_partitions": True,
+      "reduce_scatter": True,
+      "allgather_bucket_size": 50000000,
+      "reduce_bucket_size": 50000000,
+      "overlap_comm": True,
+      "contiguous_gradients": True,
+      "cpu_offload": False
+  }
+}
 
-fp16 = model_engine.fp16_enabled()
-print(f'fp16={fp16}')
+model_engine, optimizer, trainloader, __ = deepspeed.initialize(
+    args=args, model=net, model_parameters=parameters, training_data=trainset, config=ds_config)
+
+local_device = get_accelerator().device_name(model_engine.local_rank)
+local_rank = model_engine.local_rank
+
+# For float32, target_dtype will be None so no datatype conversion needed
+target_dtype = None
+if model_engine.bfloat16_enabled():
+    target_dtype=torch.bfloat16
+elif model_engine.fp16_enabled():
+    target_dtype=torch.half
 
 #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #net.to(device)
@@ -274,10 +348,9 @@ for epoch in range(2):  # loop over the dataset multiple times
     running_loss = 0.0
     for i, data in enumerate(trainloader):
         # get the inputs; data is a list of [inputs, labels]
-        inputs, labels = data[0].to(model_engine.local_rank), data[1].to(
-            model_engine.local_rank)
-        if fp16:
-            inputs = inputs.half()
+        inputs, labels = data[0].to(local_device), data[1].to(local_device)
+        if target_dtype != None:
+            inputs = inputs.to(target_dtype)
         outputs = model_engine(inputs)
         loss = criterion(outputs, labels)
 
@@ -286,7 +359,7 @@ for epoch in range(2):  # loop over the dataset multiple times
 
         # print statistics
         running_loss += loss.item()
-        if i % args.log_interval == (
+        if local_rank == 0 and i % args.log_interval == (
                 args.log_interval -
                 1):  # print every log_interval mini-batches
             print('[%d, %5d] loss: %.3f' %
@@ -317,9 +390,9 @@ print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
 ########################################################################
 # Okay, now let us see what the neural network thinks these examples above are:
-if fp16:
-    images = images.half()
-outputs = net(images.to(model_engine.local_rank))
+if target_dtype != None:
+    images = images.to(target_dtype)
+outputs = net(images.to(local_device))
 
 ########################################################################
 # The outputs are energies for the 10 classes.
@@ -340,13 +413,12 @@ total = 0
 with torch.no_grad():
     for data in testloader:
         images, labels = data
-        if fp16:
-            images = images.half()
-        outputs = net(images.to(model_engine.local_rank))
+        if target_dtype != None:
+            images = images.to(target_dtype)
+        outputs = net(images.to(local_device))
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
-        correct += (predicted == labels.to(
-            model_engine.local_rank)).sum().item()
+        correct += (predicted == labels.to(local_device)).sum().item()
 
 print('Accuracy of the network on the 10000 test images: %d %%' %
       (100 * correct / total))
@@ -364,11 +436,11 @@ class_total = list(0. for i in range(10))
 with torch.no_grad():
     for data in testloader:
         images, labels = data
-        if fp16:
-            images = images.half()
-        outputs = net(images.to(model_engine.local_rank))
+        if target_dtype != None:
+            images = images.to(target_dtype)
+        outputs = net(images.to(local_device))
         _, predicted = torch.max(outputs, 1)
-        c = (predicted == labels.to(model_engine.local_rank)).squeeze()
+        c = (predicted == labels.to(local_device)).squeeze()
         for i in range(4):
             label = labels[i]
             class_correct[label] += c[i].item()

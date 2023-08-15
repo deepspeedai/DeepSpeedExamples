@@ -31,6 +31,7 @@ from transformers.models.roberta.modeling_roberta import (
     RobertaPreTrainedModel,
 )
 
+from deepspeed.accelerator import get_accelerator
 
 def is_rank_0() -> bool:
     return int(os.environ.get("RANK", "0")) == 0
@@ -612,6 +613,7 @@ def train(
         checkpoint_every: int = 1000,
         log_every: int = 10,
         local_rank: int = -1,
+        dtype: str = "bf16",
 ) -> pathlib.Path:
     """Trains a [Bert style](https://arxiv.org/pdf/1810.04805.pdf)
     (transformer encoder only) model for MLM Task
@@ -667,8 +669,8 @@ def train(
         pathlib.Path: The final experiment directory
 
     """
-    device = (torch.device("cuda", local_rank) if (local_rank > -1)
-              and torch.cuda.is_available() else torch.device("cpu"))
+    device = (torch.device(get_accelerator().device_name(), local_rank) if (local_rank > -1)
+              and get_accelerator().is_available() else torch.device("cpu"))
     ################################
     ###### Create Exp. Dir #########
     ################################
@@ -777,6 +779,7 @@ def train(
     ###### DeepSpeed engine ########
     ################################
     log_dist("Creating DeepSpeed engine", ranks=[0], level=logging.INFO)
+    assert (dtype == 'fp16' or dtype == 'bf16')
     ds_config = {
         "train_micro_batch_size_per_gpu": batch_size,
         "optimizer": {
@@ -785,7 +788,7 @@ def train(
                 "lr": 1e-4
             }
         },
-        "fp16": {
+        dtype: {
             "enabled": True
         },
         "zero_optimization": {

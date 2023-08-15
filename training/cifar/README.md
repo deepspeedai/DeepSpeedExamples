@@ -18,3 +18,4 @@ run_ds_moe.sh
 * To run baseline CIFAR-10 model - "python cifar10_tutorial.py"
 * To run DeepSpeed CIFAR-10 model - "bash run_ds.sh"
 * To run DeepSpeed CIFAR-10 model with Mixture of Experts (MoE) - "bash run_ds_moe.sh"
+* To run with different data type (default='fp16') and zero stages (default=0) - "bash run_ds.sh --dtype={fp16|bf16} --stage={0|1|2|3}"
