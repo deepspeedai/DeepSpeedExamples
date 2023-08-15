@@ -235,6 +235,12 @@ class DeepSpeedPPOTrainer():
 
         return actor_loss, critic_loss
 
+    def get_overflow(self):
+        actor_overflow = self.actor_model.optimizer.overflow
+        critic_overflow = self.critic_model.optimizer.overflow
+
+        return actor_overflow, critic_overflow
+
     def actor_loss_fn(self, logprobs, old_logprobs, advantages, mask):
         ## policy gradient loss
         log_ratio = (logprobs - old_logprobs) * mask

@@ -11,6 +11,8 @@ ENABLE_HYBRID_ENGINE=$5
 OFFLOAD=$6
 LORA=$7
 OUTPUT=$8
+TEST=$9
+TEST_STOP_STEP=${10}
 
 if [ "$ACTOR_ZERO_STAGE" == "" ]; then
     ACTOR_ZERO_STAGE=2
@@ -38,6 +40,14 @@ if [ "$LORA" == true ]; then
 else
     ACTOR_LORA_DIM="--actor_lora_dim 0"
     ACTOR_LORA_MODULE_NAME=""
+fi
+
+if [ "$TEST" == true ]; then
+    TEST="--enable_test_mode"
+    TEST_STOP_STEP="--test_stop_step ${TEST_STOP_STEP}"
+else
+    TEST=""
+    TEST_STOP_STEP=""
 fi
 
 mkdir -p $OUTPUT
@@ -74,7 +84,8 @@ cmd="deepspeed --num_nodes=1 main.py \
    --critic_zero_stage ${CRITIC_ZERO_STAGE} \
    --output_dir $OUTPUT \
     $ENABLE_HYBRID_ENGINE $OFFLOAD $UNPIN_ACTOR_PARAMETERS \
-    $ACTOR_LORA_DIM $ACTOR_LORA_MODULE_NAME"
+    $ACTOR_LORA_DIM $ACTOR_LORA_MODULE_NAME\
+    $TEST $TEST_STOP_STEP"
 
 echo "----------------------------- DS COMMAND -----------------------------"
 echo $cmd
