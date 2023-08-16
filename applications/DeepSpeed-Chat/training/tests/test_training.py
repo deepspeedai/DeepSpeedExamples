@@ -12,22 +12,22 @@ def file_exists(directory_path, file_name):
     return os.path.isfile(os.path.join(directory_path, file_name))
 
 
-@pytest.fixture(params=["2", "3"])
+@pytest.fixture(params=["2", "3"], ids=["zero2", "zero3"])
 def zero_stage(request):
     return str(request.param)
 
 
-@pytest.fixture(params=["true", "false"])
+@pytest.fixture(params=["true", "false"], ids=["he", ""])
 def hybrid_engine(request):
     return str(request.param)
 
 
-@pytest.fixture(params=["true", "false"])
+@pytest.fixture(params=["true", "false"], ids=["offload", ""])
 def offload(request):
     return str(request.param)
 
 
-@pytest.fixture(params=["true", "false"])
+@pytest.fixture(params=["true", "false"], ids=["lora", ""])
 def lora(request):
     return str(request.param)
 
