@@ -60,11 +60,6 @@ def test_ds_chat(zero_stage, hybrid_engine, offload, lora):
             "The combination of [actor_zero_stage==2, critic_zero_stage==2, enable_hybrid_engine=True, offload=True, lora=False] is currently unsupported due to training instability!"
         )
 
-    if zero_stage == "3" and hybrid_engine == "true" and offload == "true" and lora == "true":
-        pytest.skip(
-            "The combination of [actor_zero_stage==3, critic_zero_stage==3, enable_hybrid_engine=True, offload=True, lora=True] is currently unsupported due to training instability!"
-        )
-
     # cd into execution dir
     wd = os.getcwd()
     os.chdir("../step3_rlhf_finetuning")

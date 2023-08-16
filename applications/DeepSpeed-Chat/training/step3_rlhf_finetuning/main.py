@@ -356,11 +356,6 @@ def parse_args():
             "The combination of [actor_zero_stage==2, critic_zero_stage==2, enable_hybrid_engine=True, offload=True, lora=False] is currently unsupported due to training instability!"
         )
 
-    if args.actor_zero_stage == 3 and args.critic_zero_stage == 3 and args.enable_hybrid_engine and args.offload and args.actor_lora_dim > 0:
-        raise ValueError(
-            "The combination of [actor_zero_stage==3, critic_zero_stage==3, enable_hybrid_engine=True, offload=True, lora=True] is currently unsupported due to training instability!"
-        )
-
     return args
 
 
