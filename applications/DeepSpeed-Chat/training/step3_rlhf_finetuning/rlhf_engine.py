@@ -78,10 +78,10 @@ class DeepSpeedRLHFEngine():
             tb_path=self.args.tensorboard_path,
             tb_name="step3_actor")
         ds_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         #TODO(jeff): we should probably set grad accumlation steps here as well for clarity
         ds_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps_actor
 
         # Model
@@ -140,10 +140,10 @@ class DeepSpeedRLHFEngine():
         ds_config = get_eval_ds_config(self.args.offload_reference_model,
                                        zero_stage)
         ds_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         #TODO(jeff): we should probably set grad accumlation steps here as well for clarity
         ds_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps_actor
 
         ref_model = create_hf_model(AutoModelForCausalLM,
@@ -166,10 +166,10 @@ class DeepSpeedRLHFEngine():
         ds_config = get_eval_ds_config(self.args.offload_reference_model,
                                        zero_stage)
         ds_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         #TODO(jeff): we should probably set grad accumlation steps here as well for clarity
         ds_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps_actor
 
         actor_model_ema = create_hf_model(AutoModelForCausalLM,
@@ -195,19 +195,19 @@ class DeepSpeedRLHFEngine():
             tb_path=self.args.tensorboard_path,
             tb_name="step3_critic")
         ds_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         #TODO(jeff): we should probably set grad accumlation steps here as well for clarity
         ds_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps
 
         ds_eval_config = get_eval_ds_config(offload=False,
                                             stage=self.args.critic_zero_stage)
         # We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
         ds_eval_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         ds_eval_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps
 
         # Model
@@ -267,18 +267,18 @@ class DeepSpeedRLHFEngine():
         ds_config = get_eval_ds_config(offload=self.args.offload,
                                        stage=zero_stage)
         ds_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         ds_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps
 
         ds_eval_config = get_eval_ds_config(offload=False, stage=zero_stage)
 
         # We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
         ds_eval_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_mini_train_batch_size
+            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
         ds_eval_config[
-            'train_batch_size'] = self.args.per_device_mini_train_batch_size * torch.distributed.get_world_size(
+            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps
 
         # Model
