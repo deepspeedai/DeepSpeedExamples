@@ -16,6 +16,10 @@ Model compression examples.
 ## 5. Benchmarks
 All benchmarks that use the DeepSpeed library are maintained in this folder.
 
+# Build Pipeline Status
+| Description | Status |
+| ----------- | ------ |
+| Integrations | [![nv-ds-chat](https://github.com/microsoft/DeepSpeed/actions/workflows/nv-ds-chat.yml/badge.svg?branch=master)](https://github.com/microsoft/DeepSpeed/actions/workflows/nv-ds-chat.yml) |
 
 # Contributing
 
