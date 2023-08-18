@@ -33,14 +33,17 @@ def lora(request):
 
 
 def test_ds_chat(zero_stage, hybrid_engine, offload, lora):
+    # Assert that critic model directory exists
     critic_ckpt_dir = os.getenv("CRITIC_CKPT_DIR")
     assert critic_ckpt_dir, "Please set CRITIC_CKPT_DIR in your environment"
 
+    # Setup params
     actor_model = "facebook/opt-125m"
     critic_model = critic_ckpt_dir
-    output_path = "z" + zero_stage + "_he_" + hybrid_engine + "_offload_" + offload + "_lora_" + lora
+    mixed_precision_lora = "false"
     enable_test_mode = "true"
     test_stop_step = "5"
+    output_path = "z" + zero_stage + "_he_" + hybrid_engine + "_offload_" + offload + "_lora_" + lora
     params = [
         actor_model,
         critic_model,
@@ -49,6 +52,7 @@ def test_ds_chat(zero_stage, hybrid_engine, offload, lora):
         hybrid_engine,
         offload,
         lora,
+        mixed_precision_lora,
         output_path,
         enable_test_mode,
         test_stop_step,

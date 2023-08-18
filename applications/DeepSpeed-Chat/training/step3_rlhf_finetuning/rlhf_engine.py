@@ -75,6 +75,7 @@ class DeepSpeedRLHFEngine():
             max_out_tokens=self.args.max_prompt_seq_len +
             self.args.max_answer_seq_len,
             enable_tensorboard=self.args.enable_tensorboard,
+            enable_mixed_precision_lora=self.args.enable_mixed_precision_lora,
             tb_path=self.args.tensorboard_path,
             tb_name="step3_actor")
         ds_config[

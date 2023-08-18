@@ -304,6 +304,11 @@ def parse_args():
     parser.add_argument('--enable_ema',
                         action='store_true',
                         help='Enable EMA checkpoint for the model.')
+    ## Mixed Precision LoRA
+    parser.add_argument(
+        '--enable_mixed_precision_lora',
+        action='store_true',
+        help='Enable Mixed Precision LoRA for training and generation.')
     ## Tensorboard logging
     parser.add_argument('--enable_tensorboard',
                         action='store_true',
@@ -443,6 +448,13 @@ def main():
         tokenizer=tokenizer,
         num_total_iters=num_total_iters,
         args=args)
+
+    # Mixed Precision LoRA
+    if args.enable_mixed_precision_lora:
+        assert args.actor_lora_dim > 0, "Mixed Precision LoRA requires LoRA to be enabled"
+        assert args.actor_zero_stage == 3, "Mixed Precision LoRA requires Zero stage 3"
+        rlhf_engine.actor.optimizer.quantize_nontrainable_params()
+        print_rank_0("Mixed Precision LoRA enabled")
 
     args.end_of_conversation_token = "<|endoftext|>"
 

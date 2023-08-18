@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # DeepSpeed Team
+
+import torch
+
 GLOBAL_BATCH_SIZE = 32
 MICRO_BATCH_SIZE = 4
 
@@ -15,6 +18,7 @@ def get_train_ds_config(offload,
                         tp_gather_partition_size=8,
                         max_out_tokens=512,
                         enable_tensorboard=False,
+                        enable_mixed_precision_lora=False,
                         tb_path="",
                         tb_name=""):
 
@@ -32,6 +36,9 @@ def get_train_ds_config(offload,
         "stage3_prefetch_bucket_size": 3e7,
         "memory_efficient_linear": False
     }
+    if enable_mixed_precision_lora:
+        zero_opt_dict["zero_quantized_nontrainable_weights"] = True
+        zero_opt_dict["zero_hpz_partition_size"] = torch.cuda.device_count()
     return {
         "train_batch_size": GLOBAL_BATCH_SIZE,
         "train_micro_batch_size_per_gpu": MICRO_BATCH_SIZE,
