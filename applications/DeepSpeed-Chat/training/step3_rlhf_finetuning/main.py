@@ -19,6 +19,7 @@ for prompt_batch in prompt_train_dataloader:
 import argparse
 import os
 import random
+import time
 import torch
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
@@ -42,6 +43,7 @@ sys.path.append(
 from utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollatorRLHF, get_unsupervised_data
 from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model, load_hf_tokenizer
 from utils.module.lora import convert_lora_to_linear_layer
+from utils.perf import print_throughput_step3
 
 writer = None
 
@@ -478,13 +480,9 @@ def main():
             args.global_rank)
         for step, (batch_prompt, batch_unsupervised) in enumerate(
                 zip(prompt_train_dataloader, unsupervised_train_dataloader)):
+
             batch_prompt = to_device(batch_prompt, device)
-            if batch_unsupervised is not None:
-                batch_unsupervised = to_device(batch_unsupervised, device)
-                unsup_dataset = unsup_mini_dataset.add(batch_unsupervised)
-            else:
-                unsup_dataset = unsup_mini_dataset.add(
-                    [[None] * args.per_device_generation_batch_size])
+
             # prompts = batch_prompt['prompt']
             # length = prompts.size(-1)
             # if length > args.max_prompt_seq_len:
@@ -494,6 +492,15 @@ def main():
             out = trainer.generate_experience(batch_prompt['prompt'],
                                               batch_prompt['prompt_att_mask'],
                                               step)
+
+            training_start = time.time()
+            if batch_unsupervised is not None:
+                batch_unsupervised = to_device(batch_unsupervised, device)
+                unsup_dataset = unsup_mini_dataset.add(batch_unsupervised)
+            else:
+                unsup_dataset = unsup_mini_dataset.add(
+                    [[None] * args.per_device_generation_batch_size])
+
             exp_dataset = exp_mini_dataset.add(out)
 
             if exp_dataset is not None:
@@ -526,16 +533,24 @@ def main():
                     random.shuffle(exp_dataset)
                     random.shuffle(unsup_dataset)
 
+                end = time.time()
+                training_time = end - training_start
+                e2e_time = training_time + trainer.generate_time * args.generation_batches  # it is an approximation, we did not include, e.g., rw forward time etc
+
                 print_rank_0(
-                    f'epoch: {epoch}|step: {step}|ppo_ep: {ppo_ep+1}|act_loss: {actor_loss_sum/inner_iter}|cri_loss: {critic_loss_sum/inner_iter}|unsuper_loss: {unsup_loss_sum/inner_iter}',
+                    f'Epoch: {epoch} | Step: {step} | PPO Epoch: {ppo_ep+1} | Actor Loss: {actor_loss_sum/inner_iter} | Critic Loss: {critic_loss_sum/inner_iter} | Unsupervised Loss: {unsup_loss_sum/inner_iter}',
                     args.global_rank)
+                print_throughput_step3(rlhf_engine.actor.model, args, e2e_time,
+                                       trainer.generate_time, training_time,
+                                       args.global_rank)
                 average_reward = get_all_reduce_mean(average_reward).item()
                 print_rank_0(
-                    f"average reward score: {average_reward/inner_iter}",
+                    f"Average reward score: {average_reward/inner_iter}",
                     args.global_rank)
                 print_rank_0(
                     "-------------------------------------------------------------------------------------",
                     args.global_rank)
+
                 if args.enable_tensorboard and torch.distributed.get_rank(
                 ) == 0:
                     writer.add_scalar('reward',

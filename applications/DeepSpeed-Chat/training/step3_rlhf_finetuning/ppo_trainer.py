@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 import sys
 import os
+import time
 import deepspeed
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 
@@ -65,6 +66,7 @@ class DeepSpeedPPOTrainer():
         self.cliprange_value = 0.2
         self.gamma = 1.0
         self.lam = 0.95
+        self.generate_time = 0.0
 
     def _generate_sequence(self, prompts, mask, step):
 
@@ -116,7 +118,9 @@ class DeepSpeedPPOTrainer():
 
     def generate_experience(self, prompts, mask, step):
         self.eval()
+        generate_start = time.time()
         seq = self._generate_sequence(prompts, mask, step)
+        generate_end = time.time()
         self.train()
 
         pad_token_id = self.tokenizer.pad_token_id
@@ -133,6 +137,8 @@ class DeepSpeedPPOTrainer():
 
         logits = output.logits
         logits_ref = output_ref.logits
+
+        self.generate_time = generate_end - generate_start
 
         return {
             'prompts': prompts,
