@@ -540,7 +540,8 @@ def main():
                 print_rank_0(
                     f'Epoch: {epoch} | Step: {step} | PPO Epoch: {ppo_ep+1} | Actor Loss: {actor_loss_sum/inner_iter} | Critic Loss: {critic_loss_sum/inner_iter} | Unsupervised Loss: {unsup_loss_sum/inner_iter}',
                     args.global_rank)
-                print_throughput_step3(rlhf_engine.actor.model, args, e2e_time,
+                print_throughput_step3(rlhf_engine.actor.model,
+                                       rlhf_engine.critic, args, e2e_time,
                                        trainer.generate_time, training_time,
                                        args.global_rank)
                 average_reward = get_all_reduce_mean(average_reward).item()
