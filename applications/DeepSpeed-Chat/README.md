@@ -58,7 +58,9 @@ A fast, affordable, scalable and open system framework for enabling end-to-end R
 
 ## 📰 Latest News 📰
 
-* ***[2023/04] 🚀 [DeepSpeed Chat: Easy, Fast and Affordable RLHF Training of ChatGPT-like Models at All Scales](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat)*** [[English](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/README.md)] [[中文](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/chinese/README.md)] [[日本語](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/japanese/README.md)]🚀
+* ***[2023/08] 🚀 [DeepSpeed-Chat: Llama/Llama-2 system support, new features, and training stability improvements](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/ds-chat-release-8-31/README.md)*** 🚀
+
+* ***[2023/04] [DeepSpeed Chat: Easy, Fast and Affordable RLHF Training of ChatGPT-like Models at All Scales](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat)*** [[English](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/README.md)] [[中文](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/chinese/README.md)] [[日本語](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-chat/japanese/README.md)]
 
 To cite DeepSpeed Chat, please cite our [arxiv report](https://arxiv.org/abs/2308.01320):
 
@@ -372,21 +374,21 @@ For other detailed results and in-depth analysis, including effective throughput
 
 ## 😽 Supported Models 😽
 
-
-
 Currently, we support the following model families. We will continue to grow over time to including emerging models for ChatGPT-style training! See [Roadmap](#-deepspeed-chats-roadmap-) for more details.
 
-model family | size range
------- | ------
-[opt](https://huggingface.co/models?other=opt) | 0.1B - 66B
-[bloom](https://huggingface.co/models?other=bloom) | 0.3B - 176B
-[gpt\_neox](https://huggingface.co/models?other=gpt_neox) | 1.3B - 20B
-[gptj](https://huggingface.co/models?other=gptj) | 1.4B - 6B
-[gpt\_neo](https://huggingface.co/models?other=gpt_neo) | 0.1B - 2.7B
-[gpt2](https://huggingface.co/models?other=gpt2) | 0.3B - 1.5B
-[codegen](https://huggingface.co/Salesforce/codegen-16B-multi) | 0.35b - 16B
+model family | size range | details
+------ | ------ | -------
+[opt](https://huggingface.co/models?other=opt) | 0.1B - 66B  | Extensive performance and accuracy tests have been performed.
+[llama2](https://huggingface.co/models?sort=trending&search=meta-llama%2FLlama-2) | 7B, 13B  | We provide full system support and scripts to try 7B and 13B models.*
+[llama2-70b](https://huggingface.co/models?sort=trending&search=meta-llama%2FLlama-2-70b) | 70B  | Llama-2-70B is supported through MixZ++, ZeRO-Offload but not Hybrid Engine.
+[bloom](https://huggingface.co/models?other=bloom) | 0.3B - 176B  | Please create your own scripts. We welcome contributions :)
+[gpt\_neox](https://huggingface.co/models?other=gpt_neox) | 1.3B - 20B | "
+[gptj](https://huggingface.co/models?other=gptj) | 1.4B - 6B | "
+[gpt\_neo](https://huggingface.co/models?other=gpt_neo) | 0.1B - 2.7B | "
+[gpt2](https://huggingface.co/models?other=gpt2) | 0.3B - 1.5B |  "
+[codegen](https://huggingface.co/Salesforce/codegen-16B-multi) | 0.35b - 16B | "
 
-* All performance and accuracy tests have been performed using the OPT model family only. For other models, please see our training_scripts folder on how to change model families.
+* To create a new model training recipe/script, please see our training_scripts folder that contain opt and llama2 scripts. Please note that Llama-2 models have not been fully trained but the scripts have been tested for all the system optimizations including DeepSpeed ZeRO Stage 3, Hybrid Engine, MixZ++, and LoRA. We invite users to try out the Llama-2 scripts and share the results with the community via GitHub and HuggingFace model hub.
 
 
 ## 🔬 Build Pipeline Status 🔬
@@ -427,8 +429,7 @@ For more APIs, example scripts, and evaluation results, please refer to
 
 
 Our future plan includes but not limited to :
-- [ ] System support and finetuning for LLaMA
-- [ ] ZeRO-Offload (CPU/NVMe) is currently not supported but coming soon
+- [ ] Hybrid Engine Support for Llama-2-70B
 - [ ] Generalizing DeepSpeed-RLHF abstraction and system support for a wide range of RL algorithms/paradigms
 - [ ] Auto-tuning of system optimizations
 
