@@ -4,6 +4,7 @@
 # DeepSpeed Team
 
 import torch
+import deepspeed.comm as dist
 
 GLOBAL_BATCH_SIZE = 32
 MICRO_BATCH_SIZE = 4
@@ -38,7 +39,9 @@ def get_train_ds_config(offload,
     }
     if enable_mixed_precision_lora:
         zero_opt_dict["zero_quantized_nontrainable_weights"] = True
-        zero_opt_dict["zero_hpz_partition_size"] = torch.cuda.device_count()
+        if dist.get_world_size() != torch.cuda.device_count():
+            zero_opt_dict["zero_hpz_partition_size"] = torch.cuda.device_count(
+            )
     return {
         "train_batch_size": GLOBAL_BATCH_SIZE,
         "train_micro_batch_size_per_gpu": MICRO_BATCH_SIZE,
