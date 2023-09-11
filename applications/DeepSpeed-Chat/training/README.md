@@ -9,9 +9,9 @@ Supervised fine-tuning (SFT) has indeed made significant progress in the field o
 
 Based on our testing, there are several terms that affect the generation behavior:
 * ```weight decay```: OPT models are pretrained with weight decay. Following that, finetuning normally inherits this setting. However, it may not produce the desired model. Particularly, for our OPT-1.3B example, we disabled weight decay.
-* ```dropout```: Similar as above, dropout is used in OPT pretraining. However, SFT may not necessary need it. Particularly, for our OPT-1.3B example, we enabled dropout.
-* ```dataset```: Using more data usually provide better model quality. But if the sources of datasets are too different, it may hurt the performance. For our OPT-1.3B example, we use the following four datasets: ```Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets```.
-* ```training epochs``` Normally, to avoid overfitting, we choose smaller training epochs instead of longer epochs if smaller epochs can achieve similar model quality (in this case, we use PPL as an indicator). However, similar as InstructGPT pointed, we found even though we got overfitting due to longer training, it is still recommended to use longer training epochs to get better generation quality. Particularly, for our OPT-1.3B example, we use 16 epochs even though we found 1 or 2 epochs training can reach the same PPL score.
+* ```dropout```: Similar as above, dropout is used in OPT pretraining. However, SFT may not necessarily need it. Particularly, for our OPT-1.3B example, we enabled dropout.
+* ```dataset```: Using more data usually provides better model quality. But if the sources of datasets are too different, it may hurt the performance. For our OPT-1.3B example, we use the following four datasets: ```Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets```.
+* ```training epochs``` Normally, to avoid overfitting, we choose smaller training epochs instead of longer epochs if smaller epochs can achieve similar model quality (in this case, we use PPL as an indicator). However, similar to InstructGPT pointed, we found even though we got overfitting due to longer training, it is still recommended to use longer training epochs to get better generation quality. Particularly, for our OPT-1.3B example, we use 16 epochs even though we found that 1 or 2 epochs training can reach the same PPL score.
 
 ### Step 2: Reward Model Finetuning
 Reward model (RM) fine-tuning is indeed similar to SFT, with the main differences being: (1) the training datasets are different - RM requires both good responses and bad responses to the same query; (2) the training loss is different - RM requires pair ranking loss as the optimizing objective.
@@ -22,33 +22,33 @@ Here, we share more about what we observed during our exploration:
 * ```weight decay```: For our OPT-350m example, we enabled weight decay with 0.1.
 * ```dropout```: For our OPT-350m example, we disabled dropout.
 * ```dataset```: For our OPT-350m example, we use the following four datasets: ```Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets```.
-* ```training epochs``` InstructGPT suggests to finetune the model with 1 epoch since overfitting hurts the step 3 performance. During our exploration, we did not see overfitting behavior when we increased the training epochs. However, to follow the instrution from authors. We set training epoch to be 1.
+* ```training epochs``` InstructGPT suggests to finetune the model with 1 epoch since overfitting hurts the step 3 performance. During our exploration, we did not see overfitting behavior when we increased the training epochs. However, to follow the instructions from the authors. We set training epoch to be 1.
 
 Also, we provide more explorations here even though we have not set them as an option or included them in our current pipeline
-* ```multiple answers for one prompt``` In InstructGPT, authors specifically mentioned that using paird rejected and accepted answers for one prompt is not good for reward model training. Therefore, InstructGPT construts the dataset with 4--9 answers per prompt. However, we did not find good datasets with this feature.
-* ```initialize RM with SFT or Pretrained checkpoint``` We internally tested this but did not see big difference for either accuracy or reward score. Also, in InstructGPT, authors have the same finding. However, we encourage users to try it for their own usage.
-* ```Reward score calculation``` We use the final token (or the first padding token) to get the reward score. However, it might not be the optimal choice. For instance, users can try the average score for the entire answer etc.
+* ```multiple answers for one prompt``` In InstructGPT, authors specifically mentioned that using paird rejected and accepted answers for one prompt is not suitable for reward model training. Therefore, InstructGPT constructs the dataset with 4--9 answers per prompt. However, we did not find good datasets with this feature.
+* ```initialize RM with SFT or Pretrained checkpoint``` We internally tested this but did not see a big difference for either accuracy or reward score. Also, in InstructGPT, the authors have the same finding. However, we encourage users to try it for their own usage.
+* ```Reward score calculation``` We use the final token (or the first padding token) to get the reward score. However, it might not be the optimal choice. For instance, users can try the average score for the entire answer, etc.
 * ```Reward loss objective``` We simply use the ranking loss to be the objective. However, others, like MSE, can also be an option.
 
 
 ### Step 3: RLHF finetuning
-The RLHF finetuning is the most complicated step among the three step training. Similar to SFT, reward score cannot really reflect the model generation quality. Also, we sometines observed that reward score drops to initial phase at certain point then quickly recovers. To make things worse, we also see the training can easily get divergence. We here share our settings and observations.
+The RLHF finetuning is the most complicated step among the three-step training. Similar to SFT, the reward score cannot really reflect the model generation quality. Also, we sometimes observed that the reward score drops to the initial phase at a certain point and then quickly recovers. To make things worse, we also see the training can easily get divergence. We here share our settings and observations.
 
 * ```weight decay```: For our OPT-1.3B/350m (actor/critic) example, we disabled weight decay for both models.
 * ```dropout```: We disabled droppout for OPT-1.3B and enabled it for OPT-350m.
 * ```dataset```: We use the following single dataset: ```Dahoas/rm-static```.
 * ```training epochs``` The reward score quickly becomes platou. Therefore, we set the training epoch to be 1 for our OPT-1.3B/350m (actor/critic) example. However, longer training may bring better model quality as SFT.
-* ```ema checkpoint``` We observe ema checkpoint can generally bring bettr model generation quality as stated in InstructGPT.
+* ```ema checkpoint``` We observe ema checkpoint can generally bring better model generation quality as stated in InstructGPT.
 * ```PPO related hyperparameters``` PPO training has a lot of hyperparameters, see [here](https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/step3_rlhf_finetuning/ppo_trainer.py#L61-L66). For now, we hard-coded them for users but you may want to adjust them for you own usage.
-* ```mix unsupervised training``` InstructGPT suggests to mix PPO and unsupervised training to prevent the lost of model's benchmark quality. However, when we directly apply the hyperparameter from Instruct, the model cannot converge. Therefore, we stop exploring this. However, users are encourage to test it and tune the hyperparameter for their own usage.
+* ```mix unsupervised training``` InstructGPT suggests mixing PPO and unsupervised training to prevent the loss of the model's benchmark quality. However, when we directly apply the hyperparameter from Instruct, the model cannot converge. Therefore, we stop exploring this. However, users are encouraged to test it and tune the hyperparameter for their own usage.
 * ```diverging issue``` We have found that it is very unstable to use different generation training batch sizes (`--per_device_generation_batch_size`) and PPO training batch sizes (`--per_device_training_batch_size`), more than one PPO training epoch (`--ppo_epochs`), or more than one generation batch (`--generation_batches 1`). These all point to the same problem: we are not able to update the actor model multiple times after generating experimental data. Therefore, in all of our successful runs, we have set `per_device_generation_batch_size=per_device_training_batch_size` and `ppo_epochs=generation_batches=1`. This is unexpected for a standard RL training pipeline, and we have tried different methods to overcome this, but all have failed. One of the most likely reasons for this instability is that we found the `log_probs` and `old_log_probs` used in the `actor_loss_fn` function can quickly diverge even within two consecutive iterations, which causes the corresponding `ratio` to be huge. Setting a strict upper bound can alleviate this problem, but it cannot fully resolve the convergence issue.
 
 ### About our testing
-We did most of our accuracy/quality testing on OPT-1.3B (SFT and Actor model) and OPT-350m (RW and Critic model). Particularly, we used the 16 V100-32G (DGX-2 node) gpus to run our experiments.
+We did most of our accuracy/quality testing on OPT-1.3B (SFT and Actor model) and OPT-350m (RW and Critic model). Particularly, we used the 16 V100-32G (DGX-2 node) GPUs to run our experiments.
 
-The hyperparameters included in our scripts are based on our own testing. Therefore, it may not work for you case when (but not limited to): (1) a different number of GPUs, (2) different model sizes, (3) different model families, etc.
+The hyperparameters included in our scripts are based on our own testing. Therefore, it may not work for your case when (but not limited to): (1) a different number of GPUs, (2) different model sizes, (3) different model families, etc.
 
-Also note that, you could find even better training configurations/recipes than what we provided. We did not extensively tested all hyperparameter combinations due to resouces constraints.
+Also note that you could find even better training configurations/recipes than what we provided. We did not extensively test all hyperparameter combinations due to resource constraints.
 
 ### Training logs
 We are sharing our training logs for all three steps for an OPT-1.3b actor and OPT-350m critic trained with x16-V100-32GB GPUs:
