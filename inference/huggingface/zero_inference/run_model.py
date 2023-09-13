@@ -26,7 +26,7 @@ from utils import (GB, add_model_hooks, cache_bytes, disable_torch_init,
 from packaging import version
 
 
-assert version.parse(deepspeed.__version__) >= version.parse("0.10.2"), "ZeRO-Inference with weight quantization and kv cache offloading is available only in DeepSpeed 0.10.3+, please upgrade DeepSpeed"
+assert version.parse(deepspeed.__version__) >= version.parse("0.10.3"), "ZeRO-Inference with weight quantization and kv cache offloading is available only in DeepSpeed 0.10.3+, please upgrade DeepSpeed"
 
 def get_model_config(model_name):
     if "175b" in model_name:
@@ -161,11 +161,19 @@ def run_generation(
     return_token_type_ids = True 
     padding_side = "left" if config.model_type in ["opt"] else "right"
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, 
-        return_token_type_ids=return_token_type_ids,
-        padding_side=padding_side
-    )
+    if config.model_type == "opt":
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name.replace("175b", "66b"), 
+            return_token_type_ids=return_token_type_ids,
+            padding_side=padding_side
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            return_token_type_ids=return_token_type_ids,
+            padding_side=padding_side
+        )
+
 
     tokenizer.pad_token = tokenizer.eos_token
 
