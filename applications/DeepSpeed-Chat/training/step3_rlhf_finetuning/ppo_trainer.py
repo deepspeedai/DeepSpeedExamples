@@ -9,6 +9,7 @@ import os
 import time
 import deepspeed
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
+from deepspeed.accelerator import get_accelerator
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
@@ -18,7 +19,8 @@ from utils.utils import print_rank_0
 
 def print_all_ranks(tag, value, rank):
     world_size = torch.distributed.get_world_size()
-    all_tensor = torch.zeros(world_size, dtype=torch.float32).cuda()
+    all_tensor = torch.zeros(world_size, dtype=torch.float32).to(
+        get_accelerator().current_device_name())
     all_tensor[rank] = value
     torch.distributed.all_reduce(all_tensor, op=torch.distributed.ReduceOp.SUM)
     print_rank_0(f'{tag} {all_tensor}', rank)

@@ -15,6 +15,7 @@ sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from utils.model.model_utils import create_hf_model
 from utils.utils import load_hf_tokenizer
+from deepspeed import get_accelerator
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +195,7 @@ def prompt_eval(args, model_baseline, model_fintuned, tokenizer, device,
 def main():
     args = parse_args()
 
-    device = torch.device("cuda:0")
+    device = torch.device(get_accelerator().device_name(0))
 
     tokenizer = load_hf_tokenizer(args.model_name_or_path_baseline,
                                   fast_tokenizer=True)

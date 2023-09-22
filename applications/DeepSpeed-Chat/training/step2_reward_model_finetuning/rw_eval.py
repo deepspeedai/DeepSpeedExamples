@@ -14,6 +14,7 @@ sys.path.append(
 from utils.model.model_utils import create_critic_model
 from utils.utils import to_device
 from utils.utils import load_hf_tokenizer
+from deepspeed import get_accelerator
 
 
 def parse_args():
@@ -100,7 +101,7 @@ def prepare_singlesample(prompt,
 def run_pair_comparison():
     args = parse_args()
 
-    device = torch.device("cuda:0")
+    device = torch.device(get_accelerator().device_name(0))
 
     rm_model, tokenizer = load_stuff(args.model_name_or_path,
                                      args.num_padding_at_beginning)
@@ -144,7 +145,7 @@ def run_pair_comparison():
 
 def run_single_sample():
     args = parse_args()
-    device = torch.device("cuda")
+    device = torch.device(get_accelerator().device_name())
 
     rm_model, tokenizer = load_stuff(args.model_name_or_path,
                                      args.num_padding_at_beginning)

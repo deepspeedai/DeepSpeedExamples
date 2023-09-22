@@ -15,6 +15,7 @@ import os
 import hashlib
 from itertools import chain
 from . import raw_datasets
+from deepspeed.accelerator import get_accelerator
 
 
 def get_raw_dataset(dataset_name, output_path, seed, local_rank):
@@ -281,7 +282,8 @@ def create_prompt_dataset(local_rank,
     eval_fname = f"{output_path}/evaldata_{fname}.pt"
 
     cache_found = os.path.isfile(train_fname) and os.path.isfile(eval_fname)
-    buf_create_cache = torch.ByteTensor([not cache_found]).cuda()
+    buf_create_cache = torch.ByteTensor([not cache_found]).to(
+        get_accelerator().current_device_name())
     torch.distributed.all_reduce(buf_create_cache)
 
     if local_rank <= 0 and (buf_create_cache.item() != 0 or reload):
