@@ -241,6 +241,9 @@ def parse_args():
     parser.add_argument('--offload',
                         action='store_true',
                         help='Enable ZeRO Offload techniques.')
+    parser.add_argument('--dtype', type=str, default='fp16',
+                        choices=['fp16', 'bf16'],
+                        help = 'Training data type')
     parser.add_argument(
         '--offload_reference_model',
         action='store_true',

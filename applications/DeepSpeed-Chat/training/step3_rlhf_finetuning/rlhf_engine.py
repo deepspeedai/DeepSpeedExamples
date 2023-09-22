@@ -66,6 +66,7 @@ class DeepSpeedRLHFEngine():
         # DS Config
         ds_config = get_train_ds_config(
             offload=self.args.offload,
+            dtype=self.args.dtype,
             stage=self.args.actor_zero_stage,
             enable_hybrid_engine=self.args.enable_hybrid_engine,
             inference_tp_size=self.args.inference_tp_size,
@@ -139,6 +140,7 @@ class DeepSpeedRLHFEngine():
             # If actor is ZeRO-3 then we use it for everything, otherwise assume we have enough memory for ref model
             zero_stage = 0
         ds_config = get_eval_ds_config(self.args.offload_reference_model,
+                                       self.args.dtype,
                                        zero_stage)
         ds_config[
             'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
@@ -165,6 +167,7 @@ class DeepSpeedRLHFEngine():
             # If actor is ZeRO-3 then we use it for everything, otherwise assume we have enough memory
             zero_stage = 0
         ds_config = get_eval_ds_config(self.args.offload_reference_model,
+                                       self.args.dtype,
                                        zero_stage)
         ds_config[
             'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
@@ -191,6 +194,7 @@ class DeepSpeedRLHFEngine():
         stime = log_init("Critic")
         ds_config = get_train_ds_config(
             offload=self.args.offload,
+            dtype=self.args.dtype,
             stage=self.args.critic_zero_stage,
             enable_tensorboard=self.args.enable_tensorboard,
             tb_path=self.args.tensorboard_path,
@@ -203,6 +207,7 @@ class DeepSpeedRLHFEngine():
             ) * self.args.gradient_accumulation_steps
 
         ds_eval_config = get_eval_ds_config(offload=False,
+                                            dtype=self.args.dtype,
                                             stage=self.args.critic_zero_stage)
         # We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
         ds_eval_config[
@@ -266,6 +271,7 @@ class DeepSpeedRLHFEngine():
             zero_stage = 0
 
         ds_config = get_eval_ds_config(offload=self.args.offload,
+                                       dtype=self.args.dtype,
                                        stage=zero_stage)
         ds_config[
             'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
@@ -273,7 +279,7 @@ class DeepSpeedRLHFEngine():
             'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps
 
-        ds_eval_config = get_eval_ds_config(offload=False, stage=zero_stage)
+        ds_eval_config = get_eval_ds_config(offload=False, dtype=self.args.dtype, stage=zero_stage)
 
         # We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
         ds_eval_config[
