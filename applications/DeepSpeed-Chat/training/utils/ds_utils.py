@@ -3,7 +3,6 @@
 
 # DeepSpeed Team
 
-import torch
 import deepspeed.comm as dist
 from deepspeed.accelerator import get_accelerator
 
@@ -28,15 +27,10 @@ def get_train_ds_config(offload,
     device = "cpu" if offload else "none"
     if dtype == "fp16":
         data_type = "fp16"
-        dtype_config = {
-       "enabled": True,
-       "loss_scale_window": 100
-       }
+        dtype_config = {"enabled": True, "loss_scale_window": 100}
     elif dtype == "bf16":
         data_type = "bfloat16"
-        dtype_config = {
-       "enabled": True
-       }
+        dtype_config = {"enabled": True}
     zero_opt_dict = {
         "stage": stage,
         "offload_param": {
@@ -85,13 +79,11 @@ def get_eval_ds_config(offload, dtype, stage=0):
     if dtype == "fp16":
         data_type = "fp16"
         dtype_config = {
-       "enabled": True,
-       }
+            "enabled": True,
+        }
     elif dtype == "bf16":
         data_type = "bfloat16"
-        dtype_config = {
-       "enabled": True
-       }
+        dtype_config = {"enabled": True}
     zero_opt_dict = {
         "stage": stage,
         "stage3_param_persistence_threshold": 1e4,

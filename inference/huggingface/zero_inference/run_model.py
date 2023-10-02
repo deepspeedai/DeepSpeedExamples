@@ -20,13 +20,27 @@ from transformers import (AutoConfig, AutoTokenizer, AutoModelForCausalLM,
                           BloomForCausalLM, OPTForCausalLM, LlamaForCausalLM,
                         )
 from transformers.deepspeed import HfDeepSpeedConfig
-from utils import (GB, add_model_hooks, cache_bytes, disable_torch_init,
+from utils import (GB, add_model_hooks, cache_bytes,
                    get_filename, get_quant_config, hidden_bytes, meta_to_cpu,
                    model_bytes, write_benchmark_log)
 from packaging import version
 
-
 assert version.parse(deepspeed.__version__) >= version.parse("0.10.3"), "ZeRO-Inference with weight quantization and kv cache offloading is available only in DeepSpeed 0.10.3+, please upgrade DeepSpeed"
+
+def get_tokenizer(model_name, config):
+    if config.model_type == "opt":
+        # opt175b is not available on HF (at this time),
+        # so as a hack we use opt66b which has similar tokenizer. 
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name.replace("175b", "66b"), 
+            padding_side="left" 
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    tokenizer.pad_token = tokenizer.eos_token
+
+    return tokenizer
 
 def get_model_config(model_name):
     if "175b" in model_name:
@@ -46,7 +60,6 @@ def get_model_config(model_name):
 
 def get_ds_model(
     model_name,
-    dtype,
     cpu_offload,
     disk_offload,
     offload_dir,
@@ -58,8 +71,12 @@ def get_ds_model(
     config = get_model_config(model_name)
     hidden_size = config.hidden_size
     deepspeed.init_distributed("nccl")
-    rank = dist.get_rank()
     pin_memory = bool(args.pin_memory)
+
+    if getattr(config, 'torch_dtype', None) is None:
+        dtype = torch.float16
+    else:
+        dtype = config.torch_dtype
 
     ds_config = {
         "fp16": {
@@ -155,32 +172,12 @@ def run_generation(
     quant_group_size,
     pin_kv_cache,
     async_kv_offload,
+    loops,
 ):
     # Load tokenizer
-    config = get_model_config(model_name)
-    return_token_type_ids = True 
-    padding_side = "left" if config.model_type in ["opt"] else "right"
+    config = get_model_config(model_name)    
 
-    if config.model_type == "opt":
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_name.replace("175b", "66b"), 
-            return_token_type_ids=return_token_type_ids,
-            padding_side=padding_side
-        )
-    else:
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            return_token_type_ids=return_token_type_ids,
-            padding_side=padding_side
-        )
-
-
-    tokenizer.pad_token = tokenizer.eos_token
-
-    if hasattr(config, 'torch_dtype'):
-        dtype = config.torch_dtype
-    else:
-        dtype = torch.float
+    tokenizer = get_tokenizer(model_name, config)
 
     if dummy:
         filename = os.path.join(
@@ -208,7 +205,6 @@ def run_generation(
     with torch.no_grad():
         model = get_ds_model(
             model_name,
-            dtype,
             cpu_offload,
             disk_offload,
             offload_dir,
@@ -221,14 +217,14 @@ def run_generation(
     execute_gen_len = gen_len
     prompts = ["Paris is the capital city of"] * (batch_size // dist.get_world_size())
 
-    def _batch_encode(prompts, return_token_type_ids):
-        input_tokens = tokenizer.batch_encode_plus(prompts, return_tensors="pt", padding="max_length", max_length=prompt_len, return_token_type_ids=return_token_type_ids)
+    def _batch_encode(prompts):
+        input_tokens = tokenizer.batch_encode_plus(prompts, return_tensors="pt", padding="max_length", max_length=prompt_len)
         for t in input_tokens:
             if torch.is_tensor(input_tokens[t]):
                 input_tokens[t] = input_tokens[t].to(torch.cuda.current_device())
         return input_tokens
 
-    input_tokens = _batch_encode(prompts, return_token_type_ids)
+    input_tokens = _batch_encode(prompts)
 
     if kv_offload:
         model.set_kv_cache_offload(True, gen_len, pin_kv_cache, async_kv_offload)
@@ -247,11 +243,10 @@ def run_generation(
     generate_kwargs = dict(max_new_tokens=execute_gen_len, do_sample=False)
     prefill_timings = []
     timer = timers("generate-forward")
-    for _ in range(2):
+    for _ in range(loops):
         timer.start(sync_func=get_accelerator().synchronize)
         with torch.no_grad():
             set_model_stage(model, "prefill")
-            # output_ids = model.generate(input_ids=input_ids, **generate_kwargs)
             output_ids = model.generate(**input_tokens, **generate_kwargs)
             prefill_timings.append(model.__duration__)
         timer.stop(sync_func=get_accelerator().synchronize)
@@ -343,6 +338,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="facebook/opt-1.3b", help="model name or path; currently only supports OPT and BLOOM models")
     parser.add_argument("--dummy", action="store_true", help="Use dummy weights for benchmark purposes.")
+    parser.add_argument("--loops", type=int, default=3,  help="Number of token generation iterations")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--prompt-len", type=int, default=512,  help="prompt length")
     parser.add_argument("--gen-len", type=int, default=32,  help="number of tokens to generate")
@@ -383,4 +379,5 @@ if __name__ == "__main__":
         args.quant_group_size,
         args.pin_kv_cache,
         args.async_kv_offload,
+        args.loops
     )
