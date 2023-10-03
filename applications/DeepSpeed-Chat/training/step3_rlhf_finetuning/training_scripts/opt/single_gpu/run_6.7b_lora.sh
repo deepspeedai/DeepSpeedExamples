@@ -43,7 +43,7 @@ deepspeed --num_gpus 1 main.py \
    --actor_lora_dim 128 \
    --actor_gradient_checkpointing \
    --critic_gradient_checkpointing \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    --enable_hybrid_engine \
    --output_dir $OUTPUT \
     &> $OUTPUT/training.log

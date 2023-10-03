@@ -43,8 +43,11 @@ def load_stuff(model_name_or_path, num_padding_at_beginning):
 
     tokenizer = load_hf_tokenizer(model_name_or_path, fast_tokenizer=True)
     tokenizer.pad_token = tokenizer.eos_token
-    model = create_critic_model(model_name_or_path, tokenizer, None,
-                                num_padding_at_beginning, True)
+    model = create_critic_model(model_name_or_path,
+                                tokenizer,
+                                None,
+                                num_padding_at_beginning,
+                                dropout=0.)
 
     return model, tokenizer
 

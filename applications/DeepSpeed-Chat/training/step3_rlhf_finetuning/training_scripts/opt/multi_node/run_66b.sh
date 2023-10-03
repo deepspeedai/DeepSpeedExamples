@@ -51,7 +51,7 @@ deepspeed --master_port 12346 main.py \
    --actor_zero_stage $ACTOR_ZERO_STAGE \
    --critic_zero_stage $CRITIC_ZERO_STAGE \
    --actor_gradient_checkpointing \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    --actor_lora_dim 128 \
    --actor_lora_module_name decoder.layers. \
    --output_dir $OUTPUT \

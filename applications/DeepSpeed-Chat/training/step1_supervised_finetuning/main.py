@@ -139,9 +139,12 @@ def parse_args():
     parser.add_argument('--gradient_checkpointing',
                         action='store_true',
                         help='Enable HF gradient checkpointing for model.')
-    parser.add_argument('--disable_dropout',
-                        action='store_true',
-                        help='Disable the dropout of the model.')
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=None,
+        help="If dropout configured, use it. "
+        "Otherwise, keep the default dropout configuration of the model.")
     # deepspeed features
     parser.add_argument('--offload',
                         action='store_true',
@@ -229,7 +232,7 @@ def main():
                             args.model_name_or_path,
                             tokenizer,
                             ds_config,
-                            disable_dropout=args.disable_dropout)
+                            dropout=args.dropout)
 
     if args.lora_dim > 0:
         model = convert_linear_layer_to_lora(model, args.lora_module_name,

@@ -38,7 +38,7 @@ deepspeed --master_port 12346 main.py \
    --gradient_accumulation_steps 1 \
    --num_warmup_steps 100 \
    --deepspeed --seed 1234 \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    ${ACTOR_ZERO_STAGE} \
    ${CRITIC_ZERO_STAGE} \
    --actor_lora_dim 128 \

@@ -46,7 +46,7 @@ deepspeed --master_port 12346 main.py \
    --actor_gradient_checkpointing \
    --critic_gradient_checkpointing \
    --offload_reference_model \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    --num_warmup_steps 100 \
    --deepspeed --seed 1234 \
    --actor_zero_stage $ACTOR_ZERO_STAGE \

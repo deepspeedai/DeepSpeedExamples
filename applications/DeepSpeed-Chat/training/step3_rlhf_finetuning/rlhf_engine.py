@@ -92,7 +92,7 @@ class DeepSpeedRLHFEngine():
             model_name_or_path=actor_model_name_or_path,
             tokenizer=self.tokenizer,
             ds_config=ds_config,
-            disable_dropout=self.args.disable_actor_dropout)
+            dropout=self.args.actor_dropout)
 
         # LoRA
         if self.args.actor_lora_dim > 0:
@@ -221,7 +221,7 @@ class DeepSpeedRLHFEngine():
             ds_config=ds_eval_config,
             num_padding_at_beginning=self.args.num_padding_at_beginning,
             rlhf_training=True,
-            disable_dropout=self.args.disable_critic_dropout,
+            dropout=self.args.critic_dropout,
             zero_stage=self.args.critic_zero_stage)
 
         # LoRA
@@ -295,7 +295,7 @@ class DeepSpeedRLHFEngine():
             ds_config=ds_eval_config,
             num_padding_at_beginning=self.args.num_padding_at_beginning,
             rlhf_training=True,
-            disable_dropout=self.args.disable_critic_dropout,
+            dropout=self.args.critic_dropout,
             zero_stage=zero_stage)
 
         reward_engine, *_ = deepspeed.initialize(model=reward_model,

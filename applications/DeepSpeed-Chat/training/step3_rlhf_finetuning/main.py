@@ -268,12 +268,20 @@ def parse_args():
         '--critic_gradient_checkpointing',
         action='store_true',
         help='Enable HF gradient checkpointing for Critic model.')
-    parser.add_argument('--disable_actor_dropout',
-                        action='store_true',
-                        help='Disable the dropout of the actor model.')
-    parser.add_argument('--disable_critic_dropout',
-                        action='store_true',
-                        help='Disable the dropout of the critical model.')
+    parser.add_argument(
+        "--actor_dropout",
+        type=float,
+        default=None,
+        help="If actor dropout configured, use it. "
+        "Otherwise, keep the default dropout configuration of the actor model."
+    )
+    parser.add_argument(
+        "--critic_dropout",
+        type=float,
+        default=None,
+        help="If critic dropout configured, use it. "
+        "Otherwise, keep the default dropout configuration of the critic model."
+    )
     ## LoRA for efficient training setting
     parser.add_argument("--actor_lora_dim",
                         type=int,

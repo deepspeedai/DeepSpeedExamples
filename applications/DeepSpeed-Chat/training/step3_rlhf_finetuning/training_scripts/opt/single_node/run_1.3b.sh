@@ -50,7 +50,7 @@ deepspeed --master_port 12346 main.py \
    --num_train_epochs 1 \
    --lr_scheduler_type cosine \
    --gradient_accumulation_steps 1 \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    --num_warmup_steps 100 \
    --deepspeed --seed 1234 \
    --enable_hybrid_engine \

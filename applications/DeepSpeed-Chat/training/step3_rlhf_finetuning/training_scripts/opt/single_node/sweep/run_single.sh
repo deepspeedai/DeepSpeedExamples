@@ -85,7 +85,7 @@ cmd="deepspeed --num_nodes=1 main.py \
    --critic_weight_decay 0 \
    --num_warmup_steps 100 \
    --deepspeed --seed 1234 \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    --print_answers \
    --actor_zero_stage ${ACTOR_ZERO_STAGE} \
    --critic_zero_stage ${CRITIC_ZERO_STAGE} \

@@ -38,7 +38,7 @@ deepspeed --master_port 12346 main.py \
    --lr_scheduler_type cosine \
    --gradient_accumulation_steps 1 \
    --actor_gradient_checkpointing \
-   --disable_actor_dropout \
+   --actor_dropout 0.0 \
    --num_warmup_steps 100 \
    --deepspeed --seed 1234 \
    ${ACTOR_ZERO_STAGE} \
