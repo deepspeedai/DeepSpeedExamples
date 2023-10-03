@@ -1,4 +1,4 @@
-## DeepSpeed-VisualChat: Enabling Multi-Round Multi-Image Chat for All Scales
+# DeepSpeed-VisualChat
 
 An easy-to-use, scalable, and efficient multi-modal training pipeline for multi-round multi-image interleave chat experience.
 
