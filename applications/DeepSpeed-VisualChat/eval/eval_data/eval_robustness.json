@@ -1,0 +1,78 @@
+{
+    "tech_ceos2.1a": [
+        ["Who is this person in the image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in the image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["Who is this person in the image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ],
+    "tech_ceos2.1b": [
+        ["Who is this person in this image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["Who is this person in this image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ],
+    "tech_ceos2.1c": [
+        ["Who is this person in this image a?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this image b?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["Who is this person in this image c?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in image b."],
+        ["Recall who is in the image a."],
+        ["Is the person in the image a the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the image c the founder of Apple?"]
+    ],
+    "tech_ceos2.1d": [
+        ["Who is this person in this first image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this second image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["Who is this person in this third image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ],
+    "tech_ceos2.1aa": [
+        ["Who is this person in the image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in the image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["What's the differnce between the first and second image"],
+        ["Who is this person in the image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ],
+    "tech_ceos2.1bb": [
+        ["Who is this person in this image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["What's the differnce between the first and second images"],
+        ["Who is this person in this image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ],
+    "tech_ceos2.1cc": [
+        ["Who is this person in this image a?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this image b?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["What's the differnce between the image a and image b"],
+        ["Who is this person in this image c?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in image b."],
+        ["Recall who is in the image a."],
+        ["Is the person in the image a the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the image c the founder of Apple?"]
+    ],
+    "tech_ceos2.1dd": [
+        ["Who is this person in this first image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this second image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["What's the differnce between the first and second images"],
+        ["Who is this person in this third image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ]
+}

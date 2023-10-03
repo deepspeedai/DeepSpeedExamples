@@ -1,0 +1,61 @@
+test_name,image_path,question,answer
+tech_ceos2.1a,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in the image?,"The person in the image is Steve Jobs, the co-founder and former CEO of Apple."
+tech_ceos2.1a,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in the image?,"This person in the image is Bill Gates, the co-founder of Microsoft."
+tech_ceos2.1a,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in the image?,"This person in the image is a man named Bill Gates, who is the co-founder of Microsoft."
+tech_ceos2.1a,Recall who is in the second image.,Recall who is in the second image.,The second image shows a man named Bill Gates holding a microphone.
+tech_ceos2.1a,Recall who is in the first image.,Recall who is in the first image.,The first image shows Bill Gates holding a cell phone.
+tech_ceos2.1a,"Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","The person in the first image is the founder of Microsoft, Bill Gates. The person in the second image is also the founder of Microsoft, Bill Gates."
+tech_ceos2.1a,Is the person in the third image the founder of Apple?,Is the person in the third image the founder of Apple?,"No, the person in the third image is not the founder of Apple. The person in the third image is a man named Bill Gates, who is the founder of Microsoft."
+tech_ceos2.1b,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in this image?,"The person in this image is Steve Jobs, the co-founder and former CEO of Apple."
+tech_ceos2.1b,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in this image?,"This person is the famous entrepreneur and former Apple CEO, Steve Jobs."
+tech_ceos2.1b,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in this image?,"This person is Elon Musk, the CEO of Tesla."
+tech_ceos2.1b,Recall who is in the second image.,Recall who is in the second image.,Elon Musk is in the second image holding a microphone.
+tech_ceos2.1b,Recall who is in the first image.,Recall who is in the first image.,Steve Jobs is in the first image standing behind a podium.
+tech_ceos2.1b,"Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.",Steve Jobs is the founder of Apple and is in the first image standing behind a podium.
+tech_ceos2.1b,Is the person in the third image the founder of Apple?,Is the person in the third image the founder of Apple?,"Yes, the person in the third image is Elon Musk, the founder of Tesla and SpaceX."
+tech_ceos2.1c,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in this image a?,"This person in the image is Steve Jobs, the co-founder and former CEO of Apple."
+tech_ceos2.1c,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in this image b?,This person in the image b is Bill Gates.
+tech_ceos2.1c,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in this image c?,"This person in this image c is a man wearing a suit and tie, and he is holding a microphone."
+tech_ceos2.1c,Recall who is in image b.,Recall who is in image b.,The person in image b is a man holding a microphone.
+tech_ceos2.1c,Recall who is in the image a.,Recall who is in the image a.,The person in image a is Steve Jobs.
+tech_ceos2.1c,"Is the person in the image a the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the image a the founder of Apple? if not, which of the above images is the person the founder of Apple.","Yes, the person in the image a is the founder of Apple."
+tech_ceos2.1c,Is the person in the image c the founder of Apple?,Is the person in the image c the founder of Apple?,"No, the person in the image c is not the founder of Apple."
+tech_ceos2.1d,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in this first image?,"The person in the first image is Steve Jobs, the CEO of Apple."
+tech_ceos2.1d,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in this second image?,"This person is Bill Gates, the co-founder of Microsoft."
+tech_ceos2.1d,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in this third image?,"This person is Bill Gates, the co-founder of Microsoft."
+tech_ceos2.1d,Recall who is in the second image.,Recall who is in the second image.,"The second image shows a man holding a microphone and standing in front of a large sign that says ""Toshiba."""
+tech_ceos2.1d,Recall who is in the first image.,Recall who is in the first image.,The first image shows Steve Jobs holding an iPhone.
+tech_ceos2.1d,"Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Yes, the person in the first image is the founder of Apple, Steve Jobs."
+tech_ceos2.1d,Is the person in the third image the founder of Apple?,Is the person in the third image the founder of Apple?,"No, the person in the third image is Bill Gates, the co-founder of Microsoft."
+tech_ceos2.1aa,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in the image?,"The person in the image is Steve Jobs, the co-founder and former CEO of Apple."
+tech_ceos2.1aa,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in the image?,"This person in the image is Bill Gates, the co-founder of Microsoft."
+tech_ceos2.1aa,What's the differnce between the first and second image,What's the differnce between the first and second image,The first image is of Steve Jobs holding an iPhone while the second image is of Bill Gates standing at a podium.
+tech_ceos2.1aa,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in the image?,"This person in the image is a man named Elon Musk, the founder and CEO of Tesla."
+tech_ceos2.1aa,Recall who is in the second image.,Recall who is in the second image.,"In the second image, there are two people, one of whom is Elon Musk holding a microphone."
+tech_ceos2.1aa,Recall who is in the first image.,Recall who is in the first image.,"In the first image, there is only one person, Steve Jobs, holding an iPhone."
+tech_ceos2.1aa,"Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","The person in the first image is the founder of Apple, Steve Jobs."
+tech_ceos2.1aa,Is the person in the third image the founder of Apple?,Is the person in the third image the founder of Apple?,"Yes, the person in the third image is the founder of Apple, Steve Jobs."
+tech_ceos2.1bb,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in this image?,"The person in this image is Steve Jobs, the co-founder and former CEO of Apple."
+tech_ceos2.1bb,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in this image?,"This person is the famous entrepreneur and former Apple CEO, Steve Jobs."
+tech_ceos2.1bb,What's the differnce between the first and second images,What's the differnce between the first and second images,"In the first image, Steve Jobs is holding up an iPhone while standing, while in the second image, he is sitting behind a podium."
+tech_ceos2.1bb,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in this image?,"This person is Elon Musk, the CEO of Tesla."
+tech_ceos2.1bb,Recall who is in the second image.,Recall who is in the second image.,"Elon Musk is in the second image, holding a microphone and standing behind a podium."
+tech_ceos2.1bb,Recall who is in the first image.,Recall who is in the first image.,"Steve Jobs is in the first image, holding up an iPhone."
+tech_ceos2.1bb,"Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Steve Jobs is the founder of Apple, and he is in the first image holding up an iPhone."
+tech_ceos2.1bb,Is the person in the third image the founder of Apple?,Is the person in the third image the founder of Apple?,"Yes, the person in the third image is Steve Jobs, the founder of Apple."
+tech_ceos2.1cc,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in this image a?,"This person in the image is Steve Jobs, the co-founder and former CEO of Apple."
+tech_ceos2.1cc,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in this image b?,This person in the image b is Bill Gates.
+tech_ceos2.1cc,What's the differnce between the image a and image b,What's the differnce between the image a and image b,"In image a, Steve Jobs is holding an iPhone while in image b, Bill Gates is standing behind a microphone."
+tech_ceos2.1cc,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in this image c?,"This person in this image c is a man wearing a suit and tie, and he is holding a microphone."
+tech_ceos2.1cc,Recall who is in image b.,Recall who is in image b.,The person in image b is a man wearing a suit and tie holding a microphone.
+tech_ceos2.1cc,Recall who is in the image a.,Recall who is in the image a.,Steve Jobs is in the image a holding an iPhone.
+tech_ceos2.1cc,"Is the person in the image a the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the image a the founder of Apple? if not, which of the above images is the person the founder of Apple.","Yes, the person in the image a is the founder of Apple."
+tech_ceos2.1cc,Is the person in the image c the founder of Apple?,Is the person in the image c the founder of Apple?,"No, the person in the image c is not the founder of Apple."
+tech_ceos2.1dd,./eval/eval_data/images/tech-ceo/jobs1.jpg,Who is this person in this first image?,"The person in the first image is Steve Jobs, the CEO of Apple."
+tech_ceos2.1dd,./eval/eval_data/images/tech-ceo/gate1.jpg,Who is this person in this second image?,"This person is Bill Gates, the co-founder of Microsoft."
+tech_ceos2.1dd,What's the differnce between the first and second images,What's the differnce between the first and second images,The first image is of Steve Jobs holding an iPhone while the second image is of Bill Gates standing at a podium.
+tech_ceos2.1dd,./eval/eval_data/images/tech-ceo/musk1.jpg,Who is this person in this third image?,"This person is a man named Bill Gates, who is the founder of Microsoft."
+tech_ceos2.1dd,Recall who is in the second image.,Recall who is in the second image.,The second image shows a man holding an iPhone.
+tech_ceos2.1dd,Recall who is in the first image.,Recall who is in the first image.,The first image shows Steve Jobs holding an iPhone.
+tech_ceos2.1dd,"Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple.","Yes, the person in the first image is the founder of Apple, Steve Jobs."
+tech_ceos2.1dd,Is the person in the third image the founder of Apple?,Is the person in the third image the founder of Apple?,"Yes, the person in the third image is the founder of Apple, Bill Gates."

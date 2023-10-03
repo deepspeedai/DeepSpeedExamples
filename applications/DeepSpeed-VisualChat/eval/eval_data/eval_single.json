@@ -1,0 +1,11 @@
+{
+"cat_images1": [["please describe the image", "./eval/eval_data/images/cats/cat.png"]],
+"cat_images2": [["can you describe the image", "./eval/eval_data/images/cats/1806905748_adb926a0a0.jpg"]],
+"cat_images3": [["please describe the image", "./eval/eval_data/images/cats/british_shorthair.jpg"]],
+"extreme_ironing": [["What is unusual about this image?", "./eval/eval_data/images/singles/extreme_ironing.jpg"]],
+"waterview": [["What are the things I should be cautious about when I visit here?", "./eval/eval_data/images/singles/waterview.jpg"]],
+"art-dog": [["can you describe the image", "./eval/eval_data/images/singles/202160027_b319c4166e.jpg"]],
+"funny-phone": [["What is funny about this image? Describe it panel by panel.", "./eval/eval_data/images/singles/1.jpg"]],
+"squirrel": [["Why would a person find this image funny?", "./eval/eval_data/images/singles/2.jpg"]],
+"art-painting": [["Tell me about this work of art.", "./eval/eval_data/images/singles/50.jpg"]]
+}

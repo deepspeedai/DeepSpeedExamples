@@ -1,0 +1,89 @@
+{
+    "cat_images1": [
+        ["Please describe the image in detail.", "./eval/eval_data/images/cats/1806905748_adb926a0a0.jpg"],
+        ["Please describe the image in detail.", "./eval/eval_data/images/cats/british_shorthair.jpg"],
+        ["Please describe the image in detail.", "./eval/eval_data/images/cats/cat.png"],
+        ["Are the colors of the three cats the same?"],
+        ["What are the differences between the first and third images?"],
+        ["What are the differences between the second and third images?"],
+        ["Is the cat in the first image in the sunshine?"]
+    ],
+    "cat_images2": [
+        ["Please describe the image in detail.", "./eval/eval_data/images/cats/1806905748_adb926a0a0.jpg"],
+        ["Please describe the image in detail.", "./eval/eval_data/images/cats/british_shorthair.jpg"],
+        ["What are the differences between the two images?"],
+        ["Please describe the image in detail.", "./eval/eval_data/images/cats/cat.png"],
+        ["Are the colors of the three cats the same?"],
+        ["What are the differences between the first and third images?"],
+        ["What are the differences between the second and third images?"],
+        ["Is the cat in the first image in the sunshine?"],
+        ["Which cat do you prefer and why?"],
+        ["I prefer the second cat. It's so cute."],
+        ["Then why do you prefer the third cat more?"]
+    ],
+    "counting_people1": [
+        ["Count the number of people in the image.", "./eval/eval_data/images/friends/can-count1.jpg"],
+        ["Count the number of people in the image.", "./eval/eval_data/images/friends/can-count2.jpg"],
+        ["What are the differences between the two images? Are they the same group of people? Explain why."],
+        ["Are you familiar with this TV series? Can you name the characters shown in the provided images? Who are they?"]
+    ],
+    "counting_people2":[
+        ["How many individuals are depicted in the image?", "./eval/eval_data/images/friends/can-count1.jpg"],
+        ["How many individuals can you see in the second image?", "./eval/eval_data/images/friends/can-count2.jpg"],
+        ["Can you spot any differences between these two images? Do they represent the same set of people? Please provide a rationale."],
+        ["Do you recognize this TV show? Can you name the characters shown in the provided images? Who are they?"]
+    ],
+    "counting_people3": [
+        ["Count the number of people in the image.", "./eval/eval_data/images/friends/wrong-count1.jpg"],
+        ["Count the number of people in the image.", "./eval/eval_data/images/friends/wrong-count2.jpg"],
+        ["What are the differences between the two images? Are they the same group of people? Explain why."]
+    ],
+    "counting_people4": [
+        ["How many individuals are depicted in the image?", "./eval/eval_data/images/friends/wrong-count1.jpg"],
+        ["How many individuals are depicted in the image?", "./eval/eval_data/images/friends/wrong-count2.jpg"],
+        ["Can you spot any differences between these two images?  Do they represent the same set of people? Please provide a rationale."],
+        ["Do you recognize this TV show? Can you name the characters shown in the provided images? Who are they?"]
+    ],
+    "zootopia_adventures1": [
+        ["Please describe the image in detail.", "./eval/eval_data/images/zootopia/z1.png"],
+        ["Please describe the image in detail.", "./eval/eval_data/images/zootopia/z2.png"],
+        ["Can you name the characters in the images? Who are they? What are they doing?", "./eval/eval_data/images/zootopia/z3.png"],
+        ["You are an imaginative storyteller. Create a fascinating story based on the first, second and third image."],
+        ["Are you familiar with these characters? What movie are they from?"],
+        ["Can you name the characters in the images? Who are they?"],
+        ["In what type of environment or setting do these characters live? Describe it."]
+    ],
+    "zootopia_adventures2": [
+        ["Create an engaging story strictly based on the images.", "./eval/eval_data/images/zootopia/z1.png ./eval/eval_data/images/zootopia/z2.png ./eval/eval_data/images/zootopia/z3.png"],
+        ["Do you recognize the setting or the characters in these images? Name the movie."],
+        ["Can you share some interesting facts or details about the characters shown in the images?"],
+        ["Which character do you find the most intriguing and why?"],
+        ["Based on the images, can you create some dialogues that the characters might say to each other in these situations?"]
+    ],
+    "zootopia_adventures3": [
+        ["Examine and describe the characters' actions in the first image.", "./eval/eval_data/images/zootopia/z1.png"],
+        ["In the second image, what are the main characters doing, and how do they seem to feel?", "./eval/eval_data/images/zootopia/z2.png"],
+        ["Contrast the characters' moods and interactions in the two provided images."],
+        ["Imagine and narrate a hilarious situation involving the characters from the images.", "./eval/eval_data/images/zootopia/z3.png"],
+        ["Name the movie from which these characters are, and give a succinct summary of its plot."],
+        ["Create a funny and unexpected scenario that could unfold between the characters in these images."]
+    ],
+    "tech_ceos1": [
+        ["Who is this person in this first image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Who is this person in this second image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["Who is this person in this third image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? if not, which of the above images is the person the founder of Apple."],
+        ["Is the person in the third image the founder of Apple?"]
+    ],    
+    "tech_ceos2": [
+        ["Who is this person in the first image?", "./eval/eval_data/images/tech-ceo/musk1.jpg"],
+        ["Who is this person in the second image?", "./eval/eval_data/images/tech-ceo/gate1.jpg"],
+        ["Who is this person in the third image?", "./eval/eval_data/images/tech-ceo/jobs1.jpg"],
+        ["Recall who is in the second image."],
+        ["Recall who is in the first image."],
+        ["Is the person in the first image the founder of Apple? If not, which of the above images is the person the founder of Apple. "],
+        ["Is the person in the third image the founder of Apple?"]
+    ]
+}

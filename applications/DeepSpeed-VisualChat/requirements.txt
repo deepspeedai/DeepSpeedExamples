@@ -1,0 +1,11 @@
+datasets>=2.8.0
+sentencepiece>=0.1.97
+protobuf==3.20.3
+accelerate>=0.15.0
+open_clip_torch
+deepspeed>=0.10.3
+einops
+einops_exts
+transformers==4.33.3
+transformers_stream_generator
+termcolor
