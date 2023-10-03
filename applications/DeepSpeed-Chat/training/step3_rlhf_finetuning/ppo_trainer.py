@@ -244,6 +244,11 @@ class DeepSpeedPPOTrainer():
         return actor_loss, critic_loss
 
     def get_overflow(self):
+        # Overflow is not expected when using bf16
+        # Therefore, DeepSpeed's BF16_Optimizer does not maintain an overflow indication
+        if self.args.dtype == "bf16":
+            return False, False
+
         actor_overflow = self.actor_model.optimizer.overflow
         critic_overflow = self.critic_model.optimizer.overflow
 
