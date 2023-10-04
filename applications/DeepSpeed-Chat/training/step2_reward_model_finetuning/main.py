@@ -177,6 +177,12 @@ def parse_args():
         help=
         "Initial LoRA learning rate (after the potential warmup period) to use."
     )
+    ## low precision
+    parser.add_argument(
+        '--compute_fp32_loss',
+        action='store_true',
+        help='Relevant for low precision dtypes (fp16, bf16, etc.). '
+        'If specified, loss is calculated in fp32.')
     ## Tensorboard logging
     parser.add_argument('--enable_tensorboard',
                         action='store_true',
@@ -226,7 +232,9 @@ def main():
                                    tokenizer,
                                    ds_config,
                                    args.num_padding_at_beginning,
-                                   dropout=args.dropout)
+                                   dropout=args.dropout,
+                                   zero_stage=args.zero_stage,
+                                   compute_fp32_loss=args.compute_fp32_loss)
 
     if args.lora_dim > 0:
         rm_model = convert_linear_layer_to_lora(rm_model,

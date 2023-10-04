@@ -10,7 +10,11 @@ from torch import nn
 ## https://github.com/CarperAI/trlx/blob/main/examples/summarize_rlhf/reward_model/reward_model.py
 class RewardModel(nn.Module):
 
-    def __init__(self, base_model, tokenizer, num_padding_at_beginning=0):
+    def __init__(self,
+                 base_model,
+                 tokenizer,
+                 num_padding_at_beginning=0,
+                 compute_fp32_loss=False):
         super().__init__()
         self.config = base_model.config
         self.num_padding_at_beginning = num_padding_at_beginning
@@ -27,6 +31,7 @@ class RewardModel(nn.Module):
             self.v_head = nn.Linear(self.config.n_embd, 1, bias=False)
         self.rwtranrsformer = base_model
         self.PAD_ID = tokenizer.pad_token_id
+        self.compute_fp32_loss = compute_fp32_loss
 
     def gradient_checkpointing_enable(self):
         self.rwtranrsformer.gradient_checkpointing_enable()
@@ -73,7 +78,7 @@ class RewardModel(nn.Module):
         rejected_rewards = rewards[bs:]
 
         # Compute pairwise loss. Only backprop on the different tokens before padding
-        loss = 0
+        loss = 0.
         for i in range(bs):
             chosen_id = chosen_ids[i]
             rejected_id = rejected_ids[i]
@@ -104,6 +109,9 @@ class RewardModel(nn.Module):
                 chosen_reward[c_ind - 1])  #use the end score for reference
             rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
+            if self.compute_fp32_loss:
+                c_truncated_reward = c_truncated_reward.float()
+                r_truncated_reward = r_truncated_reward.float()
             loss += -torch.nn.functional.logsigmoid(c_truncated_reward -
                                                     r_truncated_reward).mean()
 

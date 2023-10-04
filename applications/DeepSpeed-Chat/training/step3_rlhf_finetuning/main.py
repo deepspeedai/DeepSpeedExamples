@@ -325,6 +325,13 @@ def parse_args():
         '--enable_mixed_precision_lora',
         action='store_true',
         help='Enable Mixed Precision ZeRO++ for training and generation.')
+    ## low precision
+    parser.add_argument(
+        '--compute_fp32_loss',
+        action='store_true',
+        help='Relevant for low precision dtypes (fp16, bf16, etc.). '
+        'If specified, loss is calculated in fp32.'
+        'This applies for both actor and critic models.')
     ## Tensorboard logging
     parser.add_argument('--enable_tensorboard',
                         action='store_true',
@@ -572,13 +579,13 @@ def main():
                                       average_reward / inner_iter,
                                       global_step=step)
                     writer.add_scalar('actor_loss',
-                                      actor_loss,
+                                      actor_loss.item(),
                                       global_step=step)
                     writer.add_scalar('actor_loss_sum',
                                       actor_loss_sum,
                                       global_step=step)
                     writer.add_scalar('critic_loss',
-                                      critic_loss,
+                                      critic_loss.item(),
                                       global_step=step)
                     writer.add_scalar('critic_loss_sum',
                                       critic_loss_sum,
