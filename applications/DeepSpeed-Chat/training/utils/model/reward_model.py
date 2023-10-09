@@ -29,15 +29,15 @@ class RewardModel(nn.Module):
             self.config.n_embd = self.config.hidden_size if hasattr(
                 self.config, "hidden_size") else self.config.n_embd
             self.v_head = nn.Linear(self.config.n_embd, 1, bias=False)
-        self.rwtranrsformer = base_model
+        self.rwtransformer = base_model
         self.PAD_ID = tokenizer.pad_token_id
         self.compute_fp32_loss = compute_fp32_loss
 
     def gradient_checkpointing_enable(self):
-        self.rwtranrsformer.gradient_checkpointing_enable()
+        self.rwtransformer.gradient_checkpointing_enable()
 
     def gradient_checkpointing_disable(self):
-        self.rwtranrsformer.gradient_checkpointing_disable()
+        self.rwtransformer.gradient_checkpointing_disable()
 
     def forward(self,
                 input_ids=None,
@@ -54,7 +54,7 @@ class RewardModel(nn.Module):
         else:
             kwargs = dict(head_mask=head_mask)
 
-        transformer_outputs = self.rwtranrsformer(
+        transformer_outputs = self.rwtransformer(
             input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
@@ -140,7 +140,7 @@ class RewardModel(nn.Module):
         else:
             kwargs = dict(head_mask=head_mask)
 
-        transformer_outputs = self.rwtranrsformer(
+        transformer_outputs = self.rwtransformer(
             input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
