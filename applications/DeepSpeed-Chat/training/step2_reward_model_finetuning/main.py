@@ -252,7 +252,8 @@ def main():
                                                 args.lora_module_name,
                                                 args.lora_dim)
         if args.only_optimize_lora:
-            rm_model = only_optimize_lora_parameters(rm_model)
+            rm_model = only_optimize_lora_parameters(
+                rm_model, force_optimize_params=['v_head.weight'])
             rm_model = make_model_gradient_checkpointing_compatible(rm_model)
 
     train_phase = 2
