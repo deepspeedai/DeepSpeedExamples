@@ -339,6 +339,11 @@ def parse_args():
     parser.add_argument('--tensorboard_path',
                         type=str,
                         default="step3_tensorboard")
+    ## Tokenizer
+    parser.add_argument(
+        "--add_eot_token",
+        action='store_true',
+        help="Add <|endoftext|> as additional special token to tokenizer")
     ## Actor/critic model overflow alignment
     parser.add_argument(
         '--align_overflow',
@@ -459,8 +464,12 @@ def main():
     torch.distributed.barrier()
 
     # load_hf_tokenizer will get the correct tokenizer and set padding tokens based on the model family
+    args.end_of_conversation_token = "<|endoftext|>"
+    additional_special_tokens = args.end_of_conversation_token if args.add_eot_token else None
     tokenizer = load_hf_tokenizer(args.actor_model_name_or_path,
-                                  fast_tokenizer=True)
+                                  fast_tokenizer=True,
+                                  add_special_tokens=additional_special_tokens)
+
     prompt_train_dataloader, unsupervised_train_dataloader, num_total_iters = create_datasets(
         args=args, tokenizer=tokenizer, train_phase=3)
 
@@ -478,8 +487,6 @@ def main():
         assert args.actor_zero_stage == 3, "Mixed Precision LoRA requires Zero stage 3"
         rlhf_engine.actor.optimizer.quantize_nontrainable_params()
         print_rank_0("Mixed Precision ZeRO++ enabled")
-
-    args.end_of_conversation_token = "<|endoftext|>"
 
     ppo_trainer = DeepSpeedPPOTrainerUnsupervised if unsupervised_training_enabled else DeepSpeedPPOTrainer
     trainer = ppo_trainer(rlhf_engine, args)
