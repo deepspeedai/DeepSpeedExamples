@@ -293,14 +293,14 @@ def main():
             losses += loss.float()
         losses = losses / (step + 1)
         try:
-            perplexity = torch.exp(losses)
-        except OverflowError:
-            perplexity = float("inf")
-        try:
-            perplexity = get_all_reduce_mean(perplexity).item()
+            losses = get_all_reduce_mean(losses)
         except:
             pass
-        return perplexity
+        try:
+            perplexity = torch.exp(losses).item()
+        except OverflowError:
+            perplexity = float("inf")
+        return perplexity, losses.item()
 
     # Split weights in two groups, one with weight decay and the other not.
     optimizer_grouped_parameters = get_optimizer_grouped_parameters(
@@ -336,8 +336,8 @@ def main():
     print_rank_0(
         f"***** Evaluating perplexity, Epoch {0}/{args.num_train_epochs} *****",
         args.global_rank)
-    perplexity = evaluation(model, eval_dataloader)
-    print_rank_0(f"ppl: {perplexity}", args.global_rank)
+    perplexity, eval_loss = evaluation(model, eval_dataloader)
+    print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
 
     for epoch in range(args.num_train_epochs):
         print_rank_0(
@@ -365,8 +365,8 @@ def main():
         print_rank_0(
             f"***** Evaluating perplexity, Epoch {epoch+1}/{args.num_train_epochs} *****",
             args.global_rank)
-        perplexity = evaluation(model, eval_dataloader)
-        print_rank_0(f"ppl: {perplexity}", args.global_rank)
+        perplexity, eval_loss = evaluation(model, eval_dataloader)
+        print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
         model.tput_timer.update_epoch_count()
 
     if args.output_dir is not None:
