@@ -353,6 +353,11 @@ def parse_args():
     parser.add_argument('--print_answers',
                         action='store_true',
                         help='Print prompt and answers during training')
+    parser.add_argument(
+        "--print_answers_interval",
+        type=int,
+        default=1,
+        help="If --print_answers enabled, controls the printing interval.")
     ## Testing
     parser.add_argument(
         '--enable_test_mode',
