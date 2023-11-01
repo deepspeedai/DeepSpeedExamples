@@ -57,6 +57,21 @@ class MovingAverage:
         return self.mean
 
 
+class ExponentialMovingAverage:
+
+    def __init__(self, alpha=0.9):
+        self.alpha = alpha
+        self.ema = None
+
+    def update(self, num):
+        prev_ema = num if self.ema is None else self.ema
+        self.ema = self.alpha * prev_ema + (1.0 - self.alpha) * num
+        return self.ema
+
+    def get(self):
+        return self.ema if self.ema is not None else 0.
+
+
 def get_tokenizer(model_name_or_path, fast_tokenizer=True):
     if "llama" in model_name_or_path:
         from transformers.models.llama import LlamaTokenizer

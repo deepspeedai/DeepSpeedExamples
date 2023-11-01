@@ -41,7 +41,8 @@ import sys
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollatorRLHF, get_unsupervised_data
-from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model, load_hf_tokenizer
+from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, \
+    moving_average, save_zero_three_model, load_hf_tokenizer, ExponentialMovingAverage
 from utils.module.lora import convert_lora_to_linear_layer
 from utils.perf import print_throughput_step3
 from deepspeed.accelerator import get_accelerator
@@ -503,9 +504,13 @@ def main():
                                      args.per_device_training_batch_size)
 
     # Train!
-    print_rank_0("***** Running training *****", args.global_rank)
+    print_rank_0(
+        f"***** Running training (total_iters={num_total_iters}) *****",
+        args.global_rank)
 
     non_overflow_step_count = 0
+    step_average_reward = 0.
+    ema_reward_score = ExponentialMovingAverage()
 
     for epoch in range(args.num_train_epochs):
         print_rank_0(
@@ -577,9 +582,15 @@ def main():
                                        rlhf_engine.critic, args, e2e_time,
                                        trainer.generate_time, training_time,
                                        args.global_rank)
+
                 average_reward = get_all_reduce_mean(average_reward).item()
+                step_average_reward += average_reward / args.gradient_accumulation_steps_actor
+                if (step + 1) % args.gradient_accumulation_steps_actor == 0:
+                    ema_reward_score.update(step_average_reward)
+                    step_average_reward = 0.
+
                 print_rank_0(
-                    f"Average reward score: {average_reward/inner_iter}",
+                    f"Average reward score: {average_reward/inner_iter} | EMA reward score: {ema_reward_score.get()}",
                     args.global_rank)
                 print_rank_0(
                     "-------------------------------------------------------------------------------------",
