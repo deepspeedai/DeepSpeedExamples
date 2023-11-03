@@ -8,7 +8,8 @@ This folder contains end-to-end applications that use DeepSpeed to train and use
 There are several training and finetuning examples so please see the individual folders for specific instructions.
 
 ## 3. Inference
-The DeepSpeed Huggingface inference [README](./inference/huggingface/README.md) explains how to get started with running DeepSpeed Huggingface inference examples.
+- The DeepSpeed-MII inference [README](./inference/mii/README.md) explains how to get started with running model inference with [DeepSpeed-MII](https://github.com/Microsoft/DeepSpeed-MII) and [DeepSpeed-FastGen](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-fastgen).
+- The DeepSpeed Huggingface inference [README](./inference/huggingface/README.md) explains how to get started with running DeepSpeed Huggingface inference examples.
 
 ## 4. Compression
 Model compression examples.
