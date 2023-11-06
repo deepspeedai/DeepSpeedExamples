@@ -33,20 +33,24 @@ A fast, affordable, scalable and open system framework for enabling end-to-end R
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 ## Table of Contents
 
+- [🐕DeepSpeed-Chat: Easy, Fast and Affordable RLHF Training of ChatGPT-like Models at All Scales🐕](#deepspeed-chat-easy-fast-and-affordable-rlhf-training-of-chatgpt-like-models-at-all-scales)
+- [Table of Contents](#table-of-contents)
 - [📰 Latest News 📰](#-latest-news-)
-- [🚀 What is DeepSpeed Chat 🚀️](#-what-is-deepspeed-chat-)
+- [🚀 What is DeepSpeed Chat 🚀](#-what-is-deepspeed-chat-)
 - [🧨 Capabilities 🧨](#-capabilities-)
 - [☕ Quick Start ☕](#-quick-start-)
   - [🐼 Installation](#-installation)
-  - [🐼 Single Script for Training 3-Step RLHF Pipeline](#-one-single-script-completes-all-three-stages-of-rlhf-training-and-generate-your-first-chatgpt-model)
+  - [🐼 One Single Script Completes All Three Steps of RLHF Training and Generate Your First ChatGPT Model](#-one-single-script-completes-all-three-steps-of-rlhf-training-and-generate-your-first-chatgpt-model)
   - [🐼 Demonstration: Individual Step Fine-Tuning](#-demonstration-individual-step-fine-tuning)
     - [🕐 Step 1 - Supervised Fine-Tuning](#-step-1---supervised-fine-tuning)
     - [🕑 Step 2 - Reward Model](#-step-2---reward-model)
     - [🕒 Step 3 - Reinforcement Learning with Human Feedback](#-step-3---reinforcement-learning-with-human-feedback)
-   - [🐼 Adding and using your own datasets in DeepSpeed-Chat](#-adding-and-using-your-own-datasets-in-deepspeed-chat)
-   - [🐼 Customizing RLHF training pipeline via DeepSpeed-Chat’s APIs](#-customizing-your-own-rlhf-training-pipeline-using-deepspeed-chats-rlhf-apis)
-   - [🐼 Serving Your Model: Plug-in and Test!](#-serving-plug-in-your-final-model-trained-by-deepspeed-chat-and-test-it-out)  
+  - [🐼 Adding and using your own datasets in DeepSpeed-Chat](#-adding-and-using-your-own-datasets-in-deepspeed-chat)
+  - [🐼 Customizing your own RLHF training pipeline using DeepSpeed-Chat’s RLHF APIs](#-customizing-your-own-rlhf-training-pipeline-using-deepspeed-chats-rlhf-apis)
+  - [🐼 Serving: Plug-in your final model trained by DeepSpeed-Chat and test it out!](#-serving-plug-in-your-final-model-trained-by-deepspeed-chat-and-test-it-out)
 - [🔥 Training Performance Evaluation 🔥](#-training-performance-evaluation-)
+  - [🐲 Superior Model Scale and Low Training Cost](#-superior-model-scale-and-low-training-cost)
+  - [🐲 Throughput and Model Size Scalability Comparisons with Existing RLHF Systems](#-throughput-and-model-size-scalability-comparisons-with-existing-rlhf-systems)
 - [😽 Supported Models 😽](#-supported-models-)
 - [🔬 Build Pipeline Status 🔬](#-build-pipeline-status-)
 - [⚓ Documentation and Tutorial ⚓](#-documentation-and-tutorial-)
@@ -119,6 +123,7 @@ pip install deepspeed>=0.9.0
 git clone https://github.com/microsoft/DeepSpeedExamples.git
 cd DeepSpeedExamples/applications/DeepSpeed-Chat/
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ### 🐼 One Single Script Completes All Three Steps of RLHF Training and Generate Your First ChatGPT Model

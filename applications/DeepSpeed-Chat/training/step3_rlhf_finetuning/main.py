@@ -33,18 +33,13 @@ from transformers import (
 
 import deepspeed
 
-from ppo_trainer import DeepSpeedPPOTrainer, DeepSpeedPPOTrainerUnsupervised
-from rlhf_engine import DeepSpeedRLHFEngine
-
-import sys
-
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-from utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollatorRLHF, get_unsupervised_data
-from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, \
-    moving_average, save_zero_three_model, load_hf_tokenizer, ExponentialMovingAverage
-from utils.module.lora import convert_lora_to_linear_layer
-from utils.perf import print_throughput_step3
+from dschat.rlhf.ppo_trainer import DeepSpeedPPOTrainer, DeepSpeedPPOTrainerUnsupervised
+from dschat.rlhf.rlhf_engine import DeepSpeedRLHFEngine
+from dschat.utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollatorRLHF, get_unsupervised_data
+from dschat.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model, load_hf_tokenizer, \
+    ExponentialMovingAverage
+from dschat.utils.module.lora import convert_lora_to_linear_layer
+from dschat.utils.perf import print_throughput_step3
 from deepspeed.accelerator import get_accelerator
 
 writer = None

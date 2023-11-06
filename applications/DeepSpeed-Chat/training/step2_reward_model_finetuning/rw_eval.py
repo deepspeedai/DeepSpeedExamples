@@ -4,16 +4,10 @@
 
 # DeepSpeed Team
 import argparse
-import os
 import torch
 
-import sys
-
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-from utils.model.model_utils import create_critic_model
-from utils.utils import to_device
-from utils.utils import load_hf_tokenizer
+from dschat.utils.model.model_utils import create_critic_model
+from dschat.utils.utils import to_device, load_hf_tokenizer
 from deepspeed import get_accelerator
 
 

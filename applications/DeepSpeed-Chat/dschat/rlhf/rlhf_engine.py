@@ -9,10 +9,10 @@ from deepspeed.ops.adam import FusedAdam
 from deepspeed.ops.adam import DeepSpeedCPUAdam
 from transformers import AutoModelForCausalLM, get_scheduler
 
-from utils.ds_utils import get_train_ds_config, get_eval_ds_config
-from utils.module.lora import convert_linear_layer_to_lora, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
-from utils.model.model_utils import create_hf_model, create_critic_model
-from utils.utils import get_optimizer_grouped_parameters
+from dschat.utils.ds_utils import get_train_ds_config, get_eval_ds_config
+from dschat.utils.module.lora import convert_linear_layer_to_lora, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
+from dschat.utils.model.model_utils import create_hf_model, create_critic_model
+from dschat.utils.utils import get_optimizer_grouped_parameters
 """
 TODOs:
   * support HF models for critic (for debugging), must be a previously saved ckpt from step-2

@@ -66,7 +66,7 @@ def test_ds_chat(zero_stage, hybrid_engine, offload, lora):
 
     # cd into execution dir
     wd = os.getcwd()
-    os.chdir("../step3_rlhf_finetuning")
+    os.chdir("../training/step3_rlhf_finetuning")
     sweep_script = "training_scripts/opt/single_node/sweep/run_single.sh"
 
     # Run bash script
@@ -85,3 +85,5 @@ def test_ds_chat(zero_stage, hybrid_engine, offload, lora):
                        ), "Actor model was not saved during step 3 training."
     assert file_exists(f"{output_path}/critic/", "pytorch_model.bin"
                        ), "Critic model was not saved during step 3 training."
+
+    os.chdir(wd)

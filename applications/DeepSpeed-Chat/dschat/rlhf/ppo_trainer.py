@@ -4,17 +4,12 @@
 # DeepSpeed Team
 import torch
 import torch.nn.functional as F
-import sys
-import os
 import time
 import deepspeed
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 from deepspeed.accelerator import get_accelerator
 
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-
-from utils.utils import print_rank_0
+from dschat.utils.utils import print_rank_0
 
 
 def print_all_ranks(tag, value, rank):

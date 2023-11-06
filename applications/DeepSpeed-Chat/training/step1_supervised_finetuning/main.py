@@ -4,9 +4,7 @@
 
 # DeepSpeed Team
 import argparse
-import os
 import math
-import sys
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -23,14 +21,12 @@ import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 from deepspeed import get_accelerator
 
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-from utils.data.data_utils import create_prompt_dataset
-from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, get_optimizer_grouped_parameters, save_zero_three_model, load_hf_tokenizer
-from utils.ds_utils import get_train_ds_config
-from utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
-from utils.model.model_utils import create_hf_model, causal_lm_model_to_fp32_loss
-from utils.perf import print_throughput
+from dschat.utils.data.data_utils import create_prompt_dataset
+from dschat.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, get_optimizer_grouped_parameters, save_zero_three_model, load_hf_tokenizer
+from dschat.utils.ds_utils import get_train_ds_config
+from dschat.utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
+from dschat.utils.model.model_utils import create_hf_model, causal_lm_model_to_fp32_loss
+from dschat.utils.perf import print_throughput
 
 
 def parse_args():
