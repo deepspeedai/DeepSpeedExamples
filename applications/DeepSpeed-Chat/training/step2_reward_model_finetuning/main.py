@@ -291,7 +291,6 @@ def main():
                                   collate_fn=data_collator,
                                   sampler=train_sampler,
                                   batch_size=args.per_device_train_batch_size)
-    eval_sampler = SequentialSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset,
                                  collate_fn=data_collator,
                                  sampler=eval_sampler,
