@@ -1,4 +1,4 @@
 deepspeed
 torch
-diffusers
+diffusers>=0.22.3
 triton==2.0.0.dev20221202
