@@ -80,35 +80,16 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
         token_gen_time.append(time_now - time_last_token)
         time_last_token = time_now
 
-    postprocess_config = {
-        "logit_processor": {
-            # "name": "TopP",
-            # "args": {
-            #     "top_p": 0.9
-            # }
-            "name": "Temperature",
-            "args": {
-                "temperature": 0.9
-            }
-        },
-        "sampler": {
-            "name": "Logits"
-        },
-        "stop_criterion": {
-            "name": "EosGeneration"
-        }
-    }
-
     time_last_token = start_time = time.time()
     token_gen_time = []
     if stream:
         output_tokens = []
         client.generate(
-            input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config,
+            input_tokens, max_new_tokens=max_new_tokens,
             streaming_fn=callback)
     else:
         result = client.generate(
-            input_tokens, max_new_tokens=max_new_tokens, postprocess_config=postprocess_config)
+            input_tokens, max_new_tokens=max_new_tokens)
         output_tokens = result.response[0]
 
     return ResponseDetails(

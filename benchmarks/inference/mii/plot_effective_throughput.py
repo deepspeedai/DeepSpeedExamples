@@ -12,21 +12,30 @@ SLA_PROMPT_TOKENS_PER_SEC = 512
 SLA_GEN_TOKENS_PER_SEC = [1, 2, 3, 4, 6, 8]
 EMA_SPAN = 16
 
-tp_sizes = {
+tp_sizes_all = {
     "7b": [1],
-    "70b": [4, 8],
+    "70b": [4, 8]
 }
 
-prompt_gen_pairs = [
+tp_sizes_test = {
+    "7b": [1]
+}
+
+prompt_gen_pairs_all = [
     (1200, 60),
     (1200, 128),
     (2600, 60),
     (2600, 128),
 ]
 
+prompt_gen_pairs_test = [
+    (2600, 60)
+]
 
 def get_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--test", action="store_true")
+    parser.add_argument("--no_vllm", action="store_true")
     parser.add_argument("--log_dir", type=Path, default=".")
     parser.add_argument("--out_dir", type=Path, default="charts/goodtput")
     args = parser.parse_args()
@@ -96,7 +105,8 @@ def display_results(model_size, tp, bs, sla_token_gen, prompt, gen, log_dir, out
     print(f"model: {model_size} Prompt: {prompt}, Generation: {gen}, TP: {tp} sla_token_gen: {sla_token_gen}")
 
     mii_file_pattern = f"{log_dir}/logs.llama2-{model_size}-tp{tp}-b{bs}/llama2-{model_size}-tp{tp}-b{bs}_c*_p{prompt}_g{gen}.json"
-    vllm_file_pattern = f"{log_dir}/logs.vllm-llama2-{model_size}-tp{tp}/vllm-llama2-{model_size}-tp{tp}_c*_p{prompt}_g{gen}.json"
+    if not args.no_vllm:
+        vllm_file_pattern = f"{log_dir}/logs.vllm-llama2-{model_size}-tp{tp}/vllm-llama2-{model_size}-tp{tp}_c*_p{prompt}_g{gen}.json"
 
     validate_funcs = [
         (validate_token_cum_latency_SLA, (), "cum"),
@@ -109,8 +119,9 @@ def display_results(model_size, tp, bs, sla_token_gen, prompt, gen, log_dir, out
         client_num_list = sorted(list(mii_goodputs.keys()))
         mii_goodputs_list = [mii_goodputs[client_num] for client_num in client_num_list]
 
-        vllm_goodputs, vllm_good_ratios = extract_values(vllm_file_pattern, sla_token_gen, f)
-        vllm_goodputs_list = [vllm_goodputs[client_num] for client_num in client_num_list]
+        if not args.no_vllm:
+            vllm_goodputs, vllm_good_ratios = extract_values(vllm_file_pattern, sla_token_gen, f)
+            vllm_goodputs_list = [vllm_goodputs[client_num] for client_num in client_num_list]
 
         # print(f"MII {mii_goodputs_list} ratio={mii_good_ratios}")
         # print(f"vLLM {vllm_goodputs_list} ratio={vllm_good_ratios}")
@@ -118,16 +129,18 @@ def display_results(model_size, tp, bs, sla_token_gen, prompt, gen, log_dir, out
         # Plotting the scatter plot
         plt.figure(figsize=(7, 4))
         plt.scatter(client_num_list, mii_goodputs_list, label=f"DeepSpeed-FastGen", marker="o", color="blue")
-        plt.scatter(client_num_list, vllm_goodputs_list, label=f"vLLM", marker="x", color="orange")
+        if not args.no_vllm:
+            plt.scatter(client_num_list, vllm_goodputs_list, label=f"vLLM", marker="x", color="orange")
 
         fit_x_list = np.arange(min(client_num_list), max(client_num_list), 0.1)
         mii_fit_model = np.polyfit(client_num_list, mii_goodputs_list, 4)
         mii_model_fn = np.poly1d(mii_fit_model)
         plt.plot(fit_x_list, mii_model_fn(fit_x_list), color="blue", alpha=0.5, linestyle="--")
 
-        vllm_fit_model = np.polyfit(client_num_list, vllm_goodputs_list, 4)
-        vllm_model_fn = np.poly1d(vllm_fit_model)
-        plt.plot(fit_x_list, vllm_model_fn(fit_x_list), color="orange", alpha=0.5, linestyle="--")
+        if not args.no_vllm:
+            vllm_fit_model = np.polyfit(client_num_list, vllm_goodputs_list, 4)
+            vllm_model_fn = np.poly1d(vllm_fit_model)
+            plt.plot(fit_x_list, vllm_model_fn(fit_x_list), color="orange", alpha=0.5, linestyle="--")
 
         title = f"Effective throughput (SLA prompt: {SLA_PROMPT_TOKENS_PER_SEC} tokens/s, generation: {sla_token_gen} tokens/s)\n" \
                 + f'Llama 2 {model_size.upper()} Prompt: {prompt}, Generation: {gen}, TP: {tp}'
@@ -147,6 +160,13 @@ def display_results(model_size, tp, bs, sla_token_gen, prompt, gen, log_dir, out
     
 if __name__ == "__main__":
     args = get_args()
+
+    if args.test:
+        tp_sizes = tp_sizes_test
+        prompt_gen_pairs = prompt_gen_pairs_test
+    else:
+        tp_sizes = tp_sizes_all
+        prompt_gen_pairs = prompt_gen_pairs_all
 
     for model_size, tps in tp_sizes.items():
         for tp in tps:
