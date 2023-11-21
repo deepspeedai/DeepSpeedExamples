@@ -92,12 +92,19 @@ def get_shuffle_idx(seed, size):
     return shuffle_idx
 
 
-def get_raw_dataset_split_index(local_rank, output_path, dataset_name, seed,
-                                split_name, data_split, split_index,
-                                data_size):
+def get_raw_dataset_split_index(local_rank,
+                                output_path,
+                                dataset_name,
+                                seed,
+                                split_name,
+                                data_split,
+                                split_index,
+                                data_size,
+                                rebuild=False):
     index_file_name = f"{output_path}/{dataset_name}_seed{seed}_{split_name}_{data_split}_{split_index}.npy"
     # reindex each time when using local jsonfile since it's more likely to get modified
-    if (not os.path.isfile(index_file_name)) or (dataset_name == 'jsonfile'):
+    if rebuild or (not os.path.isfile(index_file_name)) or (dataset_name
+                                                            == 'jsonfile'):
         splits = [float(s) for s in data_split.split(',')]
         splits_sum = sum(splits)
         splits = [split / splits_sum for split in splits]
@@ -176,6 +183,9 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
                 chosen_token["attention_mask"] = chosen_token[
                     "attention_mask"].squeeze(0)
                 chosen_dataset.append(chosen_token)
+        print(
+            f'Creating dataset {raw_dataset.dataset_name_clean} for {train_phase=} size={len(chosen_dataset)}'
+        )
 
     elif train_phase == 2:
         for i, tmp_data in enumerate(current_dataset):
@@ -204,39 +214,41 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
                 reject_token["input_ids"] = reject_token["input_ids"]
                 reject_token["attention_mask"] = reject_token["attention_mask"]
                 reject_dataset.append(reject_token)
+        print(
+            f'Creating dataset {raw_dataset.dataset_name_clean} for {train_phase=} size={len(chosen_dataset)}'
+        )
 
     elif train_phase == 3:
+        filtered = 0
         for i, tmp_data in enumerate(current_dataset):
             # tokenize the text
             prompt = raw_dataset.get_prompt(tmp_data)
             if prompt is not None:
                 prompt_token = tokenizer(prompt, return_tensors="pt")
-                prompt_token["input_ids"] = prompt_token["input_ids"]
-                prompt_token["attention_mask"] = prompt_token["attention_mask"]
-                for key_word in ["input_ids", "attention_mask"]:
-                    length = prompt_token[key_word].size()[-1]
-                    if length > max_seq_len:
-                        y = prompt_token[key_word].squeeze(0)[length -
-                                                              (max_seq_len -
-                                                               1):].flip(0)
-                    else:
-                        y = prompt_token[key_word].squeeze(0).flip(0)
-                    prompt_token[key_word] = y
-                prompt_dataset.append(prompt_token)
+                if prompt_token["input_ids"].size()[-1] <= max_seq_len:
+                    for key_word in ["input_ids", "attention_mask"]:
+                        prompt_token[key_word] = prompt_token[
+                            key_word].squeeze(0).flip(0)
+                    prompt_dataset.append(prompt_token)
+                else:
+                    filtered += 1
+        print(f'Creating dataset {raw_dataset.dataset_name_clean} '
+              f'for {train_phase=} size={len(prompt_dataset)} {filtered=}')
+
     return PromptDataset(prompt_dataset, chosen_dataset, reject_dataset,
                          tokenizer.pad_token_id, train_phase)
 
 
 def create_dataset(local_rank, dataset_name, data_split, output_path,
                    train_phase, seed, tokenizer, end_of_conversation_token,
-                   max_seq_len):
+                   max_seq_len, rebuild):
     raw_dataset = get_raw_dataset(dataset_name, output_path, seed, local_rank)
     train_dataset = raw_dataset.get_train_data()
     train_index = get_raw_dataset_split_index(local_rank, output_path,
                                               raw_dataset.dataset_name_clean,
                                               seed, "train", data_split,
                                               train_phase - 1,
-                                              len(train_dataset))
+                                              len(train_dataset), rebuild)
     train_dataset = Subset(train_dataset, train_index)
     train_dataset = create_dataset_split(train_dataset, raw_dataset,
                                          train_phase, tokenizer,
@@ -248,7 +260,7 @@ def create_dataset(local_rank, dataset_name, data_split, output_path,
                                              raw_dataset.dataset_name_clean,
                                              seed, "eval",
                                              data_split, train_phase - 1,
-                                             len(eval_dataset))
+                                             len(eval_dataset), rebuild)
     eval_dataset = Subset(eval_dataset, eval_index)
     eval_dataset = create_dataset_split(eval_dataset, raw_dataset, train_phase,
                                         tokenizer, end_of_conversation_token,
@@ -287,10 +299,19 @@ def create_prompt_dataset(local_rank,
     torch.distributed.all_reduce(buf_create_cache)
 
     if local_rank <= 0 and (buf_create_cache.item() != 0 or reload):
+        print(f'Creating prompt dataset {data_path}, {reload=}')
         if len(data_path) == 1:  # Single dataset.
             train_dataset, eval_dataset = create_dataset(
-                local_rank, data_path[0], data_split, output_path, train_phase,
-                seed, tokenizer, end_of_conversation_token, max_seq_len)
+                local_rank,
+                data_path[0],
+                data_split,
+                output_path,
+                train_phase,
+                seed,
+                tokenizer,
+                end_of_conversation_token,
+                max_seq_len,
+                rebuild=reload)
         else:  # Blending datasets.
             train_datasets = []
             eval_datasets = []
@@ -298,8 +319,16 @@ def create_prompt_dataset(local_rank,
             eval_size = 0
             for d_path in data_path:
                 train_dataset, eval_dataset = create_dataset(
-                    local_rank, d_path, data_split, output_path, train_phase,
-                    seed, tokenizer, end_of_conversation_token, max_seq_len)
+                    local_rank,
+                    d_path,
+                    data_split,
+                    output_path,
+                    train_phase,
+                    seed,
+                    tokenizer,
+                    end_of_conversation_token,
+                    max_seq_len,
+                    rebuild=reload)
                 train_datasets.append(train_dataset)
                 eval_datasets.append(eval_dataset)
                 train_size += len(train_dataset)
@@ -328,7 +357,7 @@ def create_prompt_dataset(local_rank,
                     tokenizer,
                     end_of_conversation_token,
                     max_seq_len,
-                )
+                    rebuild=reload)
                 sft_train_datasets.append(sft_train_dataset)
                 sft_eval_datasets.append(sft_eval_dataset)
                 sft_train_size += len(sft_train_dataset)
