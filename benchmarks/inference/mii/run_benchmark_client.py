@@ -74,8 +74,8 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
 
     def callback(response):
         nonlocal time_last_token
-        # print(f"Received: {response.response} time_last_token={time_last_token}")
-        output_tokens.append(response.response[0])
+        # print(f"Received: {response[0].generated_text} time_last_token={time_last_token}")
+        output_tokens.append(response[0].generated_text)
         time_now = time.time()
         token_gen_time.append(time_now - time_last_token)
         time_last_token = time_now
@@ -90,7 +90,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
     else:
         result = client.generate(
             input_tokens, max_new_tokens=max_new_tokens)
-        output_tokens = result.response[0]
+        output_tokens = result[0].generated_text
 
     return ResponseDetails(
         generated_tokens=output_tokens,
