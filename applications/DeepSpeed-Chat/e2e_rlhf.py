@@ -4,27 +4,27 @@
 # DeepSpeed Team
 """
 Run all steps with default settings:
-$ python3 train.py
+$ python3 e2e_rlhf.py
 
 Change the model used for each step:
-$ python3 train.py --actor-model 350m --reward-model 1.3b
+$ python3 e2e_rlhf.py --actor-model 350m --reward-model 1.3b
 
 Change the ZeRO stage used for actor/reward models:
-$ python3 train.py --actor-zero-stage 1 --reward-zero-stage 3
+$ python3 e2e_rlhf.py --actor-zero-stage 1 --reward-zero-stage 3
 
 Run a subset of the steps:
-$ python3 train.py --step 1 2
+$ python3 e2e_rlhf.py --step 1 2
 
 Note: Step 3 relies on models trained in Steps 1 & 2. If you have already
 trained these models, you can run just Step 3 and select which models from
 Steps 1 & 2 to use. For example, let's train models for Steps 1 & 2 using
 125m and 350m models:
-$ python3 train.py --step 1 2 --actor-model 125m --reward-model 125m
-$ python3 train.py --step 1 2 --actor-model 350m --reward-model 350m
+$ python3 e2e_rlhf.py --step 1 2 --actor-model 125m --reward-model 125m
+$ python3 e2e_rlhf.py --step 1 2 --actor-model 350m --reward-model 350m
 
 Now we can run Step 3 with any combination of these models:
-$ python3 train.py --step 3 --actor-model 125m --reward-model 350m
-$ python3 train.py --step 3 --actor-model 350m --reward-model 125m
+$ python3 e2e_rlhf.py --step 3 --actor-model 125m --reward-model 350m
+$ python3 e2e_rlhf.py --step 3 --actor-model 350m --reward-model 125m
 """
 
 import argparse
@@ -33,6 +33,7 @@ import subprocess
 import os
 import datetime
 import time
+import sys
 
 step_dirs = {
     1: "training/step1_supervised_finetuning",
@@ -144,7 +145,7 @@ def verify_model(args, step_num):
     model_file = os.path.join(output_dir, "pytorch_model.bin")
     if not os.path.isfile(model_file):
         error_str = f"Step {step_num} model has not been trained. Train it with:\n"
-        error_str += f"python3 train.py --step {step_num}"
+        error_str += f"{sys.executable.split('/')[-1]} {sys.argv[0]} --step {step_num}"
         error_str += f" --{model_type[step_num]}-model {model_size}"
         raise RuntimeError(error_str)
 
@@ -194,7 +195,7 @@ def main(args):
         cmd = get_cmd(args, step_num)
         launch_cmd(args, step_num, cmd)
 
-        step_time = int(time.time() - start_time)
+        step_time = int(time.time() - step_start_time)
         time_str = str(datetime.timedelta(seconds=step_time))
         print(f"---=== Finished Step {step_num} in {time_str} ===---")
 
