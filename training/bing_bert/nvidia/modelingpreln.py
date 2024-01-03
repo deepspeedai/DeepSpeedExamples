@@ -1041,7 +1041,7 @@ class BertModel(BertPreTrainedModel):
                 position_ids=None,
                 inputs_embeds=None,
                 pad_token_id=self.pad_token_id,
-                model_mbeddings=self.embeddings)
+                model_embeddings=self.embeddings)
 
         embedding_output = self.embeddings(input_ids, token_type_ids)
         encoded_layers = self.encoder(
