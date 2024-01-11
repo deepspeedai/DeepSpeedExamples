@@ -3,11 +3,12 @@ import deepspeed
 from transformers import pipeline
 from difflib import SequenceMatcher
 from argparse import ArgumentParser
+from deepspeed.accelerator import get_accelerator
 
 parser = ArgumentParser()
 
 parser.add_argument("--model", required=True, type=str, help="model_name")
-parser.add_argument("--dtype", default="float16", type=str, choices=["float32", "float16", "int8"], help="data-type")
+parser.add_argument("--dtype", default="float16", type=str, choices=["float32", "float16", "int8", "bfloat16"], help="data-type")
 parser.add_argument("--num_inputs", default=1, type=int, help="number of test inputs")
 parser.add_argument("--min_length", default=200, type=int, help="minimum tokens generated")
 parser.add_argument("--max_length", default=300, type=int, help="maximum tokens generated")
@@ -73,7 +74,7 @@ else:
     inputs = test_inputs
 
 data_type = getattr(torch, args.dtype)
-pipe = pipeline('text-generation', args.model, torch_dtype=data_type, device=0)
+pipe = pipeline('text-generation', args.model, torch_dtype=data_type, device=torch.device(get_accelerator().device_name(0)))
 
 base_out_list = []
 match_count=0
