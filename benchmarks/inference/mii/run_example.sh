@@ -1,19 +1,19 @@
-### Run the server
-RAGGED_BATCH_SIZE=768
-PARAM_SIZES=(7b)
-DEPLOYMENT_NAME=llama2-7b-tp1-b768
-python server.py --model_name meta-llama/Llama-2-7b-hf -d llama2-7b-tp1-b768 -m 1 -b 768 start
+# Copyright (c) Microsoft Corporation.
+# SPDX-License-Identifier: Apache-2.0
 
-### This command will run the client with 60 generation steps and input prompt length of 2600
-DEPLOYMENT_NAME=${DEPLOYMENT_NAME} PROMPT_LENGTH=2600 MAX_NEW_TOKENS=60 bash ./run_benchmark_client.sh
+# DeepSpeed Team
 
-### Stop the server
-echo "Stopping server"
-python server.py -d ${DEPLOYMENT_NAME} stop
-sleep 120
+# Run benchmark
+python ./run_benchmark.py \
+        --model meta-llama/Llama-2-7b-hf \
+        --tp_size 1 \
+        --num_replicas 1 \
+        --max_ragged_batch_size 768 \
+        --mean_prompt_length 2600 \
+        --mean_max_new_tokens 60 \
+        --stream
 
 ### Gernerate the plots
-python plot_th_lat.py --log_dir . --test --no_vllm
-python plot_effective_throughput.py --log_dir . --test --no_vllm
+python ./src/plot_th_lat.py
 
-echo "Find the plots in the charts directory and the logs inside logs.llama2-7b-tp1-b768"
+echo "Find figures in ./plots/ and log outputs in ./results/"

@@ -1,0 +1,5 @@
+transformers
+matplotlib
+deepspeed-mii>=0.2.0
+vllm>=0.2.7
+numpy
