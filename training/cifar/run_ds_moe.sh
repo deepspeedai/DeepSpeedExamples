@@ -15,7 +15,6 @@ deepspeed --num_nodes=${NUM_NODES}\
         cifar10_deepspeed.py \
 	--log-interval 100 \
 	--deepspeed \
-	--deepspeed_config ds_config.json \
 	--moe \
 	--ep-world-size ${EP_SIZE} \
 	--num-experts ${EXPERTS} \
