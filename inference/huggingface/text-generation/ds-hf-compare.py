@@ -14,7 +14,12 @@ parser.add_argument("--min_length", default=200, type=int, help="minimum tokens 
 parser.add_argument("--max_length", default=300, type=int, help="maximum tokens generated")
 parser.add_argument("--print_outputs", action='store_true', help="print generated text outputs")
 parser.add_argument("--local_rank", type=int, default=0, help="local rank")
+parser.add_argument("--use_kernel", action='store_true', help="enable kernel-injection")
 args = parser.parse_args()
+
+def print_0(output):
+    if args.local_rank == 0:
+        print(output)
 
 def string_similarity(str1, str2):
     matcher = SequenceMatcher(None, str1, str2)
@@ -70,7 +75,7 @@ test_inputs = [
 if args.num_inputs < len(test_inputs):
     inputs = test_inputs[:args.num_inputs]
 else:
-    print(f"Warning: num_inputs ({args.num_inputs}) is greater than the number of test inputs ({len(test_inputs)}). Using all test inputs.")
+    print_0(f"Warning: num_inputs ({args.num_inputs}) is greater than the number of test inputs ({len(test_inputs)}). Using all test inputs.")
     inputs = test_inputs
 
 data_type = getattr(torch, args.dtype)
@@ -81,25 +86,28 @@ match_count=0
 mismatch_count=0
 
 # Run the baseline model
-for prompt in inputs:
-    base_out_list += pipe(prompt, do_sample=False, min_length=args.min_length, max_length=args.max_length)
+if args.local_rank == 0:
+    for prompt in inputs:
+        base_out_list += pipe(prompt, do_sample=False, min_length=args.min_length, max_length=args.max_length)
 
 # Initialize the model with DeepSpeed
-pipe.model = deepspeed.init_inference(pipe.model, dtype=data_type, replace_with_kernel_inject=True)
+pipe.model = deepspeed.init_inference(pipe.model, dtype=data_type, replace_with_kernel_inject=args.use_kernel)
 
 # Run the DeepSpeed model and compare outputs
 for prompt, base_out in zip(inputs, base_out_list):
     ds_out = pipe(prompt, do_sample=False, min_length=args.min_length, max_length=args.max_length)
-    if args.print_outputs:
-        print(f"baseline output: {base_out}")
-        print(f"deepspeed output: {ds_out}")
-        print(f"{'-'*60}")
-    if base_out == ds_out[0]:
-        if args.print_outputs: print("outputs match")
-        match_count += 1
-    else:
-        if args.print_outputs: print("outputs do not match")
-        mismatch_count += 1
-    similarity = string_similarity(base_out['generated_text'], ds_out[0]['generated_text'])
-    if args.print_outputs: print(f"The similarity ratio is: {similarity*100}%")
-print(f"Matches: {match_count}\nMismatches: {mismatch_count}")
+    if args.local_rank == 0:
+        if args.print_outputs:
+            print(f"baseline output: {base_out}")
+            print(f"deepspeed output: {ds_out}")
+            print(f"{'-'*60}")
+        if base_out == ds_out[0]:
+            if args.print_outputs: print("outputs match")
+            match_count += 1
+        else:
+            if args.print_outputs: print("outputs do not match")
+            mismatch_count += 1
+        similarity = string_similarity(base_out['generated_text'], ds_out[0]['generated_text'])
+        if args.print_outputs: print(f"The similarity ratio is: {similarity*100}%")
+
+print_0(f"Matches: {match_count}\nMismatches: {mismatch_count}")
