@@ -12,7 +12,7 @@ which requires local changes to `execution.py`. The following steps will setup `
 
 ```bash
 git clone https://github.com/openai/human-eval.git
-sed -i '/exec(check_program, exec_globals)/ s/^# //' he_test/human_eval/execution.py
+sed -i '/exec(check_program, exec_globals)/ s/^# //' human-eval/human_eval/execution.py
 cd human-eval
 python -m pip install -e .
 ```
