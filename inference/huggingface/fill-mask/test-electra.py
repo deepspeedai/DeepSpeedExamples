@@ -4,6 +4,7 @@ import deepspeed
 import torch
 import os
 from transformers.models.electra.modeling_electra import ElectraLayer
+from deepspeed.accelerator import get_accelerator
 
 local_rank = int(os.getenv('LOCAL_RANK', '0'))
 world_size = int(os.getenv('WORLD_SIZE', '4'))
@@ -21,7 +22,7 @@ pipe.model = deepspeed.init_inference(
     dtype=torch.float,
     injection_policy={ElectraLayer: ('output.dense')}
 )
-pipe.device = torch.device(f'cuda:{local_rank}')
+pipe.device = torch.device(get_accelerator().device_name(local_rank))
 output = pipe(f"HuggingFace is creating a {pipe.tokenizer.mask_token} that the community uses to solve NLP tasks.")
 
 if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
