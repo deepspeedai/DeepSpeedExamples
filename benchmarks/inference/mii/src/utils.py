@@ -14,13 +14,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterator, List
 
-from .defaults import ARG_DEFAULTS, MODEL_DEFAULTS
-from .postprocess_results import get_summary, ResponseDetails
+try:
+    from .defaults import ARG_DEFAULTS, MODEL_DEFAULTS
+    from .postprocess_results import get_summary, ResponseDetails
+except ImportError:
+    from defaults import ARG_DEFAULTS, MODEL_DEFAULTS
+    from postprocess_results import get_summary, ResponseDetails
 
 # For these arguments, users can provide multiple values when running the
 # benchmark. The benchmark will iterate over all possible combinations.
 SERVER_PARAMS = ["tp_size", "max_ragged_batch_size", "num_replicas"]
 CLIENT_PARAMS = ["mean_prompt_length", "mean_max_new_tokens", "num_clients"]
+
+AML_REQUIRED_PARAMS = ["aml_api_url", "aml_api_key", "deployment_name", "model"]
 
 
 def parse_args(
@@ -46,7 +52,7 @@ def parse_args(
         type=int,
         nargs="+",
         default=None,
-        help="Number of MII model replicas",
+        help="Number of FastGen model replicas",
     )
     server_parser.add_argument(
         "cmd",
@@ -112,6 +118,18 @@ def parse_args(
         default="./results/",
         help="Directory to save result JSON files",
     )
+    client_parser.add_argument(
+        "--aml_api_url",
+        type=str,
+        default=None,
+        help="When using the AML backend, this is the API URL that points to an AML endpoint",
+    )
+    client_parser.add_argument(
+        "--aml_api_key",
+        type=str,
+        default=None,
+        help="When using the AML backend, this is the API key for a given aml_api_url",
+    )
 
     # Create the parser, inheriting from the server and/or client parsers
     parents = []
@@ -123,21 +141,33 @@ def parse_args(
     # Common args
     parser = argparse.ArgumentParser(parents=parents)
     parser.add_argument(
-        "--model", type=str, default="meta-llama/Llama-2-7b-hf", help="Model name"
+        "--model", type=str, default=None, help="HuggingFace.co model name"
     )
     parser.add_argument(
         "--deployment_name",
         type=str,
-        default="mii-benchmark-deployment",
-        help="Deployment name for MII server",
+        default=None,
+        help="When using FastGen backend, specifies which model deployment to use. When using AML backend, specifies the name of the deployment",
     )
-    parser.add_argument("--vllm", action="store_true", help="Use VLLM instead of MII")
+    parser.add_argument(
+        "--backend",
+        type=str,
+        choices=["aml", "fastgen", "vllm"],
+        default="fastgen",
+        help="Which backend to benchmark",
+    )
     parser.add_argument(
         "--overwrite_results", action="store_true", help="Overwrite existing results"
     )
 
     # Parse arguments
     args = parser.parse_args()
+
+    # Verify that AML required parameters are defined before filling in defaults
+    if args.backend == "aml":
+        for k in AML_REQUIRED_PARAMS:
+            if getattr(args, k) is None:
+                raise ValueError(f"AML backend requires {k} to be specified")
 
     # Set default values for model-specific parameters
     if args.model in MODEL_DEFAULTS:
@@ -150,8 +180,9 @@ def parse_args(
         if hasattr(args, k) and getattr(args, k) is None:
             setattr(args, k, v)
 
+    # If we are not running the benchmark, we need to make sure to only have one
+    # value for the server args
     if server_args and not client_args:
-        # If we are not running the benchmark, we need to make sure to only have one value for the server args
         for k in SERVER_PARAMS:
             if not isinstance(getattr(args, k), int):
                 setattr(args, k, getattr(args, k)[0])
@@ -176,13 +207,9 @@ def get_args_product(
 
 
 def get_results_path(args: argparse.Namespace) -> Path:
-    if args.vllm:
-        lib_path = "vllm"
-    else:
-        lib_path = "fastgen"
     return Path(
         args.out_json_dir,
-        f"{lib_path}/",
+        f"{args.backend}/",
         "-".join(
             (
                 args.model.replace("/", "_"),

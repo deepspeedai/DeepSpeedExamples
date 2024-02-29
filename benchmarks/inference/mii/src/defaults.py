@@ -4,6 +4,8 @@
 # DeepSpeed Team
 
 ARG_DEFAULTS = {
+    "model": "meta-llama/Llama-2-7b-hf",
+    "deployment_name": "benchmark-deployment",
     "tp_size": 1,
     "max_ragged_batch_size": 768,
     "num_replicas": 1,

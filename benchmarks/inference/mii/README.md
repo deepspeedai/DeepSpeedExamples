@@ -24,10 +24,22 @@ python run_benchmark.py --tp_size 1 2
 ```
 
 By default the benchmark runs with DeepSpeed-MII as the backend inference
-server. To change the backend to vLLM, provide the `--vllm` flag:
+server. The benchmark also supports vLLM and Azure endpoints. To change the
+backend to vLLM, provide the `--backend vllm` arg:
 
 ```bash
-python run_benchmark.py --vllm
+python run_benchmark.py --backend vllm
+```
+
+To benchmark against an Azure endpoint, provide the `--backend aml` as well as
+the following values:
+- `--aml_api_url`: API URL that points to an AML endpoint
+- `--aml_api_key`: API key for the given AML endpoint
+- `--deployment_name`: The name of the AML endpoint deployment you want to test against
+- `--model`: The name of the HuggingFace-hosted model deployed on the AML endpoint. This is used to load a tokenizer and correctly calculate the number of tokens in the prompts and responses.
+
+```bash
+python run_benchmark.py --backend aml --model mistralai/Mixtral-8x7B-v0.1 --deployment_name mistralai-mixtral-8x7b-v01-4 --aml_api_url <URL obtained from Azure> --aml_api_key <Authentication key obtained from Azure>
 ```
 
 The run_all.sh script performs benchmarks across various models, client numbers,

@@ -79,13 +79,21 @@ def get_summary(args, response_details):
             for r in response_details
         ]
     )
-    first_token_latency = mean([r.token_gen_time[0] for r in response_details])
 
-    token_gen_latency_flat = reduce(
-        list.__add__,
-        [r.token_gen_time[1:-1] for r in response_details if len(r.token_gen_time) > 2],
-    )
-    token_gen_latency = mean([t for t in token_gen_latency_flat])
+    # For non-streaming results, we don't have any token_gen_time information
+    first_token_latency = 0.0
+    token_gen_latency = 0.0
+    if response_details[0].token_gen_time:
+        first_token_latency = mean([r.token_gen_time[0] for r in response_details])
+        token_gen_latency_flat = reduce(
+            list.__add__,
+            [
+                r.token_gen_time[1:-1]
+                for r in response_details
+                if len(r.token_gen_time) > 2
+            ],
+        )
+        token_gen_latency = mean([t for t in token_gen_latency_flat])
 
     return ProfilingSummary(
         throughput, latency, token_gen_latency, first_token_latency, tokens_per_sec

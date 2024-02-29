@@ -11,7 +11,8 @@ python ./run_benchmark.py \
         --max_ragged_batch_size 768 \
         --mean_prompt_length 2600 \
         --mean_max_new_tokens 60 \
-        --stream
+        --stream \
+        --backend fastgen \
 
 ### Gernerate the plots
 python ./src/plot_th_lat.py

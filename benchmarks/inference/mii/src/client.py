@@ -3,6 +3,7 @@
 
 # DeepSpeed Team
 
+import argparse
 import asyncio
 import json
 import multiprocessing
@@ -12,18 +13,30 @@ import random
 import requests
 import threading
 import time
-from typing import List, Iterable
+from typing import List, Iterable, Union
 
 import numpy as np
 from transformers import AutoTokenizer
 
-from .postprocess_results import ResponseDetails
-from .random_query_generator import RandomQueryGenerator
-from .sample_input import all_text
-from .utils import parse_args, print_summary, get_args_product, CLIENT_PARAMS
+try:
+    from .postprocess_results import ResponseDetails
+    from .random_query_generator import RandomQueryGenerator
+    from .sample_input import all_text
+    from .utils import parse_args, print_summary, get_args_product, CLIENT_PARAMS
+except ImportError:
+    from postprocess_results import ResponseDetails
+    from random_query_generator import RandomQueryGenerator
+    from sample_input import all_text
+    from utils import parse_args, print_summary, get_args_product, CLIENT_PARAMS
 
 
-def call_mii(client, input_tokens, max_new_tokens, stream):
+def call_fastgen(
+    input_tokens: str, max_new_tokens: int, args: argparse.Namespace
+) -> ResponseDetails:
+    import mii
+
+    client = mii.client(args.deployment_name)
+
     output_tokens = []
     token_gen_time = []
     time_last_token = 0
@@ -38,7 +51,7 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
 
     time_last_token = start_time = time.time()
     token_gen_time = []
-    if stream:
+    if args.stream:
         output_tokens = []
         client.generate(
             input_tokens, max_new_tokens=max_new_tokens, streaming_fn=callback
@@ -57,7 +70,12 @@ def call_mii(client, input_tokens, max_new_tokens, stream):
     )
 
 
-def call_vllm(input_tokens, max_new_tokens, stream=True):
+def call_vllm(
+    input_tokens: str, max_new_tokens: int, args: argparse.Namespace
+) -> ResponseDetails:
+    if not args.stream:
+        raise NotImplementedError("Not implemented for non-streaming")
+
     api_url = "http://localhost:26500/generate"
     headers = {"User-Agent": "Benchmark Client"}
     pload = {
@@ -68,7 +86,7 @@ def call_vllm(input_tokens, max_new_tokens, stream=True):
         "top_p": 0.9,
         "max_tokens": max_new_tokens,
         "ignore_eos": False,
-        "stream": stream,
+        "stream": args.stream,
     }
 
     def clear_line(n: int = 1) -> None:
@@ -90,76 +108,104 @@ def call_vllm(input_tokens, max_new_tokens, stream=True):
                 yield output, time_now - time_last_token
                 time_last_token = time_now
 
+    # For non-streaming, but currently non-streaming is not fully implemented
     def get_response(response: requests.Response) -> List[str]:
         data = json.loads(response.content)
         output = data["text"]
         return output
 
+    token_gen_time = []
     start_time = time.time()
-    response = requests.post(api_url, headers=headers, json=pload, stream=stream)
-    if stream:
-        token_gen_time = []
-        for h, t in get_streaming_response(response, start_time):
-            output = h
-            token_gen_time.append(t)
+    response = requests.post(api_url, headers=headers, json=pload, stream=args.stream)
+    for h, t in get_streaming_response(response, start_time):
+        output = h
+        token_gen_time.append(t)
 
-        return ResponseDetails(
-            generated_tokens=output,
-            prompt=input_tokens,
-            start_time=start_time,
-            end_time=time.time(),
-            model_time=0,
-            token_gen_time=token_gen_time,
-        )
-    else:
-        output = get_response(response)
-        raise NotImplementedError("Not implemented for non-streaming")
+    return ResponseDetails(
+        generated_tokens=output,
+        prompt=input_tokens,
+        start_time=start_time,
+        end_time=time.time(),
+        model_time=0,
+        token_gen_time=token_gen_time,
+    )
+
+
+def call_aml(
+    input_tokens: str, max_new_tokens: int, args: argparse.Namespace
+) -> ResponseDetails:
+    if args.stream:
+        raise NotImplementedError("Not implemented for streaming")
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": ("Bearer " + args.aml_api_key),
+        "azureml-model-deployment": args.deployment_name,
+    }
+    pload = {
+        "input_data": {
+            "input_string": [
+                input_tokens,
+            ],
+            "parameters": {
+                "max_new_tokens": max_new_tokens,
+                "do_sample": True,
+                "return_full_text": False,
+            },
+        }
+    }
+
+    def get_response(response: requests.Response) -> List[str]:
+        data = json.loads(response.content)
+        output = data[0]["0"]
+        return output
+
+    token_gen_time = []
+    start_time = time.time()
+    response = requests.post(args.aml_api_url, headers=headers, json=pload)
+    output = get_response(response)
+
+    return ResponseDetails(
+        generated_tokens=output,
+        prompt=input_tokens,
+        start_time=start_time,
+        end_time=time.time(),
+        model_time=0,
+        token_gen_time=token_gen_time,
+    )
 
 
 def _run_parallel(
-    deployment_name,
-    warmup,
-    barrier,
-    query_queue,
-    result_queue,
-    num_clients,
-    stream,
-    vllm,
+    barrier: Union[threading.Barrier, multiprocessing.Barrier],
+    query_queue: Union[queue.Queue, multiprocessing.Queue],
+    result_queue: Union[queue.Queue, multiprocessing.Queue],
+    args: argparse.Namespace,
 ):
     pid = os.getpid()
     session_id = f"test_session_p{pid}_t{threading.get_ident()}"
 
     event_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(event_loop)
-    if not vllm:
-        import mii
 
-        client = mii.client(deployment_name)
+    backend_call_fns = {"fastgen": call_fastgen, "vllm": call_vllm, "aml": call_aml}
+    call_fn = backend_call_fns[args.backend]
 
     barrier.wait()
 
-    for _ in range(warmup):
+    for _ in range(args.warmup):
         print(f"warmup queue size: {query_queue.qsize()} ({pid})", flush=True)
         input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
-
-        if vllm:
-            call_vllm(input_tokens, req_max_new_tokens, stream)
-        else:
-            call_mii(client, input_tokens, req_max_new_tokens, stream)
+        _ = call_fn(input_tokens, req_max_new_tokens, args)
 
     barrier.wait()
 
-    time.sleep(random.uniform(0, num_clients) * 0.01)
+    time.sleep(random.uniform(0, args.num_clients) * 0.01)
     try:
         while not query_queue.empty():
             print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
             input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
 
-            # Set max_new_tokens following normal distribution
-            if vllm:
-                r = call_vllm(input_tokens, req_max_new_tokens)
-            else:
-                r = call_mii(client, input_tokens, req_max_new_tokens, stream)
+            r = call_fn(input_tokens, req_max_new_tokens, args)
 
             result_queue.put(r)
     except queue.Empty:
@@ -180,22 +226,7 @@ def run_client(args):
     6. The main process marks the end time after receiving `num_requests' results
     """
 
-    # Unpack arguments
-    model = args.model
-    deployment_name = args.deployment_name
-    mean_prompt_length = args.mean_prompt_length
-    mean_max_new_tokens = args.mean_max_new_tokens
-    num_clients = args.num_clients
-    num_requests = args.num_requests
-    warmup = args.warmup
-    max_prompt_length = args.max_prompt_length
-    prompt_length_var = args.prompt_length_var
-    max_new_tokens_var = args.max_new_tokens_var
-    stream = args.stream
-    vllm = args.vllm
-    use_thread = args.use_thread
-
-    if use_thread:
+    if args.use_thread:
         runnable_cls = threading.Thread
         barrier_cls = threading.Barrier
         queue_cls = queue.Queue
@@ -204,7 +235,7 @@ def run_client(args):
         barrier_cls = multiprocessing.Barrier
         queue_cls = multiprocessing.Queue
 
-    barrier = barrier_cls(num_clients + 1)
+    barrier = barrier_cls(args.num_clients + 1)
     query_queue = queue_cls()
     result_queue = queue_cls()
 
@@ -212,34 +243,32 @@ def run_client(args):
         runnable_cls(
             target=_run_parallel,
             args=(
-                deployment_name,
-                warmup,
                 barrier,
                 query_queue,
                 result_queue,
-                num_clients,
-                stream,
-                vllm,
+                args,
             ),
         )
-        for i in range(num_clients)
+        for i in range(args.num_clients)
     ]
     for p in processes:
         p.start()
 
-    tokenizer = AutoTokenizer.from_pretrained(model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     request_text = query_generator.get_random_request_text(
-        mean_prompt_length,
-        mean_prompt_length * prompt_length_var,
-        max_prompt_length,
-        num_requests + warmup * num_clients,
+        args.mean_prompt_length,
+        args.mean_prompt_length * args.prompt_length_var,
+        args.max_prompt_length,
+        args.num_requests + args.warmup * args.num_clients,
     )
 
     for t in request_text:
+        # Set max_new_tokens following normal distribution
         req_max_new_tokens = int(
             np.random.normal(
-                mean_max_new_tokens, max_new_tokens_var * mean_max_new_tokens
+                args.mean_max_new_tokens,
+                args.max_new_tokens_var * args.mean_max_new_tokens,
             )
         )
         query_queue.put((t, req_max_new_tokens))
@@ -252,10 +281,10 @@ def run_client(args):
     barrier.wait()
 
     response_details = []
-    while len(response_details) < num_requests:
+    while len(response_details) < args.num_requests:
         res = result_queue.get()
         # vLLM returns concatinated tokens
-        if vllm:
+        if args.backend == "vllm":
             all_tokens = tokenizer.tokenize(res.generated_tokens)
             res.generated_tokens = all_tokens[len(tokenizer.tokenize(res.prompt)) :]
         response_details.append(res)
