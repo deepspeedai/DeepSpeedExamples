@@ -163,7 +163,11 @@ def call_aml(
     token_gen_time = []
     start_time = time.time()
     response = requests.post(args.aml_api_url, headers=headers, json=pload)
-    output = get_response(response)
+    # Sometimes the AML endpoint will return an error, so we send the request again
+    try:
+        output = get_response(response)
+    except Exception as e:
+        return call_aml(input_tokens, max_new_tokens, args)
 
     return ResponseDetails(
         generated_tokens=output,
