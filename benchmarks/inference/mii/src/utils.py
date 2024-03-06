@@ -245,6 +245,9 @@ def save_json_results(
     args: argparse.Namespace, response_details: List[ResponseDetails]
 ) -> None:
     args_dict = vars(args)
+    # Remove AML key from args dictionary
+    if "aml_api_key" in args_dict:
+        args_dict["aml_api_key"] = None
     out_json_path = get_results_path(args)
     os.makedirs(out_json_path.parent, exist_ok=True)
 
