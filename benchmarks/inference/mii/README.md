@@ -52,12 +52,19 @@ Results are collected in `./results/`.
 ## Analyze the Benchmark Results
 
 The scripts mentioned below were used for generating the plots featured in our
-blog. Specify the root directory for log files using `--log_dir`. The generated
+blog. Specify the root directory for log files using `--log_dir` and the backends you wish to run for, e.g. `--backend vllm fastgen aml`. The generated
 figures will be saved to `./plots/`
 
 - `src/plot_th_lat.py`: This script generates charts for throughput and latency across different model sizes and client counts.
 - `src/plot_effective_throughput.py`: Use this to chart effective throughput.
 - `src/plot_latency_percentile.py`: This script will plot the 50th, 90th, and 95th percentile latencies.
+- `src/plot_repl_scale.py`: This script will plot the throughput and number of replicas for a fixed clients/replica per plot.
+- `src/plot_tp_sizes.py`: This script will plot latency and TFLOPs per GPU across different tensor parallelism sizes.
+
+The following command shows an example of `plot_th_lat.py` execution using the `vllm`, `fastgen`, and `aml` backends.
+```bash
+DeepSpeedExamples/benchmarks/inference/mii$ python3 src/plot_th_lat.py --backend vllm fastgen aml --log_dir results/
+```
 
 ## Running an End-to-End Example
 

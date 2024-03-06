@@ -49,11 +49,11 @@ def start_vllm_server(args: argparse.Namespace) -> None:
             break
         if "error" in line.lower():
             p.terminate()
-            stop_vllm_server()
+            stop_vllm_server(args)
             raise RuntimeError(f"Error starting VLLM server: {line}")
         if time.time() - start_time > timeout_after:
             p.terminate()
-            stop_vllm_server()
+            stop_vllm_server(args)
             raise TimeoutError("Timed out waiting for VLLM server to start")
         time.sleep(0.01)
 

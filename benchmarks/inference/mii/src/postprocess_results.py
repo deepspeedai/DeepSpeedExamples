@@ -5,11 +5,15 @@
 
 import argparse
 import json
+import re
+import os
+from tabulate import tabulate
 from dataclasses import dataclass
 from functools import reduce
 from pathlib import Path
 from statistics import mean
 from typing import List
+from collections import defaultdict
 
 import numpy as np
 from transformers import AutoTokenizer
@@ -147,3 +151,35 @@ if __name__ == "__main__":
         + f"Token generation latency: {ps.token_gen_latency:.3f} s/token, "
         + f"First token received: {ps.first_token_latency:.3f} s"
     )
+
+def get_result_sets(args: argparse.Namespace) -> set():
+    result_params = None
+    result_re = re.compile(
+        r"(.+)-tp(\d+)-bs(\d+)-replicas(\d+)-prompt(\d+)-gen(\d+)-clients.*.json"
+    )
+
+    backend_sets = defaultdict(set)
+
+    # Generate backend sets
+    for backend in args.backend:
+        for f in os.listdir(os.path.join(args.log_dir, backend)):
+            match = result_re.match(f)
+            if match:
+                backend_sets[backend].add(match.groups())
+
+    # Intersection between all sets
+    for backend_set in backend_sets.values():
+        if result_params == None:
+            result_params = backend_set
+        else:
+            result_params = result_params.intersection(backend_set)
+
+    # Warning messages about skipped sets
+    for key, backend_set in backend_sets.items():
+        difference = backend_set.difference(result_params)
+        if difference:
+            print(f"WARNING: backend {key} has result combinations that are not present in all backends:")
+            print(tabulate(difference, headers=["model", "tp_size", "bs", "replicas", "prompt", "gen"]))
+            print("")
+
+    return result_params

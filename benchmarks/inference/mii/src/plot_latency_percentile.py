@@ -5,56 +5,52 @@
 
 import argparse
 import glob
+import re
+import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 
-from .postprocess_results import read_json, get_token_latency
-
-bs = 768
-SKIP_HEAD_TOKEN_NUM = 2
-SKIP_REQUEST_NUM = 100
-
-tp_sizes = {
-    "70b": [4],
-}
-
-prompt_gen_pairs = [
-    (2600, 128),
-]
-
+from postprocess_results import read_json, get_token_latency, get_result_sets
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log_dir", type=Path, default=".")
+    parser.add_argument("--backend", type=str, choices=["fastgen", "vllm"], default=["fastgen", "vllm"], \
+                        nargs="+", help="Specify the backends to generate plots for")
+    parser.add_argument("--log_dir", type=Path, default="./results")
     parser.add_argument(
-        "--out_dir", type=Path, default="charts/percentile_token_latency"
+        "--out_dir", type=Path, default="./plots/percentile_token_latency"
     )
+    parser.add_argument("--skip_head_token_num", type=int, default=1, help="Specify number of head tokens to skip")
+    parser.add_argument("--skip_request_num", type=int, default=1, help="Specify number of requests to skip")
     args = parser.parse_args()
     return args
 
 
-def extract_values(file_pattern):
+def extract_values(args, file_pattern):
     files = glob.glob(file_pattern)
+
+    print(f"Found {len(files)}")
+    print("\n".join(files))
 
     latencies = {}
     for f in files:
         prof_args, response_details = read_json(f)
-        client_num = prof_args["client_num"]
+        client_num = prof_args["num_clients"]
 
         response_details.sort(key=lambda r: r.start_time)
-        response_details = response_details[SKIP_REQUEST_NUM:-SKIP_REQUEST_NUM]
-        token_latencies = [
-            r.token_gen_time[SKIP_HEAD_TOKEN_NUM:-1] for r in response_details
-        ]
 
+        response_details = response_details[args.skip_request_num:-args.skip_request_num]
+        token_latencies = [
+            r.token_gen_time[args.skip_head_token_num:-1] for r in response_details
+        ]
         flat_latency_list = list(itertools.chain(*token_latencies))
         latencies[client_num] = flat_latency_list
     return latencies
 
 
-def output_charts(model_size, tp, bs, prompt, gen, log_dir, out_dir):
+def output_charts(args, model, tp_size, bs, replicas, prompt, gen, log_dir, out_dir):
     if not log_dir.exists():
         print(f"Log directory {log_dir} does not exist")
         return
@@ -62,65 +58,70 @@ def output_charts(model_size, tp, bs, prompt, gen, log_dir, out_dir):
     if not out_dir.exists():
         out_dir.mkdir(parents=True, exist_ok=True)
 
-    mii_file_pattern = f"{log_dir}/logs.llama2-{model_size}-tp{tp}-b{bs}/llama2-{model_size}-tp{tp}-b{bs}_c*_p{prompt}_g{gen}.json"
-    vllm_file_pattern = f"{log_dir}/logs.vllm-llama2-{model_size}-tp{tp}/vllm-llama2-{model_size}-tp{tp}_c*_p{prompt}_g{gen}.json"
+    result_file_pattern = f"{model}-tp{tp_size}-bs{bs}-replicas{replicas}-prompt{prompt}-gen{gen}-clients*.json"
 
-    mii_latencies = extract_values(mii_file_pattern)
-    vllm_latencies = extract_values(vllm_file_pattern)
-    client_num_list = sorted(list(mii_latencies.keys()))
+    plt_cfg = {'vllm': {'bar_x': [1, 2.5, 4], 'label': 'vLLM', 'color': 'orange'},\
+               'fastgen': {'bar_x': [1.3, 2.8, 4.3], 'label': 'DeepSpeed-FastGen', 'color': 'blue'}}
 
-    for client_num in client_num_list:
-        plt.figure(figsize=(6, 4))
+    latencies = {}
+    client_num_dict = {}
+    for backend in args.backend:
+        file_pattern = f"{log_dir}/{backend}/{result_file_pattern}"
+        latencies[backend] = extract_values(args, file_pattern)
+        client_num_dict[backend] = set(sorted(list(latencies[backend].keys())))
 
+    # Intersection of clients across all backends
+    client_num_set = set()
+    for backend in args.backend:
+        if not client_num_set:
+            client_num_set = client_num_dict[backend]
+        else:
+            client_num_set = client_num_set.intersection(client_num_dict[backend])
+
+    for client_num in client_num_set:
+        plt.figure()
         percentile = 95
 
-        P50_vllm_val = np.percentile(vllm_latencies[client_num], 50)
-        P50_mii_val = np.percentile(mii_latencies[client_num], 50)
-        P90_vllm_val = np.percentile(vllm_latencies[client_num], 90)
-        P90_mii_val = np.percentile(mii_latencies[client_num], 90)
-        P95_vllm_val = np.percentile(vllm_latencies[client_num], 95)
-        P95_mii_val = np.percentile(mii_latencies[client_num], 95)
-
-        # print(f"P50_vllm_val={P50_vllm_val}")
-        # print(f"P50_mii_val={P50_mii_val}")
-        # print(f"P90_vllm_val={P90_vllm_val}")
-        # print(f"P90_mii_val={P90_mii_val}")
-        # print(f"P95_vllm_val={P95_vllm_val}")
-        # print(f"P95_mii_val={P95_mii_val}")
+        for backend in args.backend:
+            print(f"Generating data for plot, {backend=}")
+            P50_val = np.percentile(latencies[backend][client_num], 50)
+            P90_val = np.percentile(latencies[backend][client_num], 90)
+            P95_val = np.percentile(latencies[backend][client_num], 95)
+            y = [P50_val, P90_val, P95_val]
+            plt.bar(plt_cfg[backend]['bar_x'], y, width=0.3, label=plt_cfg[backend]['label'], align="center", color=plt_cfg[backend]['color'])
 
         out_file = (
             out_dir
-            / f"p{percentile}_token_latency_llama{model_size}_c{client_num}_tp{tp}_p{prompt}g{gen}.png"
+            / f"p{percentile}_token_latency_{model}_c{client_num}_tp{tp_size}_p{prompt}g{gen}.png"
         )
 
-        x1 = [1, 2, 3]
-        y1 = [P50_vllm_val, P90_vllm_val, P95_vllm_val]
-
-        x2 = [1.3, 2.3, 3.3]
-        y2 = [P50_mii_val, P90_mii_val, P95_mii_val]
-
-        label_x = ["P50", "P90", "P95"]
-
-        plt.bar(x1, y1, width=0.3, label="vLLM", align="center", color="orange")
-        plt.bar(
-            x2, y2, width=0.3, label="DeepSpeed-FastGen", align="center", color="blue"
-        )
-        plt.ylabel("Latency", fontsize=14)
+        plt.ylabel("Latency (s)", fontsize=14)
         plt.legend(loc=2)
 
-        plt.xticks([1.15, 2.15, 3.15], label_x)
+        label_x = ["P50", "P90", "P95"]
+        plt.xticks([1, 2.5, 4], label_x)
 
+        plt.title(f"Model: {model}, Clients: {client_num}, Prompt: {prompt}, Gen: {gen}, TP: {tp_size}")
         plt.savefig(out_file)
         print(f"Saved {out_file}")
 
 
 if __name__ == "__main__":
-    raise NotImplementedError("This script is not up to date")
     args = get_args()
 
-    for model_size, tps in tp_sizes.items():
-        for tp in tps:
-            for prompt, gen in prompt_gen_pairs:
-                output_charts(
-                    model_size, tp, bs, prompt, gen, args.log_dir, args.out_dir
-                )
+    assert "aml" not in args.backend, "Percentile latency analysis is not supported for AML."
+
+    result_params = get_result_sets(args)
+
+    for model, tp_size, bs, replicas, prompt, gen in result_params:
+        output_charts(
+            args=args,
+            model=model,
+            tp_size=tp_size,
+            bs=bs,
+            replicas=replicas,
+            prompt=prompt,
+            gen=gen,
+            log_dir=args.log_dir,
+            out_dir=args.out_dir,
+        )
