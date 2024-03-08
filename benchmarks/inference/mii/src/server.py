@@ -71,13 +71,17 @@ def start_fastgen_server(args: argparse.Namespace) -> None:
     inference_config = RaggedInferenceEngineConfig(
         tensor_parallel=tp_config, state_manager=mgr_config
     )
-
+    if args.fp6:
+        quantization_mode = 'wf6af16'
+    else:
+        quantization_mode = None
     mii.serve(
         args.model,
         deployment_name=args.deployment_name,
         tensor_parallel=args.tp_size,
         inference_engine_config=inference_config,
         replica_num=args.num_replicas,
+        quantization_mode=quantization_mode
     )
 
 

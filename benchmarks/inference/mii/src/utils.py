@@ -159,6 +159,9 @@ def parse_args(
     parser.add_argument(
         "--overwrite_results", action="store_true", help="Overwrite existing results"
     )
+    parser.add_argument(
+        "--fp6", action="store_true", help="Enable FP6"
+    )
 
     # Parse arguments
     args = parser.parse_args()
