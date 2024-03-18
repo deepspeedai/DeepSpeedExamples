@@ -1,4 +1,4 @@
-# Benchmarking Scripts for DeepSpeed-FastGen
+# Inference Benchmarking Scripts for vLLM, DeepSpeed-FastGen, and Azure ML endpoints
 
 ## Run the Benchmark
 
