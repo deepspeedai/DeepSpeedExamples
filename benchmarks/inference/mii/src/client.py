@@ -151,8 +151,7 @@ def call_aml(
                 input_tokens,
             ],
             "parameters": {
-                "max_new_tokens": max_new_tokens,
-                "do_sample": True,
+                "max_tokens": max_new_tokens,
                 "return_full_text": False,
             },
         }
