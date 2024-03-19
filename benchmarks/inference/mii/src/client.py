@@ -160,19 +160,26 @@ def call_aml(
 
     def get_response(response: requests.Response) -> List[str]:
         data = json.loads(response.content)
-        output = data[0]["0"]
+        try:
+            output = data[0]["0"]
+        except (KeyError, TypeError):
+            try:
+                output = data[0]
+            except (KeyError, TypeError):
+                output = data
         return output
 
     token_gen_time = []
     if start_time is None:
         start_time = time.time()
-    response = requests.post(args.aml_api_url, headers=headers, json=pload, timeout=180)
-    # Sometimes the AML endpoint will return an error, so we send the request again
-    try:
-        output = get_response(response)
-    except (Exception, requests.exceptions.SSLError) as e:
-        print("Request failed... re-submitting")
-        return call_aml(input_tokens, max_new_tokens, args, start_time)
+    while True:
+        try: # Sometimes the AML endpoint will return an error, so we send the request again
+            response = requests.post(args.aml_api_url, headers=headers, json=pload, timeout=180)
+            output = get_response(response)
+            break
+        except Exception as e:
+            print(f"Connection failed with {e}. Retrying AML request")
+            print(f"{response.status_code}:{response.content}")
 
     return ResponseDetails(
         generated_tokens=output,
