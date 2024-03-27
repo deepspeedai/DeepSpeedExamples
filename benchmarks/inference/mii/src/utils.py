@@ -91,7 +91,7 @@ def parse_args(
     client_parser.add_argument(
         "--num_requests",
         type=int,
-        default=512,
+        default=None,
         help="Number of requests to process by clients",
     )
     client_parser.add_argument(
@@ -159,9 +159,7 @@ def parse_args(
     parser.add_argument(
         "--overwrite_results", action="store_true", help="Overwrite existing results"
     )
-    parser.add_argument(
-        "--fp6", action="store_true", help="Enable FP6"
-    )
+    parser.add_argument("--fp6", action="store_true", help="Enable FP6")
 
     # Parse arguments
     args = parser.parse_args()

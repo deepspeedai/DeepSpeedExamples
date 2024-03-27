@@ -30,6 +30,8 @@ def run_benchmark() -> None:
                 )
                 continue
 
+            if client_args.num_requests is None:
+                client_args.num_requests = client_args.num_clients * 4 + 32
             response_details = run_client(client_args)
             print_summary(client_args, response_details)
             save_json_results(client_args, response_details)
