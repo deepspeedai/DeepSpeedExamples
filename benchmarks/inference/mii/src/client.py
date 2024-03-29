@@ -169,6 +169,7 @@ def call_aml(
         return output
 
     token_gen_time = []
+    response = None
     if start_time is None:
         start_time = time.time()
     while True:
@@ -178,7 +179,9 @@ def call_aml(
             break
         except Exception as e:
             print(f"Connection failed with {e}. Retrying AML request")
-            print(f"{response.status_code}:{response.content}")
+            # make sure response exist before we call it
+            if response:
+                print(f"{response.status_code}:{response.content}")
 
     return ResponseDetails(
         generated_tokens=output,
