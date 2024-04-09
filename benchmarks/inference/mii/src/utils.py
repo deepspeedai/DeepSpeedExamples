@@ -209,8 +209,7 @@ def get_args_product(
 
 def get_results_path(args: argparse.Namespace) -> Path:
     return Path(
-        args.out_json_dir,
-        f"{args.backend}/",
+        f"{args.out_json_dir}_{args.backend}/",
         "-".join(
             (
                 args.model.replace("/", "_"),

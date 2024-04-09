@@ -7,6 +7,7 @@ import argparse
 import glob
 import os
 import re
+import yaml
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -17,10 +18,10 @@ from postprocess_results import read_json, get_summary, get_result_sets
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--backend", type=str, choices=["aml", "fastgen", "vllm"], default=["aml", "fastgen", "vllm"], \
-                        nargs="+", help="Specify the backends to generate plots for")
-    parser.add_argument("--log_dir", type=Path, default="./results")
+    parser.add_argument("--data_dirs", type=str, nargs="+", \
+                        help="Specify the data directories to generate plots for")
     parser.add_argument("--out_dir", type=Path, default="./plots/throughput_latency")
+    parser.add_argument("--model_name", type=str, default="", help="Optional model name override")
     args = parser.parse_args()
     return args
 
@@ -42,88 +43,115 @@ def extract_values(file_pattern):
         throughputs.append(summary.throughput)
         latencies.append(summary.latency)
 
-        if "aml" in args.backend:
-            extra_args["aml_api_url"] = prof_args["aml_api_url"]
-            extra_args["deployment_name"] = prof_args["deployment_name"]
-
-    return clients, throughputs, latencies, extra_args
+    return clients, throughputs, latencies, prof_args
 
 
-def output_charts(model, tp_size, bs, replicas, prompt, gen, log_dir, out_dir):
+def output_charts(model, tp_size, bs, replicas, prompt, gen, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     result_file_pattern = f"{model}-tp{tp_size}-bs{bs}-replicas{replicas}-prompt{prompt}-gen{gen}-clients*.json"
 
     plt.figure()
 
-    # Plotting the scatter plot
-    # vLLM plot formatting
-    if "vllm" in args.backend:
-        vllm_file_pattern = f"{log_dir}/vllm/{result_file_pattern}"
-        _, vllm_throughputs, vllm_latencies, _ = extract_values(vllm_file_pattern)
-        if len(vllm_throughputs) > 0:
-            plt.scatter(
-                vllm_throughputs, vllm_latencies, label=f"vLLM", marker="x", color="orange"
+    for data_dir in args.data_dirs:
+        file_pattern = f"{data_dir}/{result_file_pattern}"
+        _, throughputs, latencies, prof_args = extract_values(file_pattern)
+
+        kwargs = {}
+        kwargs["label"] = str(data_dir)
+        kwargs["marker"] = "o"
+        kwargs["linestyle"] = "--"
+
+        fit_kwargs = {}
+        fit_kwargs["linestyle"] = "--"
+        plot_fit_line = True
+
+        polyfit_degree = 3
+        plot_fn = plt.scatter
+
+        plot_config = glob.glob(f"{data_dir}/plot_config.yaml")
+
+        latencies = sorted(latencies)
+        throughputs = sorted(throughputs)
+
+        if plot_config:
+            plot_config = plot_config[0]
+            plot_config = yaml.safe_load(Path(plot_config).read_text())
+            plot_keys = plot_config.keys()
+
+            # If x_max specified, clip data
+            if "x_max" in plot_keys:
+                for i, throughput in enumerate(throughputs):
+                    if throughput > plot_config["x_max"]:
+                        latencies = latencies[:i]
+                        throughputs = throughputs[:i]
+                        break
+
+            # If y_max specified, clip data
+            if "y_max" in plot_keys:
+                for i, latency in enumerate(latencies):
+                    if latency > plot_config["y_max"]:
+                        latencies = latencies[:i]
+                        throughputs = throughputs[:i]
+                        break
+
+            # Set polyfit degree
+            polyfit_degree = plot_config.get("polyfit_degree", polyfit_degree)
+
+            # Select plot type
+            if polyfit_degree == 0:
+                plot_fit_line = False
+
+            # Main plot kwargs
+            if "label" in plot_keys:
+                kwargs["label"] = plot_config["label"]
+            if "marker" in plot_keys:
+                kwargs["marker"] = plot_config["marker"]
+            if "color" in plot_keys:
+                kwargs["color"] = plot_config["color"]
+            if "linestyle" in plot_keys:
+                kwargs["linestyle"] = plot_config["linestyle"]
+
+            # Fit line kwargs
+            if "color" in plot_keys:
+                fit_kwargs["color"] = plot_config["color"]
+            if "linestyle" in plot_keys:
+                fit_kwargs["linestyle"] = plot_config["linestyle"]
+
+        if len(throughputs) > 0:
+            plot = plot_fn(
+                throughputs,
+                latencies,
+                **kwargs,
             )
-            fit_vllm_x_list = np.arange(min(vllm_throughputs), max(vllm_throughputs), 0.01)
-            vllm_vllm_model = np.polyfit(vllm_throughputs, vllm_latencies, 3)
-            vllm_model_fn = np.poly1d(vllm_vllm_model)
+
+            if plot_fn == plt.plot:
+                plot_color = plot[0].get_color()
+            else:
+                plot_color = plot.get_facecolor()[0]
+
+            if not "color" in fit_kwargs.keys():
+                fit_kwargs["color"] = plot_color
+
+            fit_x_list = np.arange(min(throughputs), max(throughputs), 0.01)
+            data_model = np.polyfit(throughputs, latencies, polyfit_degree)
+            model_fn = np.poly1d(data_model)
+            x = fit_x_list if plot_fit_line else throughputs
+            y = model_fn(fit_x_list) if plot_fit_line else latencies
             plt.plot(
-                fit_vllm_x_list,
-                vllm_model_fn(fit_vllm_x_list),
-                color="orange",
+                x,
+                y,
                 alpha=0.5,
-                linestyle="--",
+                **fit_kwargs,
             )
-
-    # FastGen plot formatting
-    if "fastgen" in args.backend:
-        mii_file_pattern = f"{log_dir}/fastgen/{result_file_pattern}"
-        _, mii_throughputs, mii_latencies, _ = extract_values(mii_file_pattern)
-        plt.scatter(
-            mii_throughputs,
-            mii_latencies,
-            label=f"DeepSpeed FastGen",
-            marker="o",
-            color="blue",
-        )
-        fit_mii_x_list = np.arange(min(mii_throughputs), max(mii_throughputs), 0.01)
-        mii_fit_model = np.polyfit(mii_throughputs, mii_latencies, 3)
-        mii_model_fn = np.poly1d(mii_fit_model)
-        plt.plot(
-            fit_mii_x_list,
-            mii_model_fn(fit_mii_x_list),
-            color="blue",
-            alpha=0.5,
-            linestyle="--",
-        )
-
-    # AML plot formatting
-    if "aml" in args.backend:
-        aml_file_pattern = f"{log_dir}/aml/{result_file_pattern}"
-        _, aml_throughputs, aml_latencies, aml_args = extract_values(aml_file_pattern)
-        aml_endpoint_name = re.match('^https://(.+?)\.', aml_args["aml_api_url"]).groups()[0]
-        aml_deployment_name = aml_args["deployment_name"]
-        plt.scatter(
-            aml_throughputs,
-            aml_latencies,
-            label=f"AML {aml_endpoint_name.capitalize()}",
-            marker="o",
-            color="purple",
-        )
-        fit_aml_x_list = np.arange(min(aml_throughputs), max(aml_throughputs), 0.01)
-        aml_fit_model = np.polyfit(aml_throughputs, aml_latencies, 3)
-        aml_model_fn = np.poly1d(aml_fit_model)
-        plt.plot(
-            fit_aml_x_list,
-            aml_model_fn(fit_aml_x_list),
-            color="purple",
-            alpha=0.5,
-            linestyle="--",
-        )
 
     # Generic plot formatting
-    plt.title(f"Model: {model}, Prompt: {prompt}, Generation: {gen}, TP: {tp_size}")
+    if args.model_name:
+        model_label = args.model_name
+    else:
+        model_label = model
+
+    plt.title(f"Model: {model_label}, Prompt: {prompt}, Generation: {gen}, TP: {tp_size}")
     plt.xlabel("Throughput (queries/s)", fontsize=14)
     plt.ylabel("Latency (s)", fontsize=14)
     plt.legend()
@@ -140,9 +168,6 @@ def output_charts(model, tp_size, bs, replicas, prompt, gen, log_dir, out_dir):
 if __name__ == "__main__":
     args = get_args()
 
-    if not args.log_dir.exists():
-        raise ValueError(f"Log dir {args.log_dir} does not exist")
-
     result_params = get_result_sets(args)
 
     for model, tp_size, bs, replicas, prompt, gen in result_params:
@@ -153,6 +178,5 @@ if __name__ == "__main__":
             replicas=replicas,
             prompt=prompt,
             gen=gen,
-            log_dir=args.log_dir,
             out_dir=args.out_dir,
         )

@@ -61,9 +61,34 @@ figures will be saved to `./plots/`
 - `src/plot_repl_scale.py`: This script will plot the throughput and number of replicas for a fixed clients/replica per plot.
 - `src/plot_tp_sizes.py`: This script will plot latency and TFLOPs per GPU across different tensor parallelism sizes.
 
-The following command shows an example of `plot_th_lat.py` execution using the `vllm`, `fastgen`, and `aml` backends.
+## Throughput Latency Plot Generation Script
+The `plot_th_lat.py` throughput-latency plot generation script is generalized for any result output directory, irrespective of where it was run.
+
+The script uses an **_optional_** `plot_config.yaml` that resides within each result directory and allows for overrides in the plot formatting. An example config file may look like this:
+```yaml
+label: "vLLM"
+color: "purple"
+marker: "o"
+linestyle: "--"
+polyfit_degree: 0
+x_max : 30
+y_max : 10
+```
+
+Each of the config parameters is optional, allowing for overriding of only the specific plot aspects required, however, all parameters may also be provided.
+
+A few nuances for the `polyfit_degree` and `x/y_max` parameters:
+- `polyfit_degree`: Specifies the polynomial degree for the 'best fit line'. Specifying `0` removes the best fit line and simply connects the scatter plot points.
+- `x/y_max`: Clips the x or y axis data using the specified value as the upper bound.
+
+An example command executing the script may look something like this:
 ```bash
-DeepSpeedExamples/benchmarks/inference/mii$ python3 src/plot_th_lat.py --backend vllm fastgen aml --log_dir results/
+DeepSpeedExamples/benchmarks/inference/mii$ python3 src/plot_th_lat.py --data_dirs ./results/results-* --model_name <plot_model_title>
+```
+
+Or each result directory can be enumerated explicitly:
+```bash
+DeepSpeedExamples/benchmarks/inference/mii$ python3 src/plot_th_lat.py --data_dirs ./results/results-1 ./results/results-2 ./results/results-3 --model_name <plot_model_title>
 ```
 
 ## Running an End-to-End Example

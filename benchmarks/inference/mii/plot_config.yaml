@@ -1,0 +1,7 @@
+label: "vLLM"
+color: "purple"
+marker: "o"
+linestyle: "--"
+polyfit_degree: 0
+x_max : 30
+y_max : 10
