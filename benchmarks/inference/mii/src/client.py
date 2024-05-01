@@ -219,7 +219,7 @@ def _run_parallel(
 
     time.sleep(random.uniform(0, args.num_clients) * 0.01)
     try:
-        while not query_queue.empty():
+        while True:
             print(f"queue size: {query_queue.qsize()} ({pid})", flush=True)
             input_tokens, req_max_new_tokens = query_queue.get(timeout=1.0)
 
