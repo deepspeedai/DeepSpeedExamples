@@ -61,6 +61,10 @@ def parse_args(
         choices=["start", "stop", "restart"],
         help="Command for running server.py to manually start/stop/restart a server",
     )
+    server_parser.add_argument(
+        "--client_only", action="store_true", help="Run client only with server started"
+    )
+
 
     # Client args
     client_parser = argparse.ArgumentParser(add_help=False)
