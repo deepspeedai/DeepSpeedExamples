@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "deepspeedometer"
+version = "0.0.1"
+authors = [
+  { name="Ammar Ahmad Awan", email="ammar.awan@microsoft.com" },
+  { name="Arash Bakhitiari", email="abakhtiari@microsoft.com" },
+  { name="Connor Holmes"},
+  { name="Lev Kurilenko", email="lev.kurilenko@microsoft.com" },
+  { name="Heyang Qin", email="heyangqin@microsoft.com" },
+  { name="Masahiro Tanaka", email="mtanaka@microsoft.com" },
+  { name="Michael Wyatt", email="michaelwyatt@microsoft.com" },
+]
+description = "LLM benchmarking tool"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "loguru",
+    "pydantic>=2.0.0",
+    "torch",
+    "tqdm",
+    "transformers",
+]
+
+[project.urls]
+Homepage = "https://github.com/Microsoft/DeepSpeedExamples/tree/master/benchmarks/inference/deepspeedometer"
+Issues = "https://github.com/Microsoft/DeepSpeedExamples/issues"

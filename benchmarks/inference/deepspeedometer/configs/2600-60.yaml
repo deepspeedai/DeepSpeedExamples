@@ -1,0 +1,4 @@
+prompt_length: 2600
+prompt_lenght_var: 0.3
+max_new_tokens: 60
+max_new_tokens_var: 0.3
