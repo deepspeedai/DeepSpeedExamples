@@ -1,6 +1,6 @@
 # The DeepSpeed Communication Benchmarking Suite
 
-The intent of these benchmarks is to measure communication latency/bw of deepspeed and/or pytorch distributed communication operations at the Python layer. These benchmarks are complementary to C-level comms benchmarks like [OSU Micro-Benchmarks](https://mvapich.cse.ohio-state.edu/benchmarks/) and [NCCL Tests](https://github.com/NVIDIA/nccl-tests) in that users can:
+The intent of these benchmarks is to measure communication latency/bw of deepspeed and/or pytorch distributed communication operations at the Python layer. These benchmarks are complementary to C-level comms benchmarks like [OSU Micro-Benchmarks](https://mvapich.cse.ohio-state.edu/benchmarks/) , [NCCL Tests](https://github.com/NVIDIA/nccl-tests) and [oneCCL Benchmark](https://oneapi-src.github.io/oneCCL/benchmark.html) in that users can:
 - Easily debug which layer of the communication software stack hangs or performance degradations originate from.
 - Measure the expected communication performance of either DeepSpeed comms or pure PyTorch distributed
 
@@ -75,6 +75,14 @@ Finally, users can choose specific communication operations to run in `run_all.p
 
 <pre>
 deepspeed run_all.py --scan --all-reduce --all-to-all --broadcast
+</pre>
+
+## CPU Support
+Those benchmarks could also support other devices like Intel CPU via oneCCL.
+Users just need to append one more argument "--device cpu" for all python scripts to run on Intel CPU.
+For example, run with a single large message size on Intel CPU:
+<pre>
+deepspeed all_reduce.py --device cpu
 </pre>
 
 

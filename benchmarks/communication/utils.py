@@ -108,6 +108,11 @@ def get_bw(comm_op, size, duration, args):
     n = dist.get_world_size()
     tput = 0
     busbw = 0
+
+    if duration == 0:
+        print_rank_0("Error. Duration is 0.")
+        return tput, busbw
+
     if comm_op == "all_to_all":
         tput = (size / duration)
         busbw = (size / duration) * ((n - 1) / n)
@@ -235,4 +240,5 @@ def benchmark_parser():
                         default=.3,
                         help='Proportion of max available GPU memory to use for single-size evals')
     parser.add_argument("--debug", action="store_true", help='Enables all_to_all debug prints')
+    parser.add_argument("--device", type=str, default=DEFAULT_DEVICE, help='target device')
     return parser

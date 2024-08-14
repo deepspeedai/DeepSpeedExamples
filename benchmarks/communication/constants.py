@@ -12,4 +12,5 @@ DEFAULT_BACKEND = get_accelerator().communication_backend_name()
 DEFAULT_UNIT = 'Gbps'
 DEFAULT_DIST = 'deepspeed'
 DEFAULT_MAXSIZE = 24
+DEFAULT_DEVICE = 'cuda'
 TORCH_DISTRIBUTED_DEFAULT_PORT = 29500

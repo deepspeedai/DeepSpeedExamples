@@ -15,6 +15,9 @@ from deepspeed.accelerator import get_accelerator
 
 
 def timed_all_to_all(input, output, start_event, end_event, args):
+    if args.device == "cpu":
+        print_rank_0(f"No Event support on CPU to measure time for now")
+        return
     if args.dist == 'torch':
         import torch.distributed as dist
     elif args.dist == 'deepspeed':
@@ -59,8 +62,15 @@ def run_all_to_all(local_rank, args):
     # Prepare benchmark header
     print_header(args, 'all_to_all')
 
-    start_event = torch.cuda.Event(enable_timing=True)
-    end_event = torch.cuda.Event(enable_timing=True)
+    if args.device == "xpu":
+        start_event = torch.xpu.Event(enable_timing=True)
+        end_event = torch.xpu.Event(enable_timing=True)
+    elif args.device == "cpu":
+        start_event = torch.cpu.Event()
+        end_event = torch.cpu.Event()
+    else:
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
 
     if args.scan:
         M_LIST = []

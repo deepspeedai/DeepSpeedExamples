@@ -15,6 +15,9 @@ from deepspeed.accelerator import get_accelerator
 
 
 def timed_broadcast(input, start_event, end_event, args):
+    if args.device == "cpu":
+        print_rank_0(f"No Event support on CPU to measure time for now")
+        return
     if args.dist == 'torch':
         import torch.distributed as dist
     elif args.dist == 'deepspeed':
@@ -60,8 +63,15 @@ def run_broadcast(local_rank, args):
     world_size = dist.get_world_size()
     global_rank = dist.get_rank()
 
-    start_event = torch.cuda.Event(enable_timing=True)
-    end_event = torch.cuda.Event(enable_timing=True)
+    if args.device == "xpu":
+        start_event = torch.xpu.Event(enable_timing=True)
+        end_event = torch.xpu.Event(enable_timing=True)
+    elif args.device == "cpu":
+        start_event = torch.cpu.Event()
+        end_event = torch.cpu.Event()
+    else:
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
 
     if args.scan:
         M_LIST = []
