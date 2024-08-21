@@ -49,10 +49,13 @@ def parse_args():
     return args
 
 
-def get_tokenizer():
+def get_tokenizer(model=None):
     global tokenizer
     if tokenizer is None:
-        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+        if model==None:
+            tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model)
     return tokenizer
 
 
@@ -78,8 +81,8 @@ def get_summary(args, response_details):
 
     tokens_per_sec = mean(
         [
-            (len(get_tokenizer().tokenize(r.prompt)) +
-            len(get_tokenizer().tokenize(r.generated_tokens)) if type(r.generated_tokens) == str
+            (len(get_tokenizer(args["model"]).tokenize(r.prompt)) +
+            len(get_tokenizer(args["model"]).tokenize(r.generated_tokens)) if type(r.generated_tokens) == str
             else len(r.generated_tokens))
             / (r.end_time - r.start_time)
             for r in response_details

@@ -15,9 +15,10 @@ from postprocess_results import read_json, get_tokenizer, get_result_sets
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--backend", type=str, choices=["fastgen", "vllm"], default=["fastgen", "vllm"], \
+    parser.add_argument("--backend", type=str, choices=["fastgen", "vllm", "openai"], default=["fastgen", "vllm"], \
                         nargs="+", help="Specify the backends to generate plots for")
     parser.add_argument("--log_dir", type=Path, default="./results")
+    parser.add_argument("--model", type=str)
     parser.add_argument("--out_dir", type=Path, default="./plots/goodtput")
     parser.add_argument("--sla_prompt_tokens_per_sec", type=int, default=512, help="SLA prompt tokens per second")
     parser.add_argument("--sla_gen_tokens_per_sec", type=int, default=[1, 2, 3, 4, 6, 8], nargs="+", help="SLA generation tokens/s targets")
@@ -76,7 +77,7 @@ def validate_token_ema_latency_SLA(response_detail, sla_token_gen, ema_span):
 
 
 def validate_prompt_latency_SLA(response_detail, sla_token_gen, f, sla_prompt_tokens_per_sec ):
-    tokenizer = get_tokenizer()
+    tokenizer = get_tokenizer(args.model)
     prompt_length = len(tokenizer.tokenize(response_detail.prompt))
     prompt_latency_SLA = prompt_length / sla_prompt_tokens_per_sec
     if prompt_latency_SLA < response_detail.token_gen_time[0]:
@@ -137,7 +138,9 @@ def output_charts(args, model, tp_size, bs, replicas, sla_token_gen, prompt, gen
     ]
 
     plt_cfg = {'vllm': {'label': 'vLLM', 'marker': 'x', 'color': 'orange'},\
-               'fastgen': {'label': 'DeepSpeed-FastGen', 'marker': 'o', 'color': 'blue'}}
+               'fastgen': {'label': 'DeepSpeed-FastGen', 'marker': 'o', 'color': 'blue'}, \
+               'openai': {'label': 'openai-API', 'marker': '+', 'color': 'red'}
+              }
 
     for f in validate_funcs:
         plt.figure()

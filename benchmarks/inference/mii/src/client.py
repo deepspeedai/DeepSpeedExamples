@@ -131,6 +131,80 @@ def call_vllm(
     )
 
 
+# client talks with openai api
+def call_openai(
+    input_tokens: str, max_new_tokens: int, args: argparse.Namespace
+) -> ResponseDetails:
+
+    api_url = args.openai_api_url
+    headers = {
+        "User-Agent": "Benchmark Client",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {args.openai_api_key}"
+    }
+
+    pload = {
+        "prompt": input_tokens,
+        "model": args.model,
+        "n": 1,
+        "use_beam_search": False,
+        "temperature": 1.0,
+        "top_p": 0.9,
+        "max_tokens": max_new_tokens,
+        "ignore_eos": False,
+        "stream": args.stream,
+    }
+
+    def clear_line(n: int = 1) -> None:
+        LINE_UP = "\033[1A"
+        LINE_CLEAR = "\x1b[2K"
+        for _ in range(n):
+            print(LINE_UP, end=LINE_CLEAR, flush=True)
+
+    def get_streaming_response(
+        response: requests.Response, time_last_token
+    ) -> Iterable[List[str]]:
+        for chunk in response.iter_lines(
+            chunk_size=8192, decode_unicode=False, delimiter=b"data:"
+        ):
+            if chunk:
+                plain=chunk.decode("utf-8")
+                if plain.strip() == "[DONE]":
+                    continue
+                data = json.loads(plain)
+                output = data["choices"][0]["text"]
+                time_now = time.time()
+                yield output, time_now - time_last_token
+                time_last_token = time_now
+
+    # For non-streaming, but currently non-streaming is not fully implemented
+    def get_response(response: requests.Response) -> List[str]:
+        data = json.loads(response.content)
+        output = data["choices"][0]["text"]
+        return output
+
+    token_gen_time = []
+    start_time = time.time()
+    #response = requests.post(api_url, headers=headers, json=pload, stream=False)
+    response = requests.post(api_url, headers=headers, json=pload, stream=args.stream)
+    if args.stream:
+        output = ""
+        for h, t in get_streaming_response(response, start_time):
+            output += h
+            token_gen_time.append(t)
+    else:
+        output = get_response(response)
+
+    return ResponseDetails(
+        generated_tokens=output,
+        prompt=input_tokens,
+        start_time=start_time,
+        end_time=time.time(),
+        model_time=0,
+        token_gen_time=token_gen_time,
+    )
+
+
 def call_aml(
     input_tokens: str,
     max_new_tokens: int,
@@ -205,7 +279,7 @@ def _run_parallel(
     event_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(event_loop)
 
-    backend_call_fns = {"fastgen": call_fastgen, "vllm": call_vllm, "aml": call_aml}
+    backend_call_fns = {"fastgen": call_fastgen, "vllm": call_vllm, "aml": call_aml, "openai": call_openai}
     call_fn = backend_call_fns[args.backend]
 
     barrier.wait()
