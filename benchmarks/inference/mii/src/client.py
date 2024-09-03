@@ -347,6 +347,14 @@ def run_client(args):
         p.start()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
+
+    # make sure max_prompt_length is longer than the target prompt length
+    args.max_prompt_length = max(args.max_prompt_length, int(args.mean_prompt_length * 3))
+    # check if the all_text is longer than the max prompt length, if not expand it
+    global all_text
+    while len(tokenizer.tokenize(all_text)) < args.max_prompt_length:
+        all_text += all_text
+
     query_generator = RandomQueryGenerator(all_text, tokenizer, seed=42)
     request_text = query_generator.get_random_request_text(
         args.mean_prompt_length,
