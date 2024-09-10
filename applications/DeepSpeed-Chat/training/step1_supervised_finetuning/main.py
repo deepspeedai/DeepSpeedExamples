@@ -270,6 +270,7 @@ def main():
         args.seed,
         tokenizer,
         args.max_seq_len,
+        end_of_conversation_token=tokenizer.eos_token,
         sft_only_data_path=args.sft_only_data_path)
     # DataLoaders creation:
     if args.local_rank == -1:

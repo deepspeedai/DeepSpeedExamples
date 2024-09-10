@@ -149,9 +149,13 @@ class PromptDataset(Dataset):
     def __getitem__(self, idx):
         if self.train_phase == 1:
             return {
-                "input_ids": self.chosen_dataset[idx]["input_ids"],
-                "attention_mask": self.chosen_dataset[idx]["attention_mask"],
-                "labels": self.chosen_dataset[idx]["input_ids"]
+                "input_ids":
+                self.chosen_dataset[idx]["input_ids"],
+                "attention_mask":
+                self.chosen_dataset[idx]["attention_mask"],
+                "labels":
+                torch.where(self.chosen_dataset[idx]["attention_mask"].bool(),
+                            self.chosen_dataset[idx]["input_ids"], -100)
             }
         elif self.train_phase == 2:
             return self.chosen_dataset[idx]["input_ids"], self.chosen_dataset[idx]["attention_mask"], \
