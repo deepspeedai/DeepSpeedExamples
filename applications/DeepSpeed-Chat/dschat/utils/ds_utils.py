@@ -33,6 +33,7 @@ def get_train_ds_config(offload,
         dtype_config = {"enabled": True}
     zero_opt_dict = {
         "stage": stage,
+        "overlap_comm": True,
         "offload_param": {
             "device": device
         },
