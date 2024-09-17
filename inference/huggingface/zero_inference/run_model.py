@@ -87,7 +87,7 @@ def get_ds_model(
         },
         "zero_optimization": {
             "stage": 3,
-            "stage3_prefetch_bucket_size": 2 * hidden_size * hidden_size, # 0, 
+            "stage3_prefetch_bucket_size": 2 * hidden_size * hidden_size, 
             "stage3_param_persistence_threshold": hidden_size,
             "stage3_max_live_parameters": 2 * hidden_size * hidden_size,
         },
@@ -105,17 +105,29 @@ def get_ds_model(
         )
 
     if disk_offload:
+        if config.model_type == 'bloom':
+            buffer_count = 3 if args.use_gds else 5
+            buffer_size = 8*GB if args.use_gds else 9*GB
+
+        elif config.model_type == 'mixtral':
+            buffer_count = 10
+            buffer_size = 1*GB
+        else:
+            buffer_count = 5
+            buffer_size = 2*GB
+
         ds_config["zero_optimization"]["offload_param"] = dict(
             device="nvme",
             pin_memory=pin_memory,
             nvme_path=offload_dir,
-            buffer_count=5,
-            buffer_size=9 * GB if config.model_type == 'bloom' else 2 * GB,
+            buffer_count=buffer_count,
+            buffer_size=buffer_size,
         )
         ds_config["aio"] = {
-            "block_size": 1048576,
-            "queue_depth": 8,
-            "thread_count": 1,
+            "block_size": 1048576*16,
+            "queue_depth": 64,
+            "thread_count": 8,
+            "use_gds": args.use_gds,
             "single_submit": False,
             "overlap_events": True,
         }
@@ -138,6 +150,10 @@ def get_ds_model(
         )
     elif config.model_type == "llama":
         model = LlamaForCausalLM.from_pretrained(
+            dummy_weights or model_name, torch_dtype=dtype,
+        )
+    elif config.model_type == "mixtral":
+        model = AutoModelForCausalLM.from_pretrained(
             dummy_weights or model_name, torch_dtype=dtype,
         )
     else:
@@ -192,6 +208,8 @@ def run_generation(
                     model = BloomForCausalLM(config)
                 elif config.model_type == "llama":
                     model = LlamaForCausalLM(config)
+                elif config.model_type == "mixtral":
+                    model = AutoModelForCausalLM(config)
                 else:
                     raise ValueError(f"Unexpected model type: {config.model_type}")                    
             model.save_pretrained(
@@ -354,6 +372,7 @@ if __name__ == "__main__":
     parser.add_argument("--quant_group_size", type=int, default=64, help="model weight quantization group size")
     parser.add_argument("--pin_kv_cache", action="store_true", help="Allocate kv cache in pinned memory for offloading.")
     parser.add_argument("--async_kv_offload", action="store_true", help="Using non_blocking copy for kv cache offloading.")
+    parser.add_argument("--use_gds", action="store_true", help="Use NVIDIA GPU DirectStorage to transfer between NVMe and GPU.")
     args = parser.parse_args()
 
     deepspeed.init_distributed()    
