@@ -15,7 +15,7 @@ sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import data.DST as DST # default special tokens
 from torch.utils.data import DataLoader
-from transformers.deepspeed import HfDeepSpeedConfig
+from transformers.integrations.deepspeed import HfDeepSpeedConfig
 import numpy as np
 from .vis_proj import VisProjection_vit, VisProjection_perceiver
 

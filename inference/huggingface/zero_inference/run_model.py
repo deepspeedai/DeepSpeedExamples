@@ -19,7 +19,7 @@ from timer import timers
 from transformers import (AutoConfig, AutoTokenizer, AutoModelForCausalLM, 
                           BloomForCausalLM, OPTForCausalLM, LlamaForCausalLM,
                         )
-from transformers.deepspeed import HfDeepSpeedConfig
+from transformers.integrations.deepspeed import HfDeepSpeedConfig
 from utils import (GB, add_model_hooks, cache_bytes,
                    get_filename, get_quant_config, hidden_bytes, meta_to_cpu,
                    model_bytes, write_benchmark_log)

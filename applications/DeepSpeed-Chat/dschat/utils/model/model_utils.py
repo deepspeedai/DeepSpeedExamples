@@ -10,7 +10,7 @@ from transformers import (
     AutoModel,
 )
 from huggingface_hub import snapshot_download
-from transformers.deepspeed import HfDeepSpeedConfig
+from transformers.integrations.deepspeed import HfDeepSpeedConfig
 
 from dschat.utils.model.reward_model import RewardModel
 from dschat.utils.utils import load_state_dict_into_model, print_rank_0
