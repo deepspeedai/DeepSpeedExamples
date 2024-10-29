@@ -246,6 +246,9 @@ def parse_args():
         '--offload_reference_model',
         action='store_true',
         help='Enable ZeRO Offload techniques for reference model')
+    parser.add_argument('--offload_reward_model',
+                        action='store_true',
+                        help='Enable ZeRO Offload techniques for reward model')
     parser.add_argument(
         '--actor_zero_stage',
         type=int,

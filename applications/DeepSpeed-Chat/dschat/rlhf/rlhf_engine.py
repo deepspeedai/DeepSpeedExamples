@@ -268,23 +268,14 @@ class DeepSpeedRLHFEngine():
             # If critic is ZeRO-3 then we use it for everything, otherwise assume we have enough memory
             zero_stage = 0
 
-        ds_config = get_eval_ds_config(offload=self.args.offload,
+        ds_config = get_eval_ds_config(offload=self.args.offload_reward_model,
                                        dtype=self.args.dtype,
                                        stage=zero_stage)
-        ds_config[
-            'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
-        ds_config[
-            'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
-            ) * self.args.gradient_accumulation_steps
-
-        ds_eval_config = get_eval_ds_config(offload=False,
-                                            dtype=self.args.dtype,
-                                            stage=zero_stage)
 
         # We need to set train batch size and micro batch size here to pass the sanity check of DeepSpeed engine.
-        ds_eval_config[
+        ds_config[
             'train_micro_batch_size_per_gpu'] = self.args.per_device_training_batch_size
-        ds_eval_config[
+        ds_config[
             'train_batch_size'] = self.args.per_device_training_batch_size * torch.distributed.get_world_size(
             ) * self.args.gradient_accumulation_steps
 
@@ -292,7 +283,7 @@ class DeepSpeedRLHFEngine():
         reward_model = create_critic_model(
             model_name_or_path=critic_model_name_or_path,
             tokenizer=self.tokenizer,
-            ds_config=ds_eval_config,
+            ds_config=ds_config,
             num_padding_at_beginning=self.args.num_padding_at_beginning,
             rlhf_training=True,
             dropout=self.args.critic_dropout,
