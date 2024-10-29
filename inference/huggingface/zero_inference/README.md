@@ -90,7 +90,7 @@ deepspeed --num_gpus 1 run_model.py --model bigscience/bloom-7b1 --batch-size 8 
 Here is an example of running `meta-llama/Llama-2-7b-hf` with Zero-Inference using 4-bit model weights and offloading kv cache to CPU:
 
 ```sh
-deepspeed --num_gpus 1 run_model.py --model meta-llama/Llama-2-7b-hf` --batch-size 8 --prompt-len 512 --gen-len 32 --cpu-offload --quant-bits 4 --kv-offload
+deepspeed --num_gpus 1 run_model.py --model meta-llama/Llama-2-7b-hf --batch-size 8 --prompt-len 512 --gen-len 32 --cpu-offload --quant-bits 4 --kv-offload
 ```
 
 ## Performance Tuning Tips
