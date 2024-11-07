@@ -1,0 +1,6 @@
+apex
+deepspeed
+nltk
+pybind11
+transformers
+
