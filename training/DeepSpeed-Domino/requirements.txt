@@ -1,5 +1,5 @@
 apex
-deepspeed
+deepspeed>=0.16.0
 nltk
 pybind11
 transformers
