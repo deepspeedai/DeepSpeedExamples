@@ -211,12 +211,7 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
                                          padding="max_length",
                                          truncation=True,
                                          return_tensors="pt")
-                chosen_token["input_ids"] = chosen_token["input_ids"]
-                chosen_token["attention_mask"] = chosen_token["attention_mask"]
                 chosen_dataset.append(chosen_token)
-
-                reject_token["input_ids"] = reject_token["input_ids"]
-                reject_token["attention_mask"] = reject_token["attention_mask"]
                 reject_dataset.append(reject_token)
         print(
             f'Creating dataset {raw_dataset.dataset_name_clean} for {train_phase=} size={len(chosen_dataset)}'
