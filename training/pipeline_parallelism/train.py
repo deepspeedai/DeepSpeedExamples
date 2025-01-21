@@ -7,7 +7,7 @@ import torch
 import torch.distributed as dist
 
 import torchvision
-import torchvision.transforms as transforms
+from torchvision import transforms
 from torchvision.models import AlexNet
 from torchvision.models import vgg19
 

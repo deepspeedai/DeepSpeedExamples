@@ -57,7 +57,7 @@ Using ``torchvision``, it’s extremely easy to load CIFAR10.
 """
 import torch
 import torchvision
-import torchvision.transforms as transforms
+from torchvision import transforms
 
 ########################################################################
 # The output of torchvision datasets are PILImage images of range [0, 1].
