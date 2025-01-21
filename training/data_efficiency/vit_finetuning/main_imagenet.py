@@ -19,8 +19,8 @@ from torch.optim.lr_scheduler import StepLR
 import torch.multiprocessing as mp
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+from torchvision import transforms
+from torchvision import datasets
 import torchvision.models as models
 from torch.utils.data import Subset
 import models
@@ -105,7 +105,7 @@ def _get_model(args):
     nchannels = 3
     model = models.__dict__[args.arch](num_classes=nclasses, nchannels=nchannels)
     return model
-    
+
 def _get_dist_model(gpu, args):
     ngpus_per_node = torch.cuida.device_count()
     if args.distributed:
@@ -149,9 +149,9 @@ def _get_dist_model(gpu, args):
         else:
             model = torch.nn.DataParallel(model).cuda()
     return model
-    
+
 def main():
-   
+
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -190,7 +190,7 @@ def main():
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
     global history
-    
+
     if args.deepspeed:
         gpu = args.local_rank
     args.gpu = gpu
@@ -205,7 +205,7 @@ def main_worker(gpu, ngpus_per_node, args):
         deepspeed.init_distributed()
     print(f'created model on gpu {gpu}')
     # exit ()
-    
+
     # define loss function (criterion), optimizer, and learning rate scheduler
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
@@ -284,14 +284,14 @@ def main_worker(gpu, ngpus_per_node, args):
         validate(val_loader, model, criterion, args)
         # return
     args.completed_step = 0
-    
+
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
-    
+
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     scheduler = StepLR(optimizer, step_size=int(len(train_loader)*args.epochs//3), gamma=0.1)# None #
-    
+
 
     model, optimizer, _, scheduler  = deepspeed.initialize(
         model=model,
@@ -311,17 +311,17 @@ def main_worker(gpu, ngpus_per_node, args):
         time_epoch = time.time() - start_time
         # evaluate on validation set
         top5_val, top1_val, losses_val = validate(val_loader, model, criterion, args)
-        if args.gpu==0: 
+        if args.gpu==0:
             history["epoch"].append(epoch)
             history["val_loss"].append(losses_val)
-            history["val_acc1"].append(top1_val) 
-            history["val_acc5"].append(top5_val) 
+            history["val_acc1"].append(top1_val)
+            history["val_acc5"].append(top5_val)
             history["train_loss"].append(losses_train)
-            history["train_acc1"].append(top1_train) 
+            history["train_acc1"].append(top1_train)
             history["train_acc5"].append(top5_train)
-            torch.save(history,f"{args.out_dir}/stat.pt") 
+            torch.save(history,f"{args.out_dir}/stat.pt")
             try:
-                print (f'{epoch} epoch at time {time_epoch}s and learning rate {scheduler.get_last_lr()}') 
+                print (f'{epoch} epoch at time {time_epoch}s and learning rate {scheduler.get_last_lr()}')
             except:
                 print (f'{epoch} epoch at time {time_epoch}s and learning rate {args.lr}')
             print (f"finish epoch {epoch} or iteration {args.completed_step}, train_accuracy is {top1_train}, val_accuracy {top1_val}")
@@ -393,14 +393,14 @@ def train(scheduler, train_loader, model, criterion, optimizer, epoch, args):
             loss.backward()
             optimizer.step()
             scheduler.step()
-            
+
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % args.print_freq == 0 and args.gpu==0: 
+        if i % args.print_freq == 0 and args.gpu==0:
             progress.display(i + 1)
-            
+
     if args.distributed:
         losses.all_reduce()
         top1.all_reduce()
@@ -432,7 +432,7 @@ def validate(val_loader, model, criterion, args):
                 batch_time.update(time.time() - end)
                 end = time.time()
 
-                if i % args.print_freq == 0 and args.gpu==0: 
+                if i % args.print_freq == 0 and args.gpu==0:
                     progress.display(i + 1)
 
     batch_time = AverageMeter('Time', ':6.3f', Summary.NONE)
@@ -509,7 +509,7 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
-    
+
     def summary(self):
         fmtstr = ''
         if self.summary_type is Summary.NONE:
@@ -522,7 +522,7 @@ class AverageMeter(object):
             fmtstr = '{name} {count:.3f}'
         else:
             raise ValueError('invalid summary type %r' % self.summary_type)
-        
+
         return fmtstr.format(**self.__dict__)
 
 
@@ -536,7 +536,7 @@ class ProgressMeter(object):
         entries = [self.prefix + self.batch_fmtstr.format(batch)]
         entries += [str(meter) for meter in self.meters]
         print ('\t'.join(entries))
-        
+
     def display_summary(self):
         entries = [" *"]
         entries += [meter.summary() for meter in self.meters]

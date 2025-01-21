@@ -3,7 +3,7 @@ import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.utils.data
 import torchvision.datasets as dset
-import torchvision.transforms as transforms
+from torchvision import transforms
 import torchvision.utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 from time import time
