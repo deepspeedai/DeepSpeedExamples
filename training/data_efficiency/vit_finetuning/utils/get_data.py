@@ -13,18 +13,18 @@
 # limitations under the License.
 import torch
 import os
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+from torchvision import transforms
+from torchvision import datasets
 
 def get_dataset(dataset_name, data_dir, split, rand_fraction=None,clean=False, transform=None, imsize=None, bucket='pytorch-data', **kwargs):
 
   if dataset_name in [ 'cifar10', 'cifar100']:
-    dataset = globals()[f'get_{dataset_name}'](dataset_name, data_dir, split,  imsize=imsize, bucket=bucket, **kwargs)  
+    dataset = globals()[f'get_{dataset_name}'](dataset_name, data_dir, split,  imsize=imsize, bucket=bucket, **kwargs)
   elif dataset_name in [ 'cifar10vit224', 'cifar100vit224','cifar10vit384', 'cifar100vit384',]:
     imsize = int(dataset_name.split('vit')[-1])
     dataset_name = dataset_name.split('vit')[0]
     #print ('here')
-    dataset = globals()['get_cifar_vit'](dataset_name, data_dir, split, imsize=imsize, bucket=bucket, **kwargs)   
+    dataset = globals()['get_cifar_vit'](dataset_name, data_dir, split, imsize=imsize, bucket=bucket, **kwargs)
   else:
     assert 'cifar' in dataset_name
   print (dataset_name)
@@ -59,10 +59,10 @@ def get_transform(split, normalize=None, transform=None, imsize=None, aug='large
   if transform is None:
     if normalize is None:
         if aug == 'large':
-          
+
           normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         else:
-          normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])  
+          normalize = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010])
     transform = transforms.Compose(get_aug(split, imsize=imsize, aug=aug)
                                    + [transforms.ToTensor(), normalize])
   return transform
@@ -71,7 +71,7 @@ def get_transform(split, normalize=None, transform=None, imsize=None, aug='large
 def get_cifar10(dataset_name, data_dir, split, transform=None, imsize=None, bucket='pytorch-data', **kwargs):
   if imsize==224:
     transform = get_transform(split, transform=transform, imsize=imsize, aug='large')
-  else:  
+  else:
     transform = get_transform(split, transform=transform, imsize=imsize, aug='small')
   return datasets.CIFAR10(data_dir, train=(split=='train'), transform=transform, download=True, **kwargs)
 
@@ -88,7 +88,7 @@ def get_cifar100N(dataset_name, data_dir, split, rand_fraction=None,transform=No
   if split=='train':
     return CIFAR100N(root=data_dir, train=(split=='train'), transform=transform, download=True, rand_fraction=rand_fraction)
   else:
-    return datasets.CIFAR100(data_dir, train=(split=='train'), transform=transform, download=True, **kwargs)        
+    return datasets.CIFAR100(data_dir, train=(split=='train'), transform=transform, download=True, **kwargs)
 
 def get_cifar_vit(dataset_name, data_dir, split, transform=None, imsize=None, bucket='pytorch-data', **kwargs):
     if imsize==224:
@@ -111,12 +111,12 @@ def get_cifar_vit(dataset_name, data_dir, split, transform=None, imsize=None, bu
       if dataset_name =='cifar10':
           return datasets.CIFAR10(data_dir, train=(split=='train'), transform=transform_data, download=True, **kwargs)
       elif dataset_name =='cifar100':
-      
+
           return datasets.CIFAR100(data_dir, train=(split=='train'), transform=transform_data, download=True, **kwargs)
       else:
           assert dataset_name in ['cifar10', 'cifar100']
     else:
-      
+
       if split=='train':
         transform_data = transforms.Compose([# transforms.ColorJitter(brightness= 0.4, contrast= 0.4, saturation= 0.4, hue= 0.1),
           transforms.Resize(imsize),

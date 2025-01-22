@@ -18,9 +18,9 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.datasets as datasets
 import torchvision.models as models
-import torchvision.transforms as transforms
+from torchvision import transforms
+from torchvision import datasets
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import Subset
 
@@ -94,7 +94,7 @@ def main():
                       'which can slow down your training considerably! '
                       'You may see unexpected behavior when restarting '
                       'from checkpoints.')
-        
+
     if args.gpu is not None:
         warnings.warn('You have chosen a specific GPU. This will completely '
                       'disable data parallelism.')
@@ -112,7 +112,7 @@ def main():
     args.world_size = ngpus_per_node * args.world_size
     t_losses, t_acc1s = main_worker(args.gpu, ngpus_per_node, args)
     #dist.barrier()
-    
+
     # Write the losses to an excel file
     if dist.get_rank() ==0:
         all_losses = [torch.empty_like(t_losses) for _ in range(ngpus_per_node)]
@@ -278,7 +278,7 @@ def main_worker(gpu, ngpus_per_node, args):
         acc1s[epoch] = acc1
 
         scheduler.step()
-        
+
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
@@ -449,7 +449,7 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.fmt + '} ({avg' + self.fmt + '})'
         return fmtstr.format(**self.__dict__)
-    
+
     def summary(self):
         fmtstr = ''
         if self.summary_type is Summary.NONE:
@@ -462,7 +462,7 @@ class AverageMeter(object):
             fmtstr = '{name} {count:.3f}'
         else:
             raise ValueError('invalid summary type %r' % self.summary_type)
-        
+
         return fmtstr.format(**self.__dict__)
 
 
@@ -476,7 +476,7 @@ class ProgressMeter(object):
         entries = [self.prefix + self.batch_fmtstr.format(batch)]
         entries += [str(meter) for meter in self.meters]
         print('\t'.join(entries))
-        
+
     def display_summary(self):
         entries = [" *"]
         entries += [meter.summary() for meter in self.meters]
