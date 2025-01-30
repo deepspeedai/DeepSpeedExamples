@@ -22,7 +22,7 @@
     "zero_allow_untested_optimizer": true,
     "fp16": {
 	"enabled": false
-    }
+    },
     "gradient_clipping": 0,
     "prescale_gradients": false,
     "cuda_visible_devices": 0,

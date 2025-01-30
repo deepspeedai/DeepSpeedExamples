@@ -23,7 +23,7 @@
     "fp16": {
 	"enabled": true,
 	"auto_cast": true
-    }
+    },
     "gradient_clipping": 0,
     "prescale_gradients": false,
     "cuda_visible_devices": 0,
