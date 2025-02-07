@@ -1,6 +1,6 @@
 # Using DeepNVMe for simple file reads and writes involving CPU/GPU tensors
 
-The purpose of this folder is to provide example codes that illustrate how to use [DeepNVMe](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-gds/README.md) for simple file operations of moving raw data bytes between persistent storage and CPU/GPU tensors. For each file operation, we provide an implementation using Python I/O functionality, and a DeepNVMe implementation using CPU bounce buffer (aio) and NVIDIA Magnum IO<sup>TM</sup> GPUDirect® Storage (GDS) as appropriate. 
+The purpose of this folder is to provide example codes that illustrate how to use [DeepNVMe](https://github.com/deepspeedai/DeepSpeed/blob/master/blogs/deepspeed-gds/README.md) for simple file operations of moving raw data bytes between persistent storage and CPU/GPU tensors. For each file operation, we provide an implementation using Python I/O functionality, and a DeepNVMe implementation using CPU bounce buffer (aio) and NVIDIA Magnum IO<sup>TM</sup> GPUDirect® Storage (GDS) as appropriate. 
 
 The following table is a mapping of file operations to the corresponding Python and DeepNVMe implementations. 
 

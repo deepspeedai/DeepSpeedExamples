@@ -3,7 +3,7 @@
 
 # DeepSpeed Team
 """
-Part of the code was adopted from https://github.com/microsoft/Megatron-DeepSpeed/blob/main/megatron/data/dataset_utils.py
+Part of the code was adopted from https://github.com/deepspeedai/Megatron-DeepSpeed/blob/main/megatron/data/dataset_utils.py
 """
 import torch
 from torch.utils.data import Dataset, Subset, ConcatDataset

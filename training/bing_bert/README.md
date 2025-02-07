@@ -10,7 +10,7 @@ the same number and generation of GPUs.
 * Brief overview and more details, see our [press release](https://www.microsoft.com/en-us/research/blog/zero-2-deepspeed-shattering-barriers-of-deep-learning-speed-scale/).
 * Detailed technology deep dive, see our [blog post](https://www.deepspeed.ai/news/2020/05/27/fastest-bert-training.html).
 * Tutorial on how to reproduce our results, see our [BERT pre-training tutorial](https://www.deepspeed.ai/tutorials/bert-pretraining/).
-* The source code for our transformer kernels can be found in the [DeepSpeed repo](https://github.com/microsoft/deepspeed).
+* The source code for our transformer kernels can be found in the [DeepSpeed repo](https://github.com/deepspeedai/DeepSpeed).
 
 
 The fastest BERT training record reported above was achieved using internal datasets, which were not publicly available at the time of this release.  However, the DeepSpeed BERT model can also be pre-trained using publicly available datasets from [Nvidia](https://github.com/NVIDIA/DeepLearningExamples/tree/master/PyTorch/LanguageModeling/BERT).  Instructions for preparing the datasets are available [here](https://github.com/NVIDIA/DeepLearningExamples/tree/master/PyTorch/LanguageModeling/BERT#dataset-guidelines). In addition, the following three files are provided in this repo to perform the complete pre-training of DeepSpeed BERT using the Nvidia datasets.

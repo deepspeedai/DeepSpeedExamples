@@ -46,4 +46,4 @@ Additional information on DeepSpeed inference can be found here:
 
 ## Benchmarking
 DeepSpeed inference benchmarking can be found in the DeepSpeed repository:
-* [DeepSpeed Inference Benchmarking](https://github.com/microsoft/DeepSpeed/tree/master/benchmarks/inference)
+* [DeepSpeed Inference Benchmarking](https://github.com/deepspeedai/DeepSpeed/tree/master/benchmarks/inference)

@@ -16,7 +16,7 @@ setuptools.setup(
     name="deepspeed-chat",
     version="0.1",
     url=
-    "https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat",
+    "https://github.com/deepspeedai/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat",
     include_package_data=True,
     packages=setuptools.find_packages(include=['dschat']),
     install_requires=[

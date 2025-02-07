@@ -28,5 +28,5 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Microsoft/DeepSpeedExamples/tree/master/benchmarks/inference/deepspeedometer"
-Issues = "https://github.com/Microsoft/DeepSpeedExamples/issues"
+Homepage = "https://github.com/deepspeedai/DeepSpeedExamples/tree/master/benchmarks/inference/deepspeedometer"
+Issues = "https://github.com/deepspeedai/DeepSpeedExamples/issues"

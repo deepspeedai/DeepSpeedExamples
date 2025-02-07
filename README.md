@@ -1,5 +1,5 @@
 # DeepSpeed Examples
-This repository contains various examples including training, inference, compression, benchmarks, and applications that use [DeepSpeed](https://github.com/microsoft/DeepSpeed).
+This repository contains various examples including training, inference, compression, benchmarks, and applications that use [DeepSpeed](https://github.com/deepspeedai/DeepSpeed).
 
 ## 1. Applications
 This folder contains end-to-end applications that use DeepSpeed to train and use cutting-edge models.
@@ -8,7 +8,7 @@ This folder contains end-to-end applications that use DeepSpeed to train and use
 There are several training and finetuning examples so please see the individual folders for specific instructions.
 
 ## 3. Inference
-- The DeepSpeed-MII inference [README](./inference/mii/README.md) explains how to get started with running model inference with [DeepSpeed-MII](https://github.com/Microsoft/DeepSpeed-MII) and [DeepSpeed-FastGen](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-fastgen).
+- The DeepSpeed-MII inference [README](./inference/mii/README.md) explains how to get started with running model inference with [DeepSpeed-MII](https://github.com/deepspeedai/DeepSpeed-MII) and [DeepSpeed-FastGen](https://github.com/deepspeedai/DeepSpeed/tree/master/blogs/deepspeed-fastgen).
 - The DeepSpeed Huggingface inference [README](./inference/huggingface/README.md) explains how to get started with running DeepSpeed Huggingface inference examples.
 
 ## 4. Compression
@@ -20,7 +20,7 @@ All benchmarks that use the DeepSpeed library are maintained in this folder.
 # Build Pipeline Status
 | Description | Status |
 | ----------- | ------ |
-| Integrations | [![nv-ds-chat](https://github.com/microsoft/DeepSpeed/actions/workflows/nv-ds-chat.yml/badge.svg?branch=master)](https://github.com/microsoft/DeepSpeed/actions/workflows/nv-ds-chat.yml) |
+| Integrations | [![nv-ds-chat](https://github.com/deepspeedai/DeepSpeed/actions/workflows/nv-ds-chat.yml/badge.svg?branch=master)](https://github.com/deepspeedai/DeepSpeed/actions/workflows/nv-ds-chat.yml) |
 
 # Contributing
 
