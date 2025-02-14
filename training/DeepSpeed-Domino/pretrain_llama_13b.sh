@@ -53,7 +53,6 @@ LLAMA_ARGS="
     --weight-decay 1e-2 \
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
-    --no-gradient-accumulation-fusion \
     --fp16 \
     --tensor-model-parallel-size $WORLD_SIZE \
     --seed 3407 \
