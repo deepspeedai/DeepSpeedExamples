@@ -16,7 +16,7 @@ from megatron import get_args
 from megatron import get_tensorboard_writer
 from megatron.core import mpu, tensor_parallel
 from megatron.arguments import parse_args, validate_args
-from megatron.checkpointing import load_args_from_checkpoint
+# from megatron.checkpointing import load_args_from_checkpoint
 from megatron.global_vars import set_global_variables
 from megatron.model.transformer import bias_dropout_add_fused_train
 from megatron.model.fused_bias_gelu import bias_gelu

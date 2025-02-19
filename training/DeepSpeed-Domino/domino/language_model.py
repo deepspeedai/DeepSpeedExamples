@@ -85,6 +85,71 @@ class Embedding(DominoModule):
         return combined_embeds
 
 
+    def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
+        """For easy load."""
+
+        state_dict_ = {}
+        state_dict_[self._word_embeddings_key] \
+            = self.word_embeddings.state_dict(prefix=prefix,
+                                              keep_vars=keep_vars)
+        if self.add_position_embedding:
+            state_dict_[self._position_embeddings_key] \
+                = self.position_embeddings.state_dict(prefix=prefix,
+                                                  keep_vars=keep_vars)
+        if self.num_tokentypes > 0:
+            state_dict_[self._tokentype_embeddings_key] \
+                = self.tokentype_embeddings.state_dict(prefix=prefix,
+                                                       keep_vars=keep_vars)
+
+        return state_dict_
+
+    def load_state_dict(self, state_dict, strict=True):
+        """Customized load."""
+
+        # Word embedding.
+        if self._word_embeddings_key in state_dict:
+            state_dict_ = state_dict[self._word_embeddings_key]
+        else:
+            # for backward compatibility.
+            state_dict_ = {}
+            for key in state_dict.keys():
+                if 'word_embeddings' in key:
+                    state_dict_[key.split('word_embeddings.')[1]] \
+                        = state_dict[key]
+        self.word_embeddings.load_state_dict(state_dict_, strict=strict)
+
+        # Position embedding.
+        if self.add_position_embedding:
+            if self._position_embeddings_key in state_dict:
+                state_dict_ = state_dict[self._position_embeddings_key]
+            else:
+                # for backward compatibility.
+                state_dict_ = {}
+                for key in state_dict.keys():
+                    if 'position_embeddings' in key:
+                        state_dict_[key.split('position_embeddings.')[1]] \
+                            = state_dict[key]
+            self.position_embeddings.load_state_dict(state_dict_, strict=strict)
+
+        # Tokentype embedding.
+        if self.num_tokentypes > 0:
+            state_dict_ = {}
+            if self._tokentype_embeddings_key in state_dict:
+                state_dict_ = state_dict[self._tokentype_embeddings_key]
+            else:
+                # for backward compatibility.
+                for key in state_dict.keys():
+                    if 'tokentype_embeddings' in key:
+                        state_dict_[key.split('tokentype_embeddings.')[1]] \
+                            = state_dict[key]
+            if len(state_dict_.keys()) > 0:
+                self.tokentype_embeddings.load_state_dict(state_dict_,
+                                                          strict=strict)
+            else:
+                print('***WARNING*** expected tokentype embeddings in the '
+                      'checkpoint but could not find it', flush=True)
+
+
 class RotaryEmbedding(nn.Module):
     def __init__(self, dim, seq_len_interpolation_factor=None):
         super().__init__()
@@ -190,4 +255,91 @@ class TransformerLanguageModel(DominoModule):
         encoder_output = encoder_output_t
 
         return encoder_output
-        
+
+    def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
+        """For easy load."""
+
+        state_dict_ = {}
+        if self.pre_process:
+            state_dict_[self._embedding_key] \
+                = self.embedding.state_dict_for_save_checkpoint(prefix=prefix,
+                                                                keep_vars=keep_vars)
+        if self.add_encoder:
+            state_dict_[self._encoder_key] \
+                = self.encoder.state_dict_for_save_checkpoint(prefix=prefix,
+                                                              keep_vars=keep_vars)
+        if self.post_process:
+            if self.add_pooler:
+                state_dict_[self._pooler_key] \
+                    = self.pooler.state_dict_for_save_checkpoint(prefix=prefix,
+                                                                 keep_vars=keep_vars)
+            if self.untie_embeddings_and_output_weights:
+                state_dict_[self._output_layer_key] \
+                    = self.output_layer.state_dict(prefix=prefix, keep_vars=keep_vars)
+
+        if self.add_decoder:
+            state_dict_[self._decoder_key] \
+                = self.decoder.state_dict_for_save_checkpoint(prefix=prefix,
+                                                              keep_vars=keep_vars)
+
+        return state_dict_
+
+    def load_state_dict(self, state_dict, strict=True):
+        """Customized load."""
+
+        # Embedding.
+        if self.pre_process:
+            if self._embedding_key in state_dict:
+                state_dict_ = state_dict[self._embedding_key]
+            else:
+                # for backward compatibility.
+                state_dict_ = {}
+                for key in state_dict.keys():
+                    if '_embeddings' in key:
+                        state_dict_[key] = state_dict[key]
+            self.embedding.load_state_dict(state_dict_, strict=strict)
+
+        # Encoder.
+        if self.add_encoder:
+            if self._encoder_key in state_dict:
+                state_dict_ = state_dict[self._encoder_key]
+            # For backward compatibility.
+            elif 'transformer' in state_dict:
+                state_dict_ = state_dict['transformer']
+            else:
+                # For backward compatibility.
+                state_dict_ = {}
+                for key in state_dict.keys():
+                    if 'transformer.' in key:
+                        state_dict_[key.split('transformer.')[1]] = state_dict[key]
+
+            # For backward compatibility.
+            state_dict_self_attention = {}
+            for key in state_dict_.keys():
+                if '.attention.' in key:
+                    state_dict_self_attention[key.replace(".attention.",
+                        ".self_attention.")] = state_dict_[key]
+                else:
+                    state_dict_self_attention[key] = state_dict_[key]
+            state_dict_ = state_dict_self_attention
+
+            self.encoder.load_state_dict(state_dict_, strict=strict)
+
+        # Pooler.
+        if self.post_process:
+            if self.add_pooler:
+                assert 'pooler' in state_dict, \
+                    'could not find data for pooler in the checkpoint'
+                self.pooler.load_state_dict(state_dict[self._pooler_key],
+                                            strict=strict)
+            if self.untie_embeddings_and_output_weights:
+                assert 'output_layer' in state_dict, \
+                    'could not find data for output_layer in the checkpoint'
+                self.output_layer.load_state_dict(state_dict[self._output_layer_key],
+                                                  strict=strict)
+        # Decoder.
+        if self.add_decoder:
+            assert 'decoder' in state_dict, \
+                'could not find data for pooler in the checkpoint'
+            self.decoder.load_state_dict(state_dict[self._decoder_key],
+                                         strict=strict)

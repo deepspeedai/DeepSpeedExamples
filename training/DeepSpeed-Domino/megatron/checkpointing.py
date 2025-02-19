@@ -9,12 +9,11 @@ import numpy as np
 
 import torch
 
-from megatron import update_num_microbatches
-from megatron.core import mpu, tensor_parallel
-from .global_vars import get_args
-from .utils import (unwrap_model,
-                    print_rank_0)
-
+# from megatron import update_num_microbatches               
+import domino.parallel_state as mpu
+from domino.tensor_parallel.random import get_cuda_rng_tracker
+from domino.arguments import get_args
+from domino.utils import unwrap_model, print_rank_0
 
 _CHECKPOINT_VERSION = None
 
@@ -194,7 +193,7 @@ def get_rng_state():
         'np_rng_state': np.random.get_state(),
         'torch_rng_state': torch.get_rng_state(),
         'cuda_rng_state': torch.cuda.get_rng_state(),
-        'rng_tracker_states': tensor_parallel.get_cuda_rng_tracker().get_states()}
+        'rng_tracker_states': get_cuda_rng_tracker().get_states()}
 
     rng_state_list = None
     if torch.distributed.is_initialized() and \
@@ -218,6 +217,8 @@ def save_checkpoint(iteration, model, optimizer, opt_param_scheduler):
 
     # Only rank zero of the data parallel writes to the disk.
     model = unwrap_model(model)
+    model_module = model.module
+    model = [model_module]
 
     print_rank_0('saving checkpoint at iteration {:7d} to {}'.format(
         iteration, args.save))
@@ -241,7 +242,10 @@ def save_checkpoint(iteration, model, optimizer, opt_param_scheduler):
 
         # Arguments, iteration, and model.
         state_dict = {}
-        state_dict['args'] = args
+        t_args = args
+        t_args.init_method = None
+        t_args.output_layer_init_method = None
+        state_dict['args'] = t_args
         state_dict['checkpoint_version'] = 3.0
         state_dict['iteration'] = iteration
         if len(model) == 1:
@@ -503,6 +507,8 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
     load_dir = getattr(args, load_arg)
 
     model = unwrap_model(model)
+    model_module = model.module
+    model = [model_module]
 
     state_dict, checkpoint_name, release = _load_base_checkpoint(load_dir, rank0=False)
 
@@ -522,6 +528,7 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
     set_checkpoint_version(state_dict.get('checkpoint_version', 0))
 
     # Set iteration.
+    args.finetune = False
     if args.finetune or release:
         iteration = 0
     else:
@@ -544,7 +551,7 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
         check_checkpoint_args(checkpoint_args)
         args.consumed_train_samples = getattr(checkpoint_args,
                                               'consumed_train_samples', 0)
-        update_num_microbatches(consumed_samples=args.consumed_train_samples)
+        # update_num_microbatches(consumed_samples=args.consumed_train_samples)
         args.consumed_valid_samples = getattr(checkpoint_args,
                                               'consumed_valid_samples', 0)
     else:
@@ -614,7 +621,7 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
                 # Check for empty states array
                 if not rng_state['rng_tracker_states']:
                     raise KeyError
-                tensor_parallel.get_cuda_rng_tracker().set_states(
+                get_cuda_rng_tracker().set_states(
                     rng_state['rng_tracker_states'])
             else:  # backward compatability
                 random.setstate(state_dict['random_rng_state'])
@@ -624,7 +631,7 @@ def load_checkpoint(model, optimizer, opt_param_scheduler, load_arg='load', stri
                 # Check for empty states array
                 if not state_dict['rng_tracker_states']:
                     raise KeyError
-                tensor_parallel.get_cuda_rng_tracker().set_states(
+                get_cuda_rng_tracker().set_states(
                     state_dict['rng_tracker_states'])
         except KeyError:
             print_rank_0('Unable to load rng state from checkpoint {}. '
