@@ -1,6 +1,6 @@
 # Autotuning Hugging Face Examples
 
-This showcases the [autotuning](https://github.com/microsoft/DeepSpeed/tree/master/deepspeed/autotuning) feature in DeepSpeed (DS) with Hugging Face (HF) models.
+This showcases the [autotuning](https://github.com/deepspeedai/DeepSpeed/tree/master/deepspeed/autotuning) feature in DeepSpeed (DS) with Hugging Face (HF) models.
 
 ## List of Models
 

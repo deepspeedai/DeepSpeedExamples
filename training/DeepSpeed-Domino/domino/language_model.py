@@ -84,6 +84,7 @@ class Embedding(DominoModule):
 
         return combined_embeds
 
+
     def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
         """For easy load."""
 

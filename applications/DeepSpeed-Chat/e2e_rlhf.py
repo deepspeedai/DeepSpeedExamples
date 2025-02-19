@@ -41,7 +41,7 @@ step_dirs = {
     3: "training/step3_rlhf_finetuning",
 }
 model_type = {1: "actor", 2: "reward", 3: "step3"}
-dse_url = "https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat/"
+dse_url = "https://github.com/deepspeedai/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat/"
 
 
 def parse_args():

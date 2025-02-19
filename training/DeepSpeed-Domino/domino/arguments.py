@@ -222,7 +222,8 @@ def parse_args():
                        help="If '--load' is set, but checkpoint is not found "
                        "(e.g., path typo), then exit instead of random "
                        "initialization.")
-
+    parser.add_argument('--save-interval', type=int, default=None,
+                       help='Number of iterations between checkpoint saves.')
     args = parser.parse_args()
 
     args.rank = int(os.getenv('RANK', '0'))

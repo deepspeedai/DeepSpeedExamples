@@ -1,4 +1,4 @@
-# This code is adopted from https://github.com/microsoft/Megatron-DeepSpeed/blob/main/megatron/learning_rates.py
+# This code is adopted from https://github.com/deepspeedai/Megatron-DeepSpeed/blob/main/megatron/learning_rates.py
 
 # coding=utf-8
 # Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
@@ -83,7 +83,7 @@ class AnnealingLR(object):
         else:
             raise Exception('{} decay style is not supported.'.format(
                 self.decay_style))
-       
+
         return self.min_lr + coeff * delta_lr
 
 
@@ -134,7 +134,7 @@ class AnnealingLR(object):
             max_lr_ = sd['max_lr']
         self.max_lr = self._check_and_set(self.max_lr, max_lr_,
                                           'learning rate')
-        
+
         self.min_lr = self._check_and_set(self.min_lr, sd['min_lr'],
                                           'minimum learning rate')
 

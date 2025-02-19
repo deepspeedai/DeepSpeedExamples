@@ -9,11 +9,6 @@ import numpy as np
 
 import torch
 
-# from megatron.core import mpu, tensor_parallel
-# from .global_vars import get_args
-# from .utils import (unwrap_model,
-#                     print_rank_0)
-
 # from megatron import update_num_microbatches               
 import domino.parallel_state as mpu
 from domino.tensor_parallel.random import get_cuda_rng_tracker

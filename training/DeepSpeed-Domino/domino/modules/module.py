@@ -25,6 +25,7 @@ class DominoModule(torch.nn.Module):
         self.config = config
         self.share_embeddings_and_output_weights = share_embeddings_and_output_weights
 
+
     def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
         """Use this function to override the state dict for
            saving checkpoints.
@@ -98,6 +99,7 @@ class Float16Module(DominoModule):
         if mpu.is_pipeline_last_stage():
             outputs = float16_to_fp32(outputs)
         return outputs
+
 
     def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
         """ Retrieve state_dict from the module being wrapped."""

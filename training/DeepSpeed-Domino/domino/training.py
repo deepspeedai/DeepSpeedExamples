@@ -16,6 +16,7 @@ from domino.optimizer_param_scheduler import OptimizerParamScheduler
 from domino.initialize import set_jit_fusion_options
 from domino.tensor_parallel.data import broadcast_data
 
+
 from megatron.checkpointing import load_checkpoint
 from megatron.checkpointing import save_checkpoint
 
@@ -302,6 +303,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
                         config)
 
         iteration += 1
+
         if args.save and args.save_interval and \
            iteration % args.save_interval == 0:
             save_checkpoint(iteration, model, optimizer, opt_param_scheduler)

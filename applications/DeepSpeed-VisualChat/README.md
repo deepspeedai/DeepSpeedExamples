@@ -16,9 +16,9 @@ An easy-to-use, scalable, and efficient multi-modal training pipeline for multi-
 
 ## 📰 Latest News 📰
 
-* ***[2023/10] [DeepSpeed-VisualChat: Improve Your Chat Experience with Multi-Round Multi-Image Inputs](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-visualchat/10-03-2023/README.md)***
+* ***[2023/10] [DeepSpeed-VisualChat: Improve Your Chat Experience with Multi-Round Multi-Image Inputs](https://github.com/deepspeedai/DeepSpeed/tree/master/blogs/deepspeed-visualchat/10-03-2023/README.md)***
 
-⭐ If you find our [DeepSpeed](https://github.com/microsoft/DeepSpeed) and [DeepSpeedExamples](https://github.com/microsoft/DeepSpeedExamples) repositories beneficial, please give them a star on GitHub! To cite DeepSpeed-VisualChat, please cite our [arxiv report](https://arxiv.org/abs/2309.14327):
+⭐ If you find our [DeepSpeed](https://github.com/deepspeedai/DeepSpeed) and [DeepSpeedExamples](https://github.com/deepspeedai/DeepSpeedExamples) repositories beneficial, please give them a star on GitHub! To cite DeepSpeed-VisualChat, please cite our [arxiv report](https://arxiv.org/abs/2309.14327):
 
 ```
 @article{yao2023deepspeed-visualchat,
@@ -55,7 +55,7 @@ Thanks to the scalable, efficient, and user-friendly nature of the DeepSpeed eco
 
 
 ```bash
-git clone https://github.com/microsoft/DeepSpeedExamples.git
+git clone https://github.com/deepspeedai/DeepSpeedExamples.git
 cd DeepSpeedExamples/applications/DeepSpeed-VisualChat/
 pip install -r requirements.txt
 ```
@@ -97,7 +97,7 @@ Our future plan includes but not limited to :
 ## 💬 DeepSpeed-VisualChat and DeepSpeed Community 💬
 
 Just like how the success of [the BLOOM model](https://huggingface.co/bigscience/bloom) was supported by both [DeepSpeed Team](https://github.com/bigscience-workshop/Megatron-DeepSpeed) and many [open source contributors](https://huggingface.co/bigscience), we welcome all AI developers/practitioners/researchers to join this on-going effort for DeepSpeed-Chat. To participate:
-- Show your support by leaving a star ⭐ to our [DeepSpeed](https://github.com/microsoft/DeepSpeed) and [DeepSpeedExamples](https://github.com/microsoft/DeepSpeedExamples) GitHub repositories.
+- Show your support by leaving a star ⭐ to our [DeepSpeed](https://github.com/deepspeedai/DeepSpeed) and [DeepSpeedExamples](https://github.com/deepspeedai/DeepSpeedExamples) GitHub repositories.
 - Follow us on [twitter](https://twitter.com/MSFTDeepSpeed) to get notified about our latest news. For Chinese users, you can also follow our [Chinese Zhihu account](https://www.zhihu.com/people/deepspeed). For Japanese users, you can also follow our [Japanese twitter account](https://twitter.com/MSFTDeepSpeedJP).
 - Currently we prefer to interact with open source users mainly on GitHub so that it's easier for all users to search for related information. For bug reports, please submit a GitHub issue. For contribution, please submit a pull request (PR). For general question/discussion, please open a new discussion or join any existing discussions.
 - We are open to collaborations with universities, research labs, and companies, such as working together on deep learning research, applying DeepSpeed to empower real-world AI models and applications, and so on. For such requests (and other requests unsuitable for GitHub), please directly email to deepspeed-info@microsoft.com.

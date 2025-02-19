@@ -38,6 +38,7 @@ def initialize_domino():
         world_size=args.world_size,
         rank=args.rank
     )
+
     deepspeed.init_distributed()
 
     mpu.initialize_model_parallel(args.tensor_model_parallel_size)

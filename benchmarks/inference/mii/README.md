@@ -46,7 +46,7 @@ The run_all.sh script performs benchmarks across various models, client numbers,
 tensor parallel sizes, etc. This script is intended to be run on a system with
 8xA100 (80GB) GPUs available. It will run all the benchmarks (including vLLM)
 and collect the data used in our [DeepSpeed-Fastgen
-blogs](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-fastgen).
+blogs](https://github.com/deepspeedai/DeepSpeed/tree/master/blogs/deepspeed-fastgen).
 Results are collected in `./results/`.
 
 ## Analyze the Benchmark Results
@@ -98,7 +98,7 @@ getting results, you can use the `run_example.sh`. This script is designed to
 execute the benchmark with a specific configuration. The plots below will be
 generated in the `./plots/` directory. These plots show the performance as
 depicted in figure 8 of our blog
-[post.](https://github.com/microsoft/DeepSpeed/tree/master/blogs/deepspeed-fastgen#f-other-hardware-platforms)
+[post.](https://github.com/deepspeedai/DeepSpeed/tree/master/blogs/deepspeed-fastgen#f-other-hardware-platforms)
 	   
 ```bash
 bash run_example.sh
