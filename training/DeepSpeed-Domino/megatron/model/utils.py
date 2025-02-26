@@ -7,6 +7,7 @@ import math
 import torch
 
 from megatron import get_args
+from megatron.model import LayerNorm, RMSNorm
 
 def init_method_normal(sigma):
     """Init method based on N(0, sigma)."""
@@ -52,3 +53,15 @@ def openai_gelu(x):
 @torch.jit.script
 def erf_gelu(x):
     return x * 0.5 * (torch.erf(x / 1.41421).to(dtype=x.dtype)+torch.ones_like(x).to(dtype=x.dtype))
+
+def get_norm(config):
+    if config.normalization == "LayerNorm":
+        return LayerNorm(
+            config.hidden_size,
+            eps=config.layernorm_epsilon,
+            no_persist_layer_norm=not config.persist_layer_norm)
+    elif config.normalization == "RMSNorm":
+        return RMSNorm(dim=config.hidden_size,
+                       eps=config.layernorm_epsilon)
+    else:
+        raise Exception(f"unsupported norm type '{config.normalization}'.")
