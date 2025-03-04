@@ -206,6 +206,8 @@ def parse_args():
                        help='Report loss and timing interval.')
     parser.add_argument('--save-interval', type=int, default=None,
                        help='Number of iterations between checkpoint saves.')
+    parser.add_argument('--input-split-dim', type=str, default='batch',
+                       help='Dimension for input split.')
     
     args = parser.parse_args()
 
@@ -355,6 +357,8 @@ class TransformerConfig():
     no_sync_func: Callable = None
     # grad_sync_func: Callable = None
     # param_sync_func: Callable = None
+    
+    input_split_dim: str = 'batch'
 
     def __post_init__(self):
         """ Python dataclass method that is used to modify attributes after initialization.
@@ -396,5 +400,6 @@ def core_transformer_config_from_args(args):
     kw_args['init_method'] = args.init_method
     kw_args['output_layer_init_method'] = args.init_method
     kw_args['params_dtype'] = args.params_dtype
+    kw_args['input_split_dim'] = args.input_split_dim
 
     return TransformerConfig(**kw_args)
