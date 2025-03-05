@@ -5,7 +5,7 @@ You will also need to install updated DeepSpeed version (>0.7.0), which contains
 
 #### Key File: train.py
 
-The python code is modified based on (https://github.com/microsoft/DeepSpeedExamples/tree/master/cifar). The key added feature is the compression pipeline.
+The python code is modified based on (https://github.com/deepspeedai/DeepSpeedExamples/tree/master/cifar). The key added feature is the compression pipeline.
 
 #### Folders (config)
 

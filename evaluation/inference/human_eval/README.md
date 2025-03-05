@@ -23,7 +23,7 @@ This evaluation also requires the installation of DeepSpeed-MII:
 python -m pip install deepspeed-mii
 ```
 
-Additional DeepSpeed-MII installation details can be found [here](https://github.com/microsoft/DeepSpeed-MII#installation).
+Additional DeepSpeed-MII installation details can be found [here](https://github.com/deepspeedai/DeepSpeed-MII#installation).
 
 ## Run the Evaluation
 

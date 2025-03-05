@@ -1,7 +1,7 @@
 # DeepSpeedometer
 
 NOTE: This is an experimental tool and is not currently being supported since it's not fully functional. Please use the MII benchmark which can be found here:
-https://github.com/microsoft/DeepSpeedExamples/tree/master/benchmarks/inference/mii
+https://github.com/deepspeedai/DeepSpeedExamples/tree/master/benchmarks/inference/mii
 
 This benchmark is designed to measure performance of LLM serving solutions. Using a different number of parallel clients sending requests to an inference server, we gather data to plot throughput-latency curves and find the saturation point of an inference server that demonstrates the maximum performance.
 
@@ -9,7 +9,7 @@ This benchmark is designed to measure performance of LLM serving solutions. Usin
 
 To install the benchmark, clone this repository and install using `pip`:
 ```shell
-git clone https://github.com/Microsoft/DeepSpeedExamples
+git clone https://github.com/deepspeedai/DeepSpeedExamples
 cd ./DeepSpeedExamples/benchmarks/deepspeedometer
 pip install .
 ```

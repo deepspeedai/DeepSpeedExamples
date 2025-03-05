@@ -118,7 +118,6 @@ class _HuggingFaceTokenizer(MegatronTokenizer):
     def eod(self):
         return self._tokenizer.eos_token_id
 
-
 class AbstractTokenizer(ABC):
     """Abstract class for tokenizer."""
 

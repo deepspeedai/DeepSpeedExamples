@@ -1,7 +1,7 @@
 # Persistent Deployment Examples
 
 The `serve.py` script can be used to create an inference server for any of the
-[supported models](https://github.com/microsoft/DeepSpeed-mii#supported-models).
+[supported models](https://github.com/deepspeedai/DeepSpeed-mii#supported-models).
 Provide the HuggingFace model name and tensor-parallelism (use the default
 values and run `$ python serve.py` for a single-GPU
 [mistralai/Mistral-7B-v0.1](https://huggingface.co/mistralai/Mistral-7B-v0.1)

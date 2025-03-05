@@ -1,7 +1,7 @@
 # Non-Persistent Pipeline Examples
 
 The `pipeline.py` script can be used to run any of the [supported
-models](https://github.com/microsoft/DeepSpeed-mii#supported-models). Provide
+models](https://github.com/deepspeedai/DeepSpeed-mii#supported-models). Provide
 the HuggingFace model name, maximum generated tokens, and prompt(s). The
 generated responses will be printed in the terminal:
 

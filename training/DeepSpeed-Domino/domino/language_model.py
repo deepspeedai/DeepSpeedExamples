@@ -108,7 +108,6 @@ class TransformerLanguageModel(DominoModule):
                  rotary_base: int = 10000,
                  rope_scaling: bool = False,
                  seq_len_interpolation_factor: Optional[float] = None,):
-
         args = get_args()
         super(TransformerLanguageModel, self).__init__(share_embeddings_and_output_weights=True)
 
