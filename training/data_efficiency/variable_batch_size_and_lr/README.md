@@ -27,7 +27,7 @@ Above, we collected samples until we filled up the batch with at most 30 tokens.
 
 # Pipeline parallelism
 
-Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, and long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxTxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
+Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, as long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxTxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
 
 ![dynamic_batch_size_and_lr_microbatching](pic2.png)
 
