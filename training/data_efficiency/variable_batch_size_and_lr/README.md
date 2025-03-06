@@ -52,7 +52,7 @@ This PRs implements dynamic batching and LR scaling. The dataloader and LR sched
   - `batch_by_seqlen` returns `microbatch_sample_ids` (the list of sample ids per micro-batch), `batch_sizes` (the size of effective batch sizes, and `batch_max_seqlens` (longest sequence across all microbatches in a batch)
 - `dataloader_for_variable_batch_size` relies on `microbatch_sample_ids` and will iterate/collate/pad samples for every batch and return a dataloader that iterates the final (variable-size) batches;
 - `lr_scheduler_for_variable_batch_size` relies on `batch_sizes` to compute the learning rate for each effective batch, taking into account the batch size and LR in the config file, and scaling the LR based on the size of each effective batch, and the scaling rule mentioned above (Linear, Square root, etc).
-  - Special note to the `lr_scheduler` returned that will either accept either:
+  - Special note to the `lr_scheduler` returned that will accept either:
     1.  an user-provided `Optimizer` that will  scale the learning rates (in param groups) at every batch, or
     2. an user-defined `LRScheduler`, that in this case will first get the learning rate from the scheduler and then scale it accordingly.
 
