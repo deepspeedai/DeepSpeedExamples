@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import deepspeed
+import argparse
 import deepspeed.comm as dist
 from deepspeed.pipe import PipelineModule
 from deepspeed.utils import logger
@@ -113,7 +114,11 @@ if __name__ == "__main__":
     loss_fn = lambda x, y: F.mse_loss(x.float(), y.float())  # noqa
 
     # number of pipeline stages. 0 or 1 to disable pipelining, >1 to enable
-    pipeline_num_stages = 0
+    parser = argparse.ArgumentParser(prog='Example: Variable Batch Size and LR')
+    parser.add_argument('--pipeline-num-stages', type=int, default=0, help="Number of stages in pipeline")
+    args = parser.parse_args()
+    pipeline_num_stages = int(args.pipeline_num_stages) if hasattr(args, 'pipeline_num_stages') else 0
+
     if pipeline_num_stages > 1:
         model = PipelineModule(layers=model.to_layers(), num_stages=pipeline_num_stages, loss_fn=loss_fn)
 
