@@ -19,23 +19,23 @@ In practice, the user picks the total token count per batch as the metric that d
 
 # Illustration of dynamic batch size, sequence length and LR
 
-Imagine we picked a limit of `30` tokens per batch, and have set a reference `lr=1e-3` for a `train_batch_size=2` (in the deepspeed config). The batching algorithm for curriculum may pack the data into batches of short sentences (left) at the early stages, and batches of long sentences (right) as later stages, e.g.:
+Imagine we pick a limit of 30 tokens per micro-batch, i.e. the `BxSxE` data per iteration per GPU will pack as many sequences as it needs to (ie increase `B`) so that the total tokens in that iterations at most 30, not more. We have also set **reference** learning rate of `lr=1e-3` for a `train_batch_size=2` in the deepspeed config. The batching algorithm for curriculum may pack the data into batches of short sentences (left) at the early stages, and batches of long sentences (right) as later stages, as pictured below. At every iteration, the learning rate will be adjusted based on the final batch size (i.e. the sum of all micro-batch sizes `B` across all GPUs and gradient accumulation steps):  
 
 ![dynamic_batch_size_and_lr](variable_batch_lr.png)
 
-Above, we collected samples until we filled up the batch with at most 30 tokens. The batch sizes (number of samples) became then `10` and `4` on the left and right examples, respectively. Using the linear scaling rule, the LR for those batches become `5e-3` and `2e-3`.    
+In the example above, we collected samples until we filled the micro-batches with at most 30 tokens. The final micro-batch sizes was then 10 and 4 on the left and right examples, respectively. Using the linear scaling rule, the LR for those batches become `5e-3` and `2e-3`. For simplicity, only 1 GPU is illustrated above, so the LR at every iteration only accounts for the micro-batch size in one GPU. We will cover the multi-GPU use case in the next section.
 
 # Pipeline parallelism
 
-Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, as long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxSxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
+Pipeline parallelism requires the same micro-batch size and sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, as long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxSxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of 4 micro-batches (equivalently, a 2-node 2-gradient-accumulation-step setp ) for the same dataset, when preparing data for the regular Distributed Data Parallel (DDP, left) and for the pipeline parallelism use cases (right):
 
 ![dynamic_batch_size_and_lr_microbatching](variable_batch_lr_pipeline.png)
 
-We can see that the pipeline use case (right) has the same `BxSxE` shape across all the 4 micro-batches in the same batch, and in order to respect that, it packs less samples in the batch, when compared to the standard use case (left hand size) 
+We can see that the pipeline use case (right) has the same `BxSxE` shape across all the 4 micro-batches. However, in order to respect that, it packs less samples in the microbatch and adds padding, when compared to the standard use case (on the left). As an important reminder, the learning rate would now be ajusted taking into account the batch size of 16 and 12 samples for the left and right examples respectively (ie **LR is scaled based on the global batch size and not on the per-GPU micro-batch size**).  
 
 # Attention Head
 
-For an input of size `BxSxE` the attention has a shape of `SxS` for a mask of fixed size across samples of same size, or `BxSxS` for a different mask per sample (when samples have different sizes, as in the dataset above). This 3D attention matrix can be illustrated for the DDP microbatch 1 (picture above top-left, 4 sentences)  as:
+For an input of size `BxSxE` the attention has a shape of `SxS` for a mask of fixed size across samples of same size, or `BxSxS` for a different mask per sample (when samples have different sizes, as in the dataset above). This 3D attention matrix can be illustrated for the DDP micro-batch 1 (picture above top-left, 4 sentences)  as:
  
 ![dynamic_batch_size_and_lr_attn_matrix](variable_attn_matrix.png)
 
