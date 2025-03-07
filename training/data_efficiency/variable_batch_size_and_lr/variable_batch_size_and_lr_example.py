@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='Example: Variable Batch Size and LR')
     parser.add_argument('--pipeline-num-stages', type=int, default=0, help="Number of stages in pipeline")
     args = parser.parse_args()
-    pipeline_num_stages = int(args.pipeline_num_stages) if hasattr(args, 'pipeline_num_stages') else 0
+    pipeline_num_stages = args.pipeline_num_stages
 
     if pipeline_num_stages > 1:
         model = PipelineModule(layers=model.to_layers(), num_stages=pipeline_num_stages, loss_fn=loss_fn)
