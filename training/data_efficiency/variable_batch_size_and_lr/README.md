@@ -21,7 +21,7 @@ In practice, the user picks the total token count per batch as the metric that d
 
 Imagine we picked a limit of `30` tokens per batch, and have set a reference `lr=1e-3` for a `train_batch_size=2` (in the deepspeed config). The batching algorithm for curriculum may pack the data into batches of short sentences (left) at the early stages, and batches of long sentences (right) as later stages, e.g.:
 
-![dynamic_batch_size_and_lr](pic1.png)
+![dynamic_batch_size_and_lr](variable_batch_lr.png)
 
 Above, we collected samples until we filled up the batch with at most 30 tokens. The batch sizes (number of samples) became then `10` and `4` on the left and right examples, respectively. Using the linear scaling rule, the LR for those batches become `5e-3` and `2e-3`.    
 
@@ -29,7 +29,7 @@ Above, we collected samples until we filled up the batch with at most 30 tokens.
 
 Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, and long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxSxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
 
-![dynamic_batch_size_and_lr_microbatching](pic2.png)
+![dynamic_batch_size_and_lr_microbatching](variable_batch_lr_pipeline.png)
 
 We can see that the pipeline use case (right) has the same `BxSxE` shape across all the 4 micro-batches in the same batch, and in order to respect that, it packs less samples in the batch, when compared to the standard use case (left hand size) 
 
@@ -37,7 +37,7 @@ We can see that the pipeline use case (right) has the same `BxSxE` shape across 
 
 For an input of size `BxSxE` the attention has a shape of `SxS` for a mask of fixed size across samples of same size, or `BxSxS` for a different mask per sample (when samples have different sizes, as in the dataset above). This 3D attention matrix can be illustrated for the DDP microbatch 1 (picture above top-left, 4 sentences)  as:
  
-![dynamic_batch_size_and_lr_attn_matrix](pic3.png)
+![dynamic_batch_size_and_lr_attn_matrix](variable_attn_matrix.png)
 
 Note the memory savings: the attention head has a size of `BxSxS`, i.e. a linear memory dependency on the batch size `B` and quadratic memory dependency on the largest sequence length `S` in the (micro-) batch. Thus, supporting a dynamic size `S` allows for an increase of `B`.
 
