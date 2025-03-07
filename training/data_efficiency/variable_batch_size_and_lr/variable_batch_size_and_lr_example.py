@@ -36,14 +36,14 @@ if __name__ == "__main__":
         __getitem__ = lambda self, idx: (self.seqs[idx], len(self.seqs[idx]))
 
         def batch_collate_fn(self, batch):
-            """ collate sequences of different lengths into batch of size BxTxE, where T is max seqlen """
+            """ collate sequences of different lengths into batch of size BxSxE, where S is max seqlen """
             seqs, labels = zip(*batch)
             seqs = nn.utils.rnn.pad_sequence(seqs, batch_first=True, padding_value=self.padding_value)
             labels = torch.tensor(labels, dtype=float)
             return seqs, labels
 
         def sample_padding_fn(self, sample, size):
-            """ pad sequence `seq` of shape TxE to size T'xE where T' is given by `size` """
+            """ pad sequence `seq` of shape SxE to size S'xE where S' is given by `size` """
             seq, label = sample
             seq = F.pad(seq, pad=(0, 0, 0, size - len(seq)), value=self.padding_value)
             return seq, label
@@ -59,8 +59,8 @@ if __name__ == "__main__":
 
     class AttentionHeadAndFeedForward(nn.Module):
         """
-        A single attention head of batch of shape BxTxE (with variable T) and attention matrix
-        BxTxT, followed by a feed-forward network of input size BxMxE, where T<<M.
+        A single attention head of batch of shape BxSxE (with variable S) and attention matrix
+        BxSxS, followed by a feed-forward network of input size BxMxE, where S<<M.
         """
 
         def __init__(self, max_seqlen, embed_dim):
@@ -78,22 +78,22 @@ if __name__ == "__main__":
         def forward(self, x):
 
             # compute length of each sequence as first index of padding value, or max length if no padding
-            B, T, E = x.shape
-            seqlens = torch.full(size=(B, ), fill_value=T, dtype=int, device=x.device)
+            B, S, E = x.shape
+            seqlens = torch.full(size=(B, ), fill_value=S, dtype=int, device=x.device)
             seq_ids, seq_padding_ids = torch.where(x[:, :, 0] == self.padding_value)
             seqlens[seq_ids] = seq_padding_ids
 
-            # optional: 3D masks for attention, shaped BxTxT, padded to individual input sequence lengths
-            masks = torch.tril(torch.ones((B, T, T), dtype=bool)).to(x.device)
+            # optional: 3D masks for attention, shaped BxSxS, padded to individual input sequence lengths
+            masks = torch.tril(torch.ones((B, S, S), dtype=bool)).to(x.device)
             for i, seqlen in enumerate(seqlens):
                 masks[i, seqlen:, :] = masks[i, :, seqlen:] = False
 
-            # linear projections and attention head. Attention size BxTxT
+            # linear projections and attention head. Attention size BxSxS
             q, k, v = self.qe(x), self.ke(x), self.ve(x)
             out, _ = self.attn_head(q, k, v, need_weights=False, attn_mask=masks)
 
-            # feedforward: needs to convert BxTxE to BxMxE by padding extra tokens
-            out = F.pad(out, pad=(0, 0, 0, self.max_seqlen - T), value=self.padding_value)
+            # feedforward: needs to convert BxSxE to BxMxE by padding extra tokens
+            out = F.pad(out, pad=(0, 0, 0, self.max_seqlen - S), value=self.padding_value)
             out = F.relu(self.fc1(out))
             out = F.relu(self.fc2(out))
             return self.nansum_of_last_two_dims(out)
@@ -190,7 +190,7 @@ if __name__ == "__main__":
         for batch_id in range(n_batches):
             # optional: pass to dynamic LR scheduler to compute LR for batch `it` (happens after engine.backward)
             if pipeline_num_stages > 0:
-                engine.reset_activation_shape()  # reset, as each batch has a diff BxT dimension
+                engine.reset_activation_shape()  # reset, as each batch has a diff BxS dimension
                 loss = engine.train_batch(data_iter=data_iter)
             else:
                 for gas in range(engine.gradient_accumulation_steps()):
