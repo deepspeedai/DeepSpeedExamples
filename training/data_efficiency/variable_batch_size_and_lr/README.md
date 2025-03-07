@@ -27,7 +27,7 @@ Above, we collected samples until we filled up the batch with at most 30 tokens.
 
 # Pipeline parallelism
 
-Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, and long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxSxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
+Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, as long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxSxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
 
 ![dynamic_batch_size_and_lr_microbatching](variable_batch_lr_pipeline.png)
 
@@ -52,7 +52,7 @@ This PRs implements dynamic batching and LR scaling. The dataloader and LR sched
   - `batch_by_seqlen` returns `microbatch_sample_ids` (the list of sample ids per micro-batch), `batch_sizes` (the size of effective batch sizes, and `batch_max_seqlens` (longest sequence across all microbatches in a batch)
 - `dataloader_for_variable_batch_size` relies on `microbatch_sample_ids` and will iterate/collate/pad samples for every batch and return a dataloader that iterates the final (variable-size) batches;
 - `lr_scheduler_for_variable_batch_size` relies on `batch_sizes` to compute the learning rate for each effective batch, taking into account the batch size and LR in the config file, and scaling the LR based on the size of each effective batch, and the scaling rule mentioned above (Linear, Square root, etc).
-  - Special note to the `lr_scheduler` returned that will either accept either:
+  - Special note to the `lr_scheduler` returned that will accept either:
     1.  an user-provided `Optimizer` that will  scale the learning rates (in param groups) at every batch, or
     2. an user-defined `LRScheduler`, that in this case will first get the learning rate from the scheduler and then scale it accordingly.
 
