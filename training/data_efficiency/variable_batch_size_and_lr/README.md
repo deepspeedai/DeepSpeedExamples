@@ -8,7 +8,7 @@ target tokens.
 
 Dynamic batch sizes has been requested in [DeepSpeed issue 1051](https://github.com/microsoft/DeepSpeed/issues/1051), [DeepSpeed issue 3455 ](https://github.com/microsoft/DeepSpeed/issues/3455), [Pytorch Lightning issue 16914](https://github.com/Lightning-AI/pytorch-lightning/issues/16914),  [huggingface issue 2647](https://github.com/huggingface/accelerate/issues/2647) and is available already in many libraries e.g. [NVIDIA Triton](https://github.com/triton-inference-server/server/blob/main/docs/user_guide/model_configuration.md#dynamic-batcher) and [Meta FairSeq](https://github.com/facebookresearch/fairseq) (implementation [here](https://github.com/facebookresearch/fairseq/blob/34973a94d09ecc12092a5ecc8afece5e536b7692/fairseq/data/fairseq_dataset.py#L104) ).
 
-The immediate use case for this is when one needs to maximize GPU utilization. Moreover, this is particularly relevant for curriculum learning where a `BxTxE` (Batch x Time x Embedding) -shaped input should ideally have high `B` and low `T` at the early curriculum steps (many short sentences packed together as a batch), and low `B` and high `T` at the late steps (few long sentences in the batch). A dynamic size `T` is already supported by Deepspeed, e.g. in the documentation for pipeline parallelism's [reset_activation_shape()](https://deepspeed.readthedocs.io/en/stable/pipeline.html#deepspeed.runtime.pipe.engine.PipelineEngine.reset_activation_shape):
+The immediate use case for this is when one needs to maximize GPU utilization. Moreover, this is particularly relevant for curriculum learning where a `BxSxE` (Batch x Sequence Length x Embedding) -shaped input should ideally have high `B` and low `S` at the early curriculum steps (many short sentences packed together as a batch), and low `B` and high `S` at the late steps (few long sentences in the batch). A dynamic size `S` is already supported by Deepspeed, e.g. in the documentation for pipeline parallelism's [reset_activation_shape()](https://deepspeed.readthedocs.io/en/stable/pipeline.html#deepspeed.runtime.pipe.engine.PipelineEngine.reset_activation_shape):
 > For curriculum learning that changes the seqlen of each sample, we need to call this whenever the seqlen is going to change.
 
 However, dynamic `B` is not supported. A dynamic `B` would require an adequate increase/decrease of learning rate. This technique has been applied previously, and the two most common LR scaling algorithms have been described as:
@@ -27,19 +27,19 @@ Above, we collected samples until we filled up the batch with at most 30 tokens.
 
 # Pipeline parallelism
 
-Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, and long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxTxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
+Pipeline parallelism requires the same batch size and same sequence length across all micro-batches in a batch, as the activation sizes must be fixed between gradient accumulation steps. Between batches, these may change, and long as `engine.reset_activation_shape()` is called so that the new shapes are communicated on the first gradient accumulation step in the batch. Enforcing similar `BxSxE` between batches may lead to smaller micro-batches. As an example, below we can see an illustration of a 2-node 2-gradient-accumulation-step (ie 4 micro-batches) batching for the same dataset, when preparing data for the regular DDP (left) and for the pipeline parallelism use cases (right):
 
 ![dynamic_batch_size_and_lr_microbatching](pic2.png)
 
-We can see that the pipeline use case (right) has the same `BxTxE` shape across all the 4 micro-batches in the same batch, and in order to respect that, it packs less samples in the batch, when compared to the standard use case (left hand size) 
+We can see that the pipeline use case (right) has the same `BxSxE` shape across all the 4 micro-batches in the same batch, and in order to respect that, it packs less samples in the batch, when compared to the standard use case (left hand size) 
 
 # Attention Head
 
-For an input of size `BxTxE` the attention has a shape of `TxT` for a mask of fixed size across samples of same size, or `BxTxT` for a different mask per sample (when samples have different sizes, as in the dataset above). This 3D attention matrix can be illustrated for the DDP microbatch 1 (picture above top-left, 4 sentences)  as:
+For an input of size `BxSxE` the attention has a shape of `SxS` for a mask of fixed size across samples of same size, or `BxSxS` for a different mask per sample (when samples have different sizes, as in the dataset above). This 3D attention matrix can be illustrated for the DDP microbatch 1 (picture above top-left, 4 sentences)  as:
  
 ![dynamic_batch_size_and_lr_attn_matrix](pic3.png)
 
-Note the memory savings: the attention head has a size of `BxTxT`, i.e. a linear memory dependency on the batch size `B` and quadratic memory dependency on the largest sequence length `T` in the (micro-) batch. Thus, supporting a dynamic size `T` allows for an increase of `B`.
+Note the memory savings: the attention head has a size of `BxSxS`, i.e. a linear memory dependency on the batch size `B` and quadratic memory dependency on the largest sequence length `S` in the (micro-) batch. Thus, supporting a dynamic size `S` allows for an increase of `B`.
 
 # PR overview
 
@@ -48,7 +48,7 @@ This PRs implements dynamic batching and LR scaling. The dataloader and LR sched
 - The partitioning of samples into batches is done by `batch_by_seqlen`.
 - For pipeline parallelism, it is required that all micro-batches in a pipeline pass to have the same activation shapes. This is enabled by setting to `True` the following parameters:
   - `required_microbatches_of_same_sizes` that will force the `B` dimension to be the same across all gradient accumulation steps of all dataloaders on a batch;
-  - `required_microbatches_of_same_lengths` that will force the `T` dimension to be the same across all gradient accumulation steps. Works by calling the user-provided `sample_padding_fn(sentence, len)` that pads a given sentence to the argument length;
+  - `required_microbatches_of_same_lengths` that will force the `S` dimension to be the same across all gradient accumulation steps. Works by calling the user-provided `sample_padding_fn(sentence, len)` that pads a given sentence to the argument length;
   - `batch_by_seqlen` returns `microbatch_sample_ids` (the list of sample ids per micro-batch), `batch_sizes` (the size of effective batch sizes, and `batch_max_seqlens` (longest sequence across all microbatches in a batch)
 - `dataloader_for_variable_batch_size` relies on `microbatch_sample_ids` and will iterate/collate/pad samples for every batch and return a dataloader that iterates the final (variable-size) batches;
 - `lr_scheduler_for_variable_batch_size` relies on `batch_sizes` to compute the learning rate for each effective batch, taking into account the batch size and LR in the config file, and scaling the LR based on the size of each effective batch, and the scaling rule mentioned above (Linear, Square root, etc).
@@ -58,7 +58,7 @@ This PRs implements dynamic batching and LR scaling. The dataloader and LR sched
 
 # Example
 
-This example in `variable_batch_size_and_lr_example.py` presents a use case with and without pipeline parallelism. The example shows an attention head with attention of variable-sized `BxTxT` per batch, followed by a fixed size feed forward network. These are the main blocks on a Large Language Model. The feed-forward (or linear layer) that follows the attention head requires a constant input size, equivalent to the largest sentence in the whole dataset, so the output of the attention must be padded (see `feedforward: needs to convert BxTxE to BxMxE by padding extra tokens` in the code).
+This example in `variable_batch_size_and_lr_example.py` presents a use case with and without pipeline parallelism. The example shows an attention head with attention of variable-sized `BxSxS` per batch, followed by a fixed size feed forward network. These are the main blocks on a Large Language Model. The feed-forward (or linear layer) that follows the attention head requires a constant input size, equivalent to the largest sentence in the whole dataset, so the output of the attention must be padded (see `feedforward: needs to convert BxSxE to BxMxE by padding extra tokens` in the code).
 
 
 # Config
