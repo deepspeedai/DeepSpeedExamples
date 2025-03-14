@@ -92,10 +92,25 @@ def parse_args():
     parser.add_argument('--position-embedding-type', type=str, default='learned_absolute',
                        choices=['learned_absolute', 'rope'],
                        help='Position embedding type.')
+    parser.add_argument('--use-rotary-position-embeddings', action='store_true',
+                       help='Use rotary positional embeddings or not. '
+                       'Deprecated: use --position-embedding-type')
+    parser.add_argument('--rotary-base', type=int, default=10000,
+                       help='Base to use for rotary positional embeddings, default 10000')
     parser.add_argument('--rotary-percent', type=float, default=1.0,
                        help='Percent of rotary dimension to use, default 100%')
+    parser.add_argument('--rotary-interleaved', action='store_true',
+                          help='Use interleaved rotary embedding.')
     parser.add_argument('--rotary-seq-len-interpolation-factor', type=int, default=None,
                        help='Sequence length interpolation factor for rotary embeddings.')
+    parser.add_argument('--use-rope-scaling', action='store_true',
+                       help='Apply rope scaling as used in llama3.1')
+    parser.add_argument('--disable-bias-linear', action='store_false',
+                       help='Disable bias in the linear layers',
+                       dest='add_bias_linear')
+    parser.add_argument('--group-query-attention', action='store_true',
+                          help='Use group-query attention.')
+    parser.add_argument('--num-query-groups', type=int, default=1)
     parser.add_argument('--hidden-dropout', type=float, default=0.1,
                        help='Dropout probability for hidden state transformer.')
     parser.add_argument('--attention-dropout', type=float, default=0.1,
@@ -180,8 +195,11 @@ def parse_args():
                                 'GPT2BPETokenizer',
                                 'SentencePieceTokenizer',
                                 'GPTSentencePieceTokenizer',
+                                'HuggingFaceTokenizer',
                                 'NullTokenizer'],
                        help='What type of tokenizer to use.')
+    parser.add_argument('--tokenizer-model', type=str, default=None,
+                       help='Sentencepiece tokenizer model.')
     parser.add_argument('--make-vocab-size-divisible-by', type=int, default=128,
                        help='Pad the vocab size to be divisible by this value.'
                        'This is added for computational efficieny reasons.')
@@ -343,6 +361,12 @@ class TransformerConfig():
     gated_linear_unit: bool = False
     activation_func: Callable = F.gelu
     bias_gelu_fusion = False
+    kv_channels: int = None
+    rotary_interleaved: bool = False
+    normalization: str = 'LayerNorm'
+    group_query_attention: bool = False
+    num_query_groups: int = 1
+    seq_length: int = 2048
 
     # initialization
     init_method: Callable = None
