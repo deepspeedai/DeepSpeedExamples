@@ -73,6 +73,7 @@ def get_model_response(generator, user_input, max_new_tokens):
 def process_response(response, num_rounds):
     output = str(response[0]["generated_text"])
     output = output.replace("<|endoftext|></s>", "")
+    output = output.replace("<|endoftext|>", "")
     all_positions = [m.start() for m in re.finditer("Human: ", output)]
     place_of_second_q = -1
     if len(all_positions) > num_rounds:
