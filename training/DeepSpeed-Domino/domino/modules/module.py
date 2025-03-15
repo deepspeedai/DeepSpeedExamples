@@ -25,6 +25,14 @@ class DominoModule(torch.nn.Module):
         self.config = config
         self.share_embeddings_and_output_weights = share_embeddings_and_output_weights
 
+
+    def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
+        """Use this function to override the state dict for
+           saving checkpoints.
+        """
+
+        return self.state_dict(prefix=prefix, keep_vars=keep_vars)
+
     def initialize_word_embeddings(self):
         self.share_embeddings_and_output_weights = True
         return
@@ -74,7 +82,8 @@ def float16_to_fp32(val):
     return conversion_helper(val, float_conversion)
 
 
-class Float16Module(torch.nn.Module):
+# class Float16Module(torch.nn.Module):
+class Float16Module(DominoModule):
 
     def __init__(self, module, args):
         super(Float16Module, self).__init__()
@@ -91,3 +100,10 @@ class Float16Module(torch.nn.Module):
             outputs = float16_to_fp32(outputs)
         return outputs
 
+
+    def state_dict_for_save_checkpoint(self, prefix='', keep_vars=False):
+        """ Retrieve state_dict from the module being wrapped."""
+        return self.module.state_dict_for_save_checkpoint(prefix=prefix, keep_vars=keep_vars)
+
+    def load_state_dict(self, state_dict, strict=True):
+        self.module.load_state_dict(state_dict, strict=strict)

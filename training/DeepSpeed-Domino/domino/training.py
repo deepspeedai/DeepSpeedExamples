@@ -17,6 +17,9 @@ from domino.initialize import set_jit_fusion_options
 from domino.tensor_parallel.data import broadcast_data
 
 
+from megatron.checkpointing import load_checkpoint
+from megatron.checkpointing import save_checkpoint
+
 def is_rank_0():
     # if torch.cuda.current_device() == 0:
     if torch.distributed.get_rank() == 0:
@@ -109,7 +112,10 @@ def setup_model_and_optimizer(base_model,
     optimizer = get_megatron_optimizer(models, no_wd_decay_cond, scale_lr_cond)
     opt_param_scheduler = get_optimizer_param_scheduler(optimizer)
 
-    args.iteration = 0
+    if args.load is not None:
+        args.iteration = load_checkpoint(model, optimizer, opt_param_scheduler)
+    else:
+        args.iteration = 0
 
     return model, optimizer, opt_param_scheduler
 
@@ -297,6 +303,11 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
                         config)
 
         iteration += 1
+
+        if args.save and args.save_interval and \
+           iteration % args.save_interval == 0:
+            save_checkpoint(iteration, model, optimizer, opt_param_scheduler)
+
         args.consumed_train_samples += mpu.get_data_parallel_world_size() * \
             args.micro_batch_size * get_num_microbatches()
         

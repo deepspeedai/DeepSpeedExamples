@@ -14,6 +14,7 @@ from domino.modules.fused_func import bias_dropout_add_fused_train
 from domino.modules.fused_bias_gelu import bias_gelu
 
 from megatron import fused_kernels
+import deepspeed
 
 
 def initialize_domino():
@@ -37,6 +38,9 @@ def initialize_domino():
         world_size=args.world_size,
         rank=args.rank
     )
+
+    deepspeed.init_distributed()
+
     mpu.initialize_model_parallel(args.tensor_model_parallel_size)
     seed_ = args.seed
     data_parallel_random_init = False

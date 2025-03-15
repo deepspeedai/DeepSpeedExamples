@@ -204,9 +204,26 @@ def parse_args():
                        'validation set.')
     parser.add_argument('--log-interval', type=int, default=100,
                        help='Report loss and timing interval.')
+    parser.add_argument('--save', type=str, default=None,
+                       help='Output directory to save checkpoints to.')
+    parser.add_argument('--no-save-optim', action='store_true', default=None,
+                       help='Do not save current optimizer.')
+    parser.add_argument('--no-save-rng', action='store_true', default=None,
+                       help='Do not save current rng state.')
     parser.add_argument('--save-interval', type=int, default=None,
                        help='Number of iterations between checkpoint saves.')
-    
+    parser.add_argument('--load', type=str, default=None,
+                       help='Directory containing a model checkpoint.')
+    parser.add_argument('--no-load-optim', action='store_true', default=None,
+                       help='Do not load optimizer when loading checkpoint.')
+    parser.add_argument('--no-load-rng', action='store_true', default=None,
+                       help='Do not load rng state when loading checkpoint.')
+    parser.add_argument('--exit-on-missing-checkpoint', action='store_true',
+                       help="If '--load' is set, but checkpoint is not found "
+                       "(e.g., path typo), then exit instead of random "
+                       "initialization.")
+    parser.add_argument('--save-interval', type=int, default=None,
+                       help='Number of iterations between checkpoint saves.')
     args = parser.parse_args()
 
     args.rank = int(os.getenv('RANK', '0'))
