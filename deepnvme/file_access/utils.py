@@ -50,7 +50,7 @@ def parse_write_arguments():
     args = parser.parse_args()
     print(f'args = {args}')
     if not os.path.isdir(args.nvme_folder):
-        print(f'Invalid output folder path: {args.output_folder}')
+        print(f'Invalid nvme folder path: {args.nvme_folder}')
         quit()
 
     return args
