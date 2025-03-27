@@ -294,7 +294,11 @@ def parse_args():
                       'bfloat16 data type.', flush=True)
 
     args.async_tensor_model_parallel_allreduce = True
-    args.gradient_accumulation_fusion = True
+    if torch.cuda.is_available() and torch.version.hip:
+        args.gradient_accumulation_fusion = False
+    elif torch.cuda.is_available() and torch.version.cuda:
+        args.gradient_accumulation_fusion = True
+    
     args.padded_vocab_size = 0 # tokenizer.py
     args.model_type = 1
     args.data_parallel_size = 1
