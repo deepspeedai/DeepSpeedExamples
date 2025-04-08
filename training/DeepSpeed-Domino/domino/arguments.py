@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 import dataclasses
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 from domino.timer import Timers
 from megatron.tokenizer import build_tokenizer
 
@@ -206,6 +206,8 @@ def parse_args():
                        help='Report loss and timing interval.')
     parser.add_argument('--save-interval', type=int, default=None,
                        help='Number of iterations between checkpoint saves.')
+    parser.add_argument('--fused-linear-loss', action='store_true',
+                       help='whether to use LigerFusedLinearCrossEntropyFunction()')
     
     args = parser.parse_args()
 
@@ -359,6 +361,8 @@ class TransformerConfig():
     no_sync_func: Callable = None
     # grad_sync_func: Callable = None
     # param_sync_func: Callable = None
+    
+    fused_linear_loss: bool = False
 
     def __post_init__(self):
         """ Python dataclass method that is used to modify attributes after initialization.
@@ -400,5 +404,6 @@ def core_transformer_config_from_args(args):
     kw_args['init_method'] = args.init_method
     kw_args['output_layer_init_method'] = args.init_method
     kw_args['params_dtype'] = args.params_dtype
+    kw_args['fused_linear_loss'] = args.fused_linear_loss
 
     return TransformerConfig(**kw_args)
