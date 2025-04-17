@@ -14,6 +14,7 @@ from domino.language_model import parallel_lm_logits
 from domino.language_model import get_language_model
 from domino.tensor_parallel.cross_entropy import vocab_parallel_cross_entropy
 
+from domino.tensor_parallel.cross_entropy import LigerFusedLinearCrossEntropyFunction
 
 _TRAIN_START_TIME = time.time()
 
@@ -22,6 +23,14 @@ def post_language_model_processing(lm_output, labels, logit_weights, parallel_ou
     labels = labels.transpose(0, 1).contiguous()
     loss = vocab_parallel_cross_entropy(output.float(), labels)
     loss = loss.transpose(0, 1).contiguous()
+    return loss
+
+def post_language_model_processing_with_liger(lm_output, labels, logit_weights, parallel_output):
+    b, s = labels.shape
+    lm_output = lm_output.flatten(0, 1)
+    labels = labels.transpose(0, 1).flatten(0, 1)
+    loss, _ = LigerFusedLinearCrossEntropyFunction.apply(lm_output, logit_weights, labels)
+    loss = loss.view(s, b).transpose(0, 1).contiguous()
     return loss
 
 
@@ -46,6 +55,7 @@ class GPTModel(DominoModule):
             post_process=self.post_process,
         )
         self.initialize_word_embeddings()
+        self.config = config
 
     def set_input_tensor(self, input_tensor):
         self.language_model.set_input_tensor(input_tensor)
@@ -66,12 +76,20 @@ class GPTModel(DominoModule):
         )
 
         if self.post_process:
-            return post_language_model_processing(
-                lm_output,
-                labels,
-                self.shared_embedding_or_output_weight(),
-                self.parallel_output,
-            )
+            if self.config.fused_linear_loss:
+                return post_language_model_processing_with_liger(
+                    lm_output,
+                    labels,
+                    self.shared_embedding_or_output_weight(),
+                    self.parallel_output,
+                )
+            else:
+                return post_language_model_processing(
+                    lm_output,
+                    labels,
+                    self.shared_embedding_or_output_weight(),
+                    self.parallel_output,
+                )
         else:
             return lm_output
 
