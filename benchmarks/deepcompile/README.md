@@ -91,7 +91,7 @@ bash run_bench_acc.sh
 You can use the same script with `--acc_step_eval` to plot the results along gradient accumulation steps.
 
 ```bash
-ython plot.py --result_dir results/acc_step_1_16 --acc_step_eval --metric throughput
+python plot.py --result_dir results/acc_step_1_16 --acc_step_eval --metric throughput
 ```
 
 Here are some example charts:
@@ -144,8 +144,8 @@ A schedule is defined as a list of tuples, where each tuple consists of:
 In the example above, `add_z3_gather_release` is applied at step 0 to minimize memory usage. After a warmup phase (e.g., after the first few training iterations), additional optimizations such as prefetching and selective unsharding are applied based on profiled memory usage.
 Each optimization pass takes a standardized set of arguments provided by DeepCompile. For details, please refer to the implementation of each pass:
 
-- [ZeRO3 (All-gather and reduce-scatter insertion)](https://github.com/deepspeedai/DeepSpeed/blob/tohtana/deepcompile/deepspeed/compile/passes/zero3_compile.py)
-- [Proactive prefetching](https://github.com/deepspeedai/DeepSpeed/blob/tohtana/deepcompile/deepspeed/compile/passes/prefetch.py)
-- [Selective unsharding](https://github.com/deepspeedai/DeepSpeed/blob/tohtana/deepcompile/deepspeed/compile/passes/selective_gather.py)
-- [Reduce-scatter insertion (ZeRO1)](https://github.com/deepspeedai/DeepSpeed/blob/tohtana/deepcompile/deepspeed/compile/passes/zero1_compile.py)
-- [Adaptive offloading](https://github.com/deepspeedai/DeepSpeed/blob/tohtana/deepcompile/deepspeed/compile/passes/offload_adam_states.py)
+- [ZeRO3 (All-gather and reduce-scatter insertion)](https://github.com/deepspeedai/DeepSpeed/blob/master/deepspeed/compile/passes/zero3_compile.py)
+- [Proactive prefetching](https://github.com/deepspeedai/DeepSpeed/blob/master/deepspeed/compile/passes/prefetch.py)
+- [Selective unsharding](https://github.com/deepspeedai/DeepSpeed/blob/master/deepspeed/compile/passes/selective_gather.py)
+- [Reduce-scatter insertion (ZeRO1)](https://github.com/deepspeedai/DeepSpeed/blob/master/deepspeed/compile/passes/zero1_compile.py)
+- [Adaptive offloading](https://github.com/deepspeedai/DeepSpeed/blob/master/deepspeed/compile/passes/offload_adam_states.py)
