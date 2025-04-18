@@ -2,6 +2,7 @@ import torch
 import os, timeit, functools, pathlib
 from deepspeed.ops.op_builder import AsyncIOBuilder
 from utils import parse_write_arguments, GIGA_UNIT
+from deepspeed.accelerator import get_accelerator
 
 def file_write(out_f, tensor, handle, bounce_buffer):
     bounce_buffer.copy_(tensor)
@@ -14,9 +15,13 @@ def main():
     pathlib.Path(output_file).unlink(missing_ok=True)
     file_sz = args.mb_size*(1024**2)
     app_tensor = torch.empty(file_sz, dtype=torch.uint8, device='cpu', requires_grad=False)
+    native_locked_tensor = get_accelerator()._name == 'cpu'
 
     aio_handle = AsyncIOBuilder().load().aio_handle()
-    bounce_buffer = torch.empty(file_sz, dtype=torch.uint8, requires_grad=False).pin_memory()
+    if native_locked_tensor:
+        bounce_buffer = aio_handle.new_cpu_locked_tensor(file_sz, torch.Tensor().to(torch.uint8))
+    else:
+        bounce_buffer = torch.empty(file_sz, dtype=torch.uint8, requires_grad=False).pin_memory()
 
 
     t = timeit.Timer(functools.partial(file_write, output_file, app_tensor, aio_handle, bounce_buffer))
@@ -32,6 +37,9 @@ def main():
         py_file_write(py_ref_file, app_tensor)
         filecmp.clear_cache()
         print(f'Validation success = {filecmp.cmp(py_ref_file, output_file, shallow=False) }')
+
+    if native_locked_tensor:
+        aio_handle.free_cpu_locked_tensor(bounce_buffer)
 
     pathlib.Path(output_file).unlink(missing_ok=True)
 
