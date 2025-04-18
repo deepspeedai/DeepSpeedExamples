@@ -16,7 +16,7 @@ jobs:
 
   # formatting and basic install on cpu-only machine
   formatting:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2
