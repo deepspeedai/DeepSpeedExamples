@@ -25,6 +25,7 @@ def get_args():
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
     parser.add_argument("--activation_checkpointing", action="store_true")
+    parser.add_argument("--eval", action="store_true")
     parser.add_argument("--dataset_name", type=str, default="timdettmers/openassistant-guanaco")
     parser.add_argument("--num_layers", type=int, default=0)
     parser.add_argument("--attn_impl", type=str, default="spda")
@@ -179,10 +180,13 @@ def main():
         on_trace_ready=torch.profiler.tensorboard_trace_handler(prof_dir),
     ) if do_profile else nullcontext()
 
-    # Training loop
-    model.train()
-    global_step = 0
+    # Training 
+    if args.eval:
+        model.eval()
+    else:
+        model.train()
 
+    global_step = 0
     iter_times = []
 
     # See https://github.com/microsoft/DeepSpeed/issues/6793

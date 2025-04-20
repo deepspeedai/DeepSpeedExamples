@@ -94,6 +94,14 @@ while [[ $# -gt 0 ]]; do
             EXTRA_OPTS="${EXTRA_OPTS} --num_layers $2"
             shift 2
             ;;
+        --attn-impl)
+            EXTRA_OPTS="${EXTRA_OPTS} --attn_impl $2"
+            shift 2
+            ;;
+        --eval)
+            EXTRA_OPTS="${EXTRA_OPTS} --eval"
+            shift
+            ;;
         --debug-log)
             DEBUG_LOG=1
             shift
