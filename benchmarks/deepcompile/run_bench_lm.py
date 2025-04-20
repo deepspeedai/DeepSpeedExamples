@@ -72,7 +72,7 @@ def main():
     args = get_args()
     print(args)
 
-    if "offload_adam_states" in args.passes:
+    if args.passes is not None and "offload_adam_states" in args.passes:
         os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
     if args.deterministic:
