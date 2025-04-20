@@ -6,6 +6,8 @@ DC_OPTS="--compile --deepcompile"
 ACC_OPTS="--gradient-accumulation-steps 1"
 AC_OPTS="--activation-checkpointing"
 
+export NUM_NODES=${NUM_NODES:-4}
+
 MODEL="meta-llama/Meta-Llama-3-70B-Instruct"
 BATCH_SIZE_OPTS=(1 2 4)
 SEQ_LENGTH_OPTS=(512 1024 2048)
