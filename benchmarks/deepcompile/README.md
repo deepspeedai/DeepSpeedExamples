@@ -12,7 +12,7 @@ In addition, you need to install the following:
 - PyTorch v2.6.0
   - For the Mixtral model, we recommend using PyTorch v2.7.0 (currently the final release candidate) due to an issue with `torch.where`.
   - See details [here](https://github.com/pytorch/pytorch/issues/149278)
-- DeepSpeed (v.0.16.6 or newer)
+- DeepSpeed (v0.16.6 or newer)
   - As DeepCompile is under active development, we recommend using the latest version or installing from source.
 - transformers
 - accelerate
@@ -117,7 +117,7 @@ Here are some example charts:
 To enable DeepCompile, simply set "deepcompile": true in the compile section of your DeepSpeed configuration JSON:
 
 ```json
-{   
+{
 …
     "zero_optimization": {
         "stage": 3,
