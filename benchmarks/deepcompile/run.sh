@@ -1,7 +1,6 @@
 #!/bin/bash
 
-
-NUM_NODES=${NUM_NODES:-$(wc -l < /job/hostfile)}
+NUM_NODES=${NUM_NODES:-1}
 NGPUS_PER_NODE=${NGPUS_PER_NODE:-$(nvidia-smi --query-gpu=name --format=csv,noheader | wc -l)}
 NUM_PROCESSES=$((${NUM_NODES} * ${NGPUS_PER_NODE}))
 
@@ -217,7 +216,7 @@ echo "Logging to ${LOG_FILE}"
 ${HOME}/.local/bin/accelerate launch --main_process_ip ${HOST_IP} --main_process_port 12345 \
 --num_machines ${NUM_NODES} --num_processes ${NUM_PROCESSES} --machine_rank ${MACHINE_RANK} \
 --config_file configs/config.yaml \
-run_acc_lm.py \
+run_bench_lm.py \
 --model_name "${MODEL}" \
 --zero_stage ${ZERO_STAGE} \
 ${GAS_OPTS} \

@@ -15,8 +15,6 @@ from torch.utils.data import SequentialSampler
 
 from datasets.utils.logging import disable_progress_bar
 
-from patch_phi3_moe import patch_phi3moe
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-2-7b-hf")
@@ -98,15 +96,12 @@ def main():
         model = AutoModelForCausalLM.from_pretrained(model_weight_path, trust_remote_code=True)
     else:
         if args.num_layers > 0:
-            model_config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+            model_config = AutoConfig.from_pretrained(model_name, attn_implementation=args.attn_impl, trust_remote_code=True)
             print(f"num_hidden_layers: {model_config.num_hidden_layers} -> {args.num_layers}")
             model_config.num_hidden_layers = args.num_layers
             model = AutoModelForCausalLM.from_config(model_config, trust_remote_code=True)
         else:
             model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
-
-    if patch_phi3moe(model) and accelerator.is_main_process:
-        print("Patched Phi-3.5-MoE model")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
@@ -148,7 +143,6 @@ def main():
     if "Mixtral" in model_name:
         torch._dynamo.config.capture_dynamic_output_shape_ops = True
         torch._dynamo.config.capture_scalar_outputs = True
-
 
     if is_deepspeed:
         if args.compile:
