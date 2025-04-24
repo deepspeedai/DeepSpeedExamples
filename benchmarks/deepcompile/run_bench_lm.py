@@ -15,8 +15,6 @@ from torch.utils.data import SequentialSampler
 
 from datasets.utils.logging import disable_progress_bar
 
-from patch_phi3_moe import patch_phi3moe
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-2-7b-hf")
@@ -27,6 +25,7 @@ def get_args():
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
     parser.add_argument("--activation_checkpointing", action="store_true")
+    parser.add_argument("--eval", action="store_true")
     parser.add_argument("--dataset_name", type=str, default="timdettmers/openassistant-guanaco")
     parser.add_argument("--num_layers", type=int, default=0)
     parser.add_argument("--attn_impl", type=str, default="spda")
@@ -74,7 +73,7 @@ def main():
     args = get_args()
     print(args)
 
-    if "offload_adam_states" in args.passes:
+    if args.passes is not None and "offload_adam_states" in args.passes:
         os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
     if args.deterministic:
@@ -98,15 +97,12 @@ def main():
         model = AutoModelForCausalLM.from_pretrained(model_weight_path, trust_remote_code=True)
     else:
         if args.num_layers > 0:
-            model_config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+            model_config = AutoConfig.from_pretrained(model_name, attn_implementation=args.attn_impl, trust_remote_code=True)
             print(f"num_hidden_layers: {model_config.num_hidden_layers} -> {args.num_layers}")
             model_config.num_hidden_layers = args.num_layers
             model = AutoModelForCausalLM.from_config(model_config, trust_remote_code=True)
         else:
             model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
-
-    if patch_phi3moe(model) and accelerator.is_main_process:
-        print("Patched Phi-3.5-MoE model")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
@@ -149,7 +145,6 @@ def main():
         torch._dynamo.config.capture_dynamic_output_shape_ops = True
         torch._dynamo.config.capture_scalar_outputs = True
 
-
     if is_deepspeed:
         if args.compile:
             schedule = make_schedule(args.passes.split(","), warmup=5) if args.passes else None
@@ -185,10 +180,13 @@ def main():
         on_trace_ready=torch.profiler.tensorboard_trace_handler(prof_dir),
     ) if do_profile else nullcontext()
 
-    # Training loop
-    model.train()
-    global_step = 0
+    # Training 
+    if args.eval:
+        model.eval()
+    else:
+        model.train()
 
+    global_step = 0
     iter_times = []
 
     # See https://github.com/microsoft/DeepSpeed/issues/6793

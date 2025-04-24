@@ -5,6 +5,8 @@ COMPILE_OPTS="--compile"
 N3Z_OPTS="--compile --deepcompile"
 AC_OPTS="--activation-checkpointing"
 
+export NUM_NODES=${NUM_NODES:-4}
+
 MODEL="meta-llama/Meta-Llama-3-70B-Instruct"
 BATCH_SIZE_OPTS=(1)
 SEQ_LENGTH_OPTS=(1024)

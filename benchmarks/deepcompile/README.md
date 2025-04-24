@@ -10,7 +10,10 @@ We tested the scripts with Python 3.10.12 and CUDA 12.4.
 In addition, you need to install the following:
 
 - PyTorch v2.6.0
+  - For the Mixtral model, we recommend using PyTorch v2.7.0 (currently the final release candidate) due to an issue with `torch.where`.
+  - See details [here](https://github.com/pytorch/pytorch/issues/149278)
 - DeepSpeed (v0.16.6 or newer)
+  - As DeepCompile is under active development, we recommend using the latest version or installing from source.
 - transformers
 - accelerate
 - datasets v3.1
@@ -23,6 +26,12 @@ pip3 install transformers datasets==3.1 accelerate
 
 # Install DeepSpeed
 pip install deepspeed
+
+# Or install the latest revision of DeepSpeed from source
+# git clone https://github.com/deepspeedai/DeepSpeed
+# cd DeepSpeed
+# git pip install .
+# cd ..
 
 # Clone this repository
 git clone https://github.com/deepspeedai/DeepSpeedExamples
@@ -108,7 +117,7 @@ Here are some example charts:
 To enable DeepCompile, simply set "deepcompile": true in the compile section of your DeepSpeed configuration JSON:
 
 ```json
-{   
+{
 …
     "zero_optimization": {
         "stage": 3,
