@@ -1,0 +1,24 @@
+{
+    "zero_optimization": {
+        "stage": 3,
+        "stage3_prefetch_bucket_size": "auto",
+        "stage3_param_persistence_threshold": "auto",
+        "stage3_max_live_parameters": "auto",
+        "offload_param": {
+            "device": "nvme",
+            "nvme_path": "/local_nvme/sglang",
+            "pin_memory": true,
+            "buffer_size": "auto",
+            "buffer_count": 5
+        }
+    },
+    "aio": {
+        "block_size": 8388608,
+        "queue_depth": 32,
+        "intra_op_parallelism": 8,
+        "single_submit": false,
+        "overlap_events": true,
+        "use_gds": false
+    },
+    "train_batch_size": 1
+}
