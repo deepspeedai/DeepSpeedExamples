@@ -1,0 +1,3 @@
+[submodule "training/DeepSpeed-Domino/Megatron-LM"]
+	path = training/DeepSpeed-Domino/Megatron-LM
+	url = https://github.com/NVIDIA/Megatron-LM.git
