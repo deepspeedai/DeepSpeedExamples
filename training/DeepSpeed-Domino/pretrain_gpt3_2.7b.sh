@@ -40,7 +40,7 @@ GPT_ARGS="
     --micro-batch-size 64 \
     --global-batch-size 64 \
     --lr 0.00015 \
-    --train-iters 10 \
+    --train-iters 100 \
     --lr-decay-iters 320000 \
     --lr-decay-style cosine \
     --min-lr 1.0e-5 \
@@ -61,6 +61,7 @@ DATA_ARGS="
  
 OUTPUT_ARGS="
     --log-interval 1 \
+    --eval-iters 1
 "
 
 cmd="deepspeed --num_gpus $WORLD_SIZE \
