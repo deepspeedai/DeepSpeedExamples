@@ -12,13 +12,15 @@ NNODES=1
 NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
  
-CHECKPOINT_PATH=checkpoint
-rm -rf $CHECKPOINT_PATH/*
-VOCAB_FILE="dataset/gpt2-vocab.json"
-MERGE_FILE="dataset/gpt2-merges.txt"
-DATA_PATH="dataset/my-gpt2_text_document"
+# CHECKPOINT_PATH=checkpoint
+# rm -rf $CHECKPOINT_PATH/*
+VOCAB_FILE="/home/code/dataset/gpt2-vocab.json"
+MERGE_FILE="/home/code/dataset/gpt2-merges.txt"
+DATA_PATH="/home/code/dataset/BookCorpusDataset_text_document"
+
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$SCRIPT_DIR/Megatron-LM"
 export PYTHONPATH=$SCRIPT_DIR:$PYTHONPATH
 
 DISTRIBUTED_ARGS="

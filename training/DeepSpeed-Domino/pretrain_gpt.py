@@ -3,16 +3,17 @@
 
 import time
 import torch
-from domino.utils import print_rank_0
-from domino.initialize import initialize_domino, set_jit_fusion_options
-from domino.arguments import get_args, core_transformer_config_from_args
-from domino.data.gpt_dataset import build_train_valid_test_datasets
-from domino.training import pretrain
-from domino.modules.module import DominoModule
-from domino.modules.enums import AttnMaskType
+from megatron import get_args
+from megatron.utils import print_rank_0
+from megatron.initialize import initialize_megatron, set_jit_fusion_options
+from megatron.arguments import core_transformer_config_from_args
+from megatron.data.gpt_dataset import build_train_valid_test_datasets
+from megatron.training import pretrain
+from megatron.model.module import MegatronModule
+from megatron.model.enums import AttnMaskType
 from domino.language_model import parallel_lm_logits
 from domino.language_model import get_language_model
-from domino.tensor_parallel.cross_entropy import vocab_parallel_cross_entropy
+from megatron.core.tensor_parallel.cross_entropy import vocab_parallel_cross_entropy
 
 
 _TRAIN_START_TIME = time.time()
@@ -25,7 +26,7 @@ def post_language_model_processing(lm_output, labels, logit_weights, parallel_ou
     return loss
 
 
-class GPTModel(DominoModule):
+class GPTModel(MegatronModule):
     def __init__(
         self,
         config,
@@ -76,10 +77,12 @@ class GPTModel(DominoModule):
             return lm_output
 
 def main():
-    initialize_domino()
+
+    initialize_megatron(extra_args_provider=None,
+                        args_defaults={'tokenizer_type': 'GPT2BPETokenizer'})
 
     # Set pytorch JIT layer fusion options and warmup JIT functions.
-    set_jit_fusion_options()
+    # set_jit_fusion_options()
 
     # Adjust the startup time so it reflects the largest value.
     # This will be closer to what scheduler will see (outside of
