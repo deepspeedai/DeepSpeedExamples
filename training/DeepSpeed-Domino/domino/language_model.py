@@ -127,6 +127,7 @@ class TransformerLanguageModel(DominoModule):
         self.init_method = config.init_method
         self.encoder_attn_mask_type = encoder_attn_mask_type
         self.encoder_hidden_state = None
+        self.input_split_dim = config.input_split_dim
 
         if self.pre_process:
             self.embedding = Embedding(self.hidden_size,
@@ -177,17 +178,30 @@ class TransformerLanguageModel(DominoModule):
 
         encoder_out_size = encoder_input.shape
         p_batch_size = encoder_out_size[1] // 2
+        p_seq_size = encoder_out_size[0] // 2
         dtype = encoder_input.dtype
         encoder_output_t = torch.empty(encoder_out_size, dtype=dtype, device=torch.cuda.current_device())
         intra_partitions = 2
-        encoder_inputs = torch.tensor_split(encoder_input, intra_partitions, dim=1)
+        if self.input_split_dim == 'batch':
+            encoder_inputs = torch.tensor_split(encoder_input, intra_partitions, dim=1)
+        elif self.input_split_dim == 'seq':
+            encoder_inputs = torch.tensor_split(encoder_input, intra_partitions, dim=0)
+        else:
+            raise NotImplementedError
         encoder_outputs = self.encoder(
             encoder_inputs,
             enc_attn_mask,
             rotary_pos_emb=rotary_pos_emb)
-        encoder_output_t[:, 0:p_batch_size, :] = encoder_outputs[0]
-        encoder_output_t[:, p_batch_size:2*p_batch_size, :] = encoder_outputs[1]
+        
+        if self.input_split_dim == 'batch':
+            encoder_output_t[:, 0:p_batch_size, :] = encoder_outputs[0]
+            encoder_output_t[:, p_batch_size:2*p_batch_size, :] = encoder_outputs[1]
+        elif self.input_split_dim == 'seq':
+            encoder_output_t[0:p_seq_size, :, :] = encoder_outputs[0]
+            encoder_output_t[p_seq_size:2*p_seq_size, :, :] = encoder_outputs[1]
+        else:
+            raise NotImplementedError
+        
         encoder_output = encoder_output_t
-
         return encoder_output
         
