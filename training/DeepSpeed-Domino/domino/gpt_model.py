@@ -1,6 +1,6 @@
-# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
+# This file is adapted from gpt_model.py in Megatron-LM
 
-"""GPT-2 model."""
+# Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
 import torch
 

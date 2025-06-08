@@ -1,6 +1,20 @@
-# Domino Example
+# Running Tensor Parallel Training with Domino
 
-## Install Dependency Libraries
+This example demonstrates how to use Domino for tensor parallel training with large language models such as GPT-3. The setup has been validated on:
+
+ - NVIDIA H200 GPUs using the Docker image: `nvcr.io/nvidia/pytorch:24.12-py3`
+
+ - AMD MI300 GPUs using the Docker image: `rocm/pytorch:rocm6.3.4_ubuntu22.04_py3.10_pytorch_release_2.4.0`
+
+You can pull the same docker images using the following commands:
+
+```
+docker pull nvcr.io/nvidia/pytorch:24.12-py3 
+
+docker pull rocm/pytorch:rocm6.3.4_ubuntu22.04_py3.10_pytorch_release_2.4.0
+```
+
+## Install Dependencies
 ```
 pip install -r requirements.txt
 ```
@@ -8,74 +22,65 @@ pip install -r requirements.txt
 ## Prepare the Dataset
 Follow the instructions from [Megatron-DeepSpeed](https://github.com/deepspeedai/Megatron-DeepSpeed/tree/main/examples_deepspeed/universal_checkpointing#download-and-pre-process-training-dataset) to prepare the training dataset.
 
-## Execute Domino Training
+## Launch Training with Domino
 
-To start training, adjust the following parameters in the script as needed:
+Adjust the following parameters in the script as needed:
 
 - **GPUS_PER_NODE**: Number of GPUs per node.
-- **CHECKPOINT_PATH**: Path to the checkpoint, if applicable.
 - **VOCAB_FILE**, **MERGE_FILE**, **DATA_PATH**: Paths to the dataset files.
 - **--micro-batch-size**: Batch size per GPU.
 
-### Available Models and Scripts
+### Supported Models and Scripts
 
 | Model      | Script                   |
 |------------|--------------------------|
-| GPT-3 2.7B | `pretrain_gpt3_2.7b.sh`  |
 | GPT-3 6.7B | `pretrain_gpt3_6.7b.sh`  |
-| LLaMA 7B   | `pretrain_llama_7b.sh`   |
-| LLaMA 13B  | `pretrain_llama_13b.sh`  |
+| GPT-3 13B | `pretrain_gpt3_13b.sh`  |
+
+
 
 ### Example
 
-To train the GPT-3 2.7B model, run the following command:
+To train the GPT-3 13B model, run the following command:
 
 ```bash
-bash pretrain_gpt3_2.7b.sh
+bash pretrain_gpt3_13b.sh
 ```
 
-The output should look like this:
+Sample output during training:
 
 ```
-training ...
-iteration: 1 | loss: 11.318 | iteration time (ms): 2174.0469932556152
-iteration: 2 | loss: 11.307 | iteration time (ms): 1414.4024848937988
-iteration: 3 | loss: 11.323 | iteration time (ms): 1385.9455585479736
-iteration: 4 | loss: 11.310 | iteration time (ms): 1475.5175113677979
-iteration: 5 | loss: 11.306 | iteration time (ms): 1395.7207202911377
-iteration: 6 | loss: 11.315 | iteration time (ms): 1392.2104835510254
-iteration: 7 | loss: 11.314 | iteration time (ms): 1402.6703834533691
-iteration: 8 | loss: 11.309 | iteration time (ms): 1450.613260269165
-iteration: 9 | loss: 11.305 | iteration time (ms): 1473.1688499450684
-iteration: 10 | loss: 11.320 | iteration time (ms): 1398.4534740447998
-[2024-11-04 15:32:30,918] [INFO] [launch.py:351:main] Process 73015 exits successfully.
-[2024-11-04 15:32:30,918] [INFO] [launch.py:351:main] Process 73017 exits successfully.
-[2024-11-04 15:32:30,919] [INFO] [launch.py:351:main] Process 73014 exits successfully.
-[2024-11-04 15:32:30,919] [INFO] [launch.py:351:main] Process 73016 exits successfully.
+...
+iteration: 30 | loss: 10.120 | iteration time (ms): 528.60 
+iteration: 31 | loss: 9.984 | iteration time (ms): 527.02 
+iteration: 32 | loss: 9.751 | iteration time (ms): 521.55 
+iteration: 33 | loss: 9.496 | iteration time (ms): 525.22 
+iteration: 34 | loss: 9.510 | iteration time (ms): 523.22 
+iteration: 35 | loss: 9.551 | iteration time (ms): 527.20 
+iteration: 36 | loss: 9.549 | iteration time (ms): 525.23 
+iteration: 37 | loss: 9.204 | iteration time (ms): 527.17 
+iteration: 38 | loss: 9.215 | iteration time (ms): 524.86 
+iteration: 39 | loss: 9.091 | iteration time (ms): 525.64 
+iteration: 40 | loss: 8.950 | iteration time (ms): 523.91 
+iteration: 41 | loss: 8.773 | iteration time (ms): 527.28 
+iteration: 42 | loss: 8.867 | iteration time (ms): 523.56 
+iteration: 43 | loss: 8.705 | iteration time (ms): 524.88 
+iteration: 44 | loss: 8.815 | iteration time (ms): 523.07 
+iteration: 45 | loss: 8.655 | iteration time (ms): 525.73 
+iteration: 46 | loss: 8.740 | iteration time (ms): 525.80 
+iteration: 47 | loss: 8.821 | iteration time (ms): 523.97 
+iteration: 48 | loss: 8.625 | iteration time (ms): 524.56 
+iteration: 49 | loss: 8.520 | iteration time (ms): 524.56 
+iteration: 50 | loss: 8.488 | iteration time (ms): 521.91 
+...
 ```
+### Running on AMD GPUs
 
-## Advanced Usage
-You can compile Pytorch and Apex from source for better performance.
+To run on AMD hardware, you must comment out lines 144–162 in the `initialize.py` file within the Megatron submodule. These lines attempt to locate the `nvcc` compiler, which is not available in AMD environments. This change does not impact performance, as fused kernels are not loaded from this location in current implementations.
 
-### Compile PyTorch from Source
-Compile PyTorch from source could enable JIT script.
-```
-git clone -b v2.1.0 https://github.com/pytorch/pytorch.git
-git submodule sync
-git submodule update --init --recursive
-conda install cmake ninja
-pip install -r requirements.txt
-conda install intel::mkl-static intel::mkl-include
-conda install -c pytorch magma-cuda121 # or the magma-cuda* that matches your CUDA version from https://anaconda.org/pytorch/repo
-export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
-python setup.py develop
 
-# Build torchvision
-git clone https://github.com/pytorch/vision.git
-python setup.py develop
-```
 
-## Build Apex
+## Build Apex from source
 ```
 git clone https://github.com/NVIDIA/apex
 cd apex

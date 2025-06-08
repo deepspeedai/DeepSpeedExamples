@@ -1,3 +1,5 @@
+# This file is adapted from language_model.py in Megatron-LM
+
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
 """Transformer based language model."""
@@ -409,20 +411,6 @@ class TransformerLanguageModel(MegatronModule):
         else:
             self.encoder = None
 
-        # Decoder (usually set to False, True if part of an encoder-decoder
-        # architecture and in decoder-only stage).
-        if self.add_decoder:
-            self.decoder = ParallelTransformer(
-                config,
-                model_type=args.model_type,
-                layer_type=LayerType.decoder,
-                self_attn_mask_type=self.decoder_attn_mask_type,
-                pre_process=self.pre_process,
-                post_process=self.post_process)
-            self._decoder_key = 'decoder'
-        else:
-            self.decoder = None
-
         if self.post_process:
             # Pooler.
             if self.add_pooler:
@@ -440,32 +428,7 @@ class TransformerLanguageModel(MegatronModule):
 
     def set_input_tensor(self, input_tensor):
         """ See megatron.model.transformer.set_input_tensor()"""
-
         pass
-        # This is usually handled in schedules.py but some inference code still
-        # gives us non-lists or None
-        # if not isinstance(input_tensor, list):
-        #     input_tensor = [input_tensor]
-
-        # if self.add_encoder and self.add_decoder:
-        #     assert len(input_tensor) == 1, \
-        #         'input_tensor should only be length 1 for stage with both encoder and decoder'
-        #     self.encoder.set_input_tensor(input_tensor[0])
-        # elif self.add_encoder:
-        #     assert len(input_tensor) == 1, \
-        #         'input_tensor should only be length 1 for stage with only encoder'
-        #     self.encoder.set_input_tensor(input_tensor[0])
-        # elif self.add_decoder:
-        #     if len(input_tensor) == 2:
-        #         self.decoder.set_input_tensor(input_tensor[0])
-        #         self.encoder_hidden_state = input_tensor[1]
-        #     elif len(input_tensor) == 1:
-        #         self.decoder.set_input_tensor(None)
-        #         self.encoder_hidden_state = input_tensor[0]
-        #     else:
-        #         raise Exception('input_tensor must have either length 1 or 2')
-        # else:
-        #     raise Exception('Stage must have at least either encoder or decoder')
 
     def forward(self, enc_input_ids, enc_position_ids, enc_attn_mask,
                 dec_input_ids=None, dec_position_ids=None, dec_attn_mask=None,
@@ -505,20 +468,11 @@ class TransformerLanguageModel(MegatronModule):
         # print(encoder_input)
         if enc_hidden_states is None:
             if self.encoder is not None:
-                # encoder_out_size = encoder_input.shape
-                # p_batch_size = encoder_out_size[1] // 2
-                # dtype = encoder_input.dtype
-                # encoder_output_t = torch.zeros(encoder_out_size, dtype=dtype, device=torch.cuda.current_device())
-                # encoder_output_t = torch.empty(encoder_out_size, dtype=dtype, device=torch.cuda.current_device())
-                # intra_partitions = 2
-                # encoder_inputs = torch.tensor_split(encoder_input, intra_partitions, dim=1)
+
                 encoder_output = self.encoder(
                     encoder_input,
                     enc_attn_mask,
                     rotary_pos_emb=rotary_pos_emb)
-                # encoder_output_t[:, 0:p_batch_size, :] = encoder_outputs[0]
-                # encoder_output_t[:, p_batch_size:2*p_batch_size, :] = encoder_outputs[1]
-                # encoder_output = encoder_output_t
             else:
                 encoder_output = self.encoder_hidden_state
         else:

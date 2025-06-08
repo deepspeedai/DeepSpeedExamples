@@ -1,3 +1,5 @@
+# This file is adapted from training.py in Megatron-LM
+
 """Pretrain utilities."""
 
 from datetime import datetime
@@ -41,9 +43,9 @@ from megatron.utils import report_memory
 from torch.profiler import profile, ProfilerActivity
 
 def is_rank_0():
-    # if torch.cuda.current_device() == 0:
     if torch.distributed.get_rank() == 0:
         return True
+    return False
 
 def pretrain(model_builder,
              dataset_builder,
@@ -226,19 +228,6 @@ def get_model(model_builder, model_type=ModelType.encoder_or_decoder, wrap_with_
     # Fp16 conversion.
     if args.fp16 or args.bf16:
         model = Float16Module(model, args)
-    # Fp16 conversion.
-    # if args.fp16 or args.bf16:
-    #     model = [Float16Module(model_module, args) for model_module in model]
-
-
-    # from .transformer import ParallelTransformerLayer
-    # graphs = []
-    # for m in model:
-    #     for i, module in enumerate(m.modules()):
-    #         if isinstance(module, ParallelTransformerLayer):      
-    #             # print("Building CUDA graph for transformer layer", i)
-    #             module.build_cuda_graph()
-    #             # graphs.append(module.g_)
 
     if wrap_with_ddp:
         if args.DDP_impl == 'local':
@@ -423,22 +412,19 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
 
-    # timers('ite-time', log_level=0).start(barrier=True)
     num_prof_iter = 0
     total_time = 0.0
     start_iter = 40
     time_list = []
 
     # def trace_handler(prof):
-    #     # output = prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=10)
-    #     # print(output)
     #     if is_rank_0():
-    #         prof.export_chrome_trace(f"/home/code/profile/8MI300_GPT_13b_b16s1024_hw_gpt3_async_1stmlp.json")
+    #         prof.export_chrome_trace(f"/home/code/profile/8MI300_GPT_13b_b16s1024.json")
 
     # with profile(
     #     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
     #     record_shapes=True,
-    #     schedule=torch.profiler.schedule(wait=40, warmup=2, active=3),
+    #     schedule=torch.profiler.schedule(wait=40, warmup=2, active=2),
     #     on_trace_ready=trace_handler
     # ) as prof:
     if True:
@@ -476,7 +462,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
             # ite_time = timers('ite-time').elapsed(barrier=True)
             if iteration % args.log_interval == 0 and is_rank_0():
                 loss = loss_dict['lm loss'].item()
-                print( 'iteration: {} | loss: {:.3f} | iteration time (ms): {} '.format(iteration, loss, ite_time))
+                print( 'iteration: {} | loss: {:.3f} | iteration time (ms): {:.2f} '.format(iteration, loss, ite_time))
                 # loss_scale = optimizer.cur_scale
                 # lr = optimizer.param_groups[0]['lr']
                 # print( 'lr: {} loss scale: {:.1f} |'.format(lr, loss_scale))'
@@ -485,155 +471,6 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
         print("Average time of the last", args.train_iters - start_iter,  "iterations time(ms): ", total_time/num_prof_iter)
         print("Min iteration time: ", min(time_list))
     return iteration
-
-# def train(forward_step_func, model, optimizer, opt_param_scheduler,
-#           train_data_iterator, valid_data_iterator, config):
-#     """Train the model function."""
-#     args = get_args()
-#     timers = get_timers()
-
-#     # Write args to tensorboard
-#     write_args_to_tensorboard()
-#     # def count_params(model, is_human: bool = False):
-#     #     params: int = sum(p.numel() for p in model.parameters() if p.requires_grad)
-#     #     return f"{params / 1e6:.2f}M" if is_human else params
-
-#     # print("Total # of params:", count_params(model, is_human=True))
-#     # Turn on training mode which enables dropout.
-#     model.train()
-
-#     # Tracking loss.
-#     total_loss_dict = {}
-
-#     # Iterations.
-#     iteration = args.iteration
-
-#     # Setup some training config params
-#     config.grad_scale_func = optimizer.scale_loss
-#     config.timers = timers
-
-#     timers('interval-time', log_level=0).start(barrier=True)
-#     print_datetime('before the start of training step')
-#     report_memory_flag = False #True
-
-#     # def trace_handler(prof):
-#     #     # output = prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=10)
-#     #     # print(output)
-#     #     if is_rank_0():
-#     #         prof.export_chrome_trace(f"./traces/1node_13b_mb8_domino_flash-attn.json")
-
-#     # with profile(
-#     #     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-#     #     record_shapes=True,
-#     #     schedule=torch.profiler.schedule(wait=30, warmup=2, active=3),
-#     #     on_trace_ready=trace_handler
-#     # ) as prof:
-#     if True:
-#         while iteration < args.train_iters:
-#             if args.profile and \
-#                     iteration == args.profile_step_start and \
-#                     torch.distributed.get_rank() in args.profile_ranks:
-#                 torch.cuda.cudart().cudaProfilerStart()
-#                 torch.autograd.profiler.emit_nvtx(
-#                     record_shapes=True).__enter__()
-
-#             update_num_microbatches(args.consumed_train_samples)
-#             args.curr_iteration = iteration
-#             loss_dict, skipped_iter, grad_norm, num_zeros_in_grad = \
-#                 train_step(forward_step_func,
-#                            train_data_iterator,
-#                            model,
-#                            optimizer,
-#                            opt_param_scheduler,
-#                            config)
-#             iteration += 1
-#             # prof.step()
-#             args.consumed_train_samples += mpu.get_data_parallel_world_size() * \
-#                 args.micro_batch_size * \
-#                 get_num_microbatches()
-
-#             # Logging.
-#             loss_scale = optimizer.get_loss_scale().item()
-#             params_norm = None
-#             if args.log_params_norm:
-#                 params_norm = calc_params_l2_norm(model)
-#             report_memory_flag = training_log(loss_dict, total_loss_dict,
-#                                               optimizer.param_groups[0]['lr'],
-#                                               iteration, loss_scale,
-#                                               report_memory_flag, skipped_iter,
-#                                               grad_norm, params_norm, num_zeros_in_grad)#, model)
-
-#             # Evaluation
-#             if args.eval_interval and iteration % args.eval_interval == 0 and \
-#                     args.do_valid:
-#                 prefix = 'iteration {}'.format(iteration)
-#                 evaluate_and_print_results(prefix, forward_step_func,
-#                                            valid_data_iterator, model,
-#                                            iteration, config, False)
-            
-#             # Checkpointing
-#             saved_checkpoint = False
-#             if args.exit_signal_handler:
-#                 signal_handler = get_signal_handler()
-#                 if any(signal_handler.signals_received()):
-#                     save_checkpoint_and_time(iteration, model, optimizer,
-#                                              opt_param_scheduler)
-#                     print_datetime('exiting program after receiving SIGTERM.')
-#                     sys.exit()
-
-#             if args.save and args.save_interval and \
-#                     iteration % args.save_interval == 0:
-#                 save_checkpoint_and_time(iteration, model, optimizer,
-#                                          opt_param_scheduler)
-#                 saved_checkpoint = True
-
-#             if args.profile and \
-#                     iteration == args.profile_step_end and \
-#                     torch.distributed.get_rank() in args.profile_ranks:
-#                 torch.cuda.cudart().cudaProfilerStop()
-
-#     return iteration
-
-
-def is_rank_0():
-    # if torch.cuda.current_device() == 0:
-    if torch.distributed.get_rank() == 0:
-        return True
-
-# def get_parameters_in_billions(model):
-#     gpus_per_model = torch.distributed.get_world_size(group=mpu.get_model_parallel_group())
-
-#     approx_parameters_in_billions = sum([sum([p.ds_numel if hasattr(p,'ds_id') else  p.nelement() for p in model_module.parameters()])
-#                                         for model_module in model])
-
-#     return approx_parameters_in_billions*gpus_per_model/(1e9)
-
-# def throughput_calculator(model, args, iteration_time, total_iterations):
-#     batch_size = args.micro_batch_size * get_num_microbatches() * args.data_parallel_size
-#     # approx_parameters_in_billions = None if (model is None) else get_parameters_in_billions(model)
-#     elapsed_time_per_iter = iteration_time/total_iterations
-#     samples_per_second = batch_size / elapsed_time_per_iter
-
-#     #flops calculator
-#     hidden_size = args.hidden_size
-#     num_layers = args.num_layers
-#     vocab_size = args.padded_vocab_size
-
-#     # General TFLOPs formula (borrowed from Equation 3 in Section 5.1 of
-#     # https://arxiv.org/pdf/2104.04473.pdf).
-#     # The factor of 4 is when used with activation check-pointing,
-#     # otherwise it will be 3.
-#     checkpoint_activations_factor = 3
-#     if hasattr(args, 'checkpoint_activations') and args.checkpoint_activations:
-#         checkpoint_activations_factor = 4
-#     if hasattr(args, 'recompute_granularity') and (args.recompute_granularity == 'selective' or args.recompute_granularity == 'full'):
-#         checkpoint_activations_factor = 4
-#     seq_len = args.seq_length
-#     if hasattr(args, 'actual_seq_length'):
-#         seq_len = args.actual_seq_length
-#     flops_per_iteration = (24 * checkpoint_activations_factor * batch_size * seq_len * num_layers * (hidden_size**2)) * (1. + (seq_len / (6. * hidden_size)) + (vocab_size / (16. * num_layers * hidden_size)))
-#     tflops = flops_per_iteration / (elapsed_time_per_iter * args.world_size * (1e12))
-#     return samples_per_second, tflops
 
 
 def training_log(loss_dict, total_loss_dict, learning_rate, iteration,

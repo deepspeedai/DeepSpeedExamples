@@ -5,15 +5,14 @@
 
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 
-GPUS_PER_NODE=2
+GPUS_PER_NODE=8
 MASTER_ADDR=localhost
 MASTER_PORT=6001
 NNODES=1
 NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
  
-# CHECKPOINT_PATH=checkpoint
-# rm -rf $CHECKPOINT_PATH/*
+
 VOCAB_FILE="/home/code/dataset/gpt2-vocab.json"
 MERGE_FILE="/home/code/dataset/gpt2-merges.txt"
 DATA_PATH="/home/code/dataset/BookCorpusDataset_text_document"
@@ -32,13 +31,13 @@ DISTRIBUTED_ARGS="
 "
 
 GPT_ARGS="
-    --num-layers 12 \
-    --hidden-size 2560 \
-    --num-attention-heads 32 \
-    --seq-length 512 \
-    --max-position-embeddings 512 \
-    --micro-batch-size 64 \
-    --global-batch-size 64 \
+    --num-layers 40 \
+    --hidden-size 5120 \
+    --num-attention-heads 64 \
+    --seq-length 1024 \
+    --max-position-embeddings 1024 \
+    --micro-batch-size 16 \
+    --global-batch-size 16 \
     --lr 0.00015 \
     --train-iters 100 \
     --lr-decay-iters 320000 \
@@ -48,6 +47,7 @@ GPT_ARGS="
     --lr-warmup-fraction .01 \
     --clip-grad 1.0 \
     --fp16 \
+    --no-gradient-accumulation-fusion \
     --tensor-model-parallel-size $WORLD_SIZE \
     --seed 3407
 "
@@ -71,5 +71,5 @@ cmd="deepspeed --num_gpus $WORLD_SIZE \
     $OUTPUT_ARGS 
     " 
 
-echo $cmd
+# echo $cmd
 eval $cmd 
