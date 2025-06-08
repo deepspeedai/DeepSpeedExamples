@@ -13,9 +13,9 @@ NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
  
 
-VOCAB_FILE="/home/code/dataset/gpt2-vocab.json"
-MERGE_FILE="/home/code/dataset/gpt2-merges.txt"
-DATA_PATH="/home/code/dataset/BookCorpusDataset_text_document"
+VOCAB_FILE="dataset/gpt2-vocab.json"
+MERGE_FILE="dataset/gpt2-merges.txt"
+DATA_PATH="dataset/BookCorpusDataset_text_document"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 SCRIPT_DIR="$SCRIPT_DIR/Megatron-LM"
