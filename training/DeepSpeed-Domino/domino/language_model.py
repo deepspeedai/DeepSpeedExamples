@@ -1,6 +1,8 @@
 # Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
 # This file is adapted from language_model.py in Megatron-LM
 
+from typing import Literal, Optional
+
 import torch
 from torch import einsum, nn
 from domino.arguments import get_args
@@ -13,6 +15,9 @@ from domino.modules.fused_layer_norm import MixedFusedLayerNorm as fused_layer_n
 from domino.modules.fused_func import bias_dropout_add_fused_train, bias_dropout_add_fused_inference, apply_rotary_pos_emb
 from domino.tensor_parallel.partition import _initialize_affine_weight_gpu, set_tensor_model_parallel_attributes
 from domino.tensor_parallel.partition import ColumnParallelLinear, RowParallelLinearNoComm
+
+from megatron.core.models.common.embeddings.rotary_pos_embedding import RotaryEmbedding
+from megatron.model.utils import get_norm
 
 from deepspeed.runtime.domino.transformer import DominoTransformer
 
@@ -45,12 +50,18 @@ def parallel_lm_logits(input_, word_embeddings_weight, parallel_output,
 def get_language_model(config, num_tokentypes,
                        encoder_attn_mask_type,
                        pre_process=True, post_process=True):
+    args = get_args()
     language_model = TransformerLanguageModel(
         config,
         encoder_attn_mask_type,
         num_tokentypes=num_tokentypes,
         pre_process=pre_process,
-        post_process=post_process
+        post_process=post_process,
+        position_embedding_type=args.position_embedding_type,
+        rotary_percent=args.rotary_percent,
+        rotary_base=args.rotary_base,
+        rope_scaling=args.use_rope_scaling,
+        seq_len_interpolation_factor = args.rotary_seq_len_interpolation_factor,
     )
 
     return language_model
@@ -85,38 +96,18 @@ class Embedding(DominoModule):
         return combined_embeds
 
 
-class RotaryEmbedding(nn.Module):
-    def __init__(self, dim, seq_len_interpolation_factor=None):
-        super().__init__()
-        self.seq_len_interpolation_factor = seq_len_interpolation_factor
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
-        self.register_buffer('inv_freq', inv_freq, persistent=False)
-
-    def forward(self, max_seq_len, offset=0):
-        seq = torch.arange(max_seq_len, device=self.inv_freq.device) + offset
-        if self.seq_len_interpolation_factor is not None:
-            seq = seq.type_as(self.inv_freq)
-            seq *= 1 / self.seq_len_interpolation_factor
-        freqs = einsum('i , j -> i j', seq.type_as(self.inv_freq), self.inv_freq)
-        # first part even vector components, second part odd vector components,
-        #  2 * dim in dimension size
-        emb = torch.cat((freqs, freqs), dim=-1)
-        # emb [seq_length, .., dim]
-        return emb[:, None, None, :]
-
-    # def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
-    #     state_dict.pop(f'{prefix}inv_freq', None)
-    #     return super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
-
-
 class TransformerLanguageModel(DominoModule):
     def __init__(self,
                  config,
                  encoder_attn_mask_type,
                  num_tokentypes=0,
                  pre_process=True,
-                 post_process=True):
-
+                 post_process=True,
+                 position_embedding_type: Literal['learned_absolute', 'rope', 'none'] = 'learned_absolute',
+                 rotary_percent: float = 1.0,
+                 rotary_base: int = 10000,
+                 rope_scaling: bool = False,
+                 seq_len_interpolation_factor: Optional[float] = None,):
         args = get_args()
         super(TransformerLanguageModel, self).__init__(share_embeddings_and_output_weights=True)
 
@@ -127,6 +118,11 @@ class TransformerLanguageModel(DominoModule):
         self.init_method = config.init_method
         self.encoder_attn_mask_type = encoder_attn_mask_type
         self.encoder_hidden_state = None
+        self.position_embedding_type = position_embedding_type
+        self.rotary_percent = rotary_percent
+        self.rotary_base = rotary_base
+        self.rotary_scaling = rope_scaling
+        self.seq_length = config.seq_length
 
         if self.pre_process:
             self.embedding = Embedding(self.hidden_size,
@@ -138,19 +134,18 @@ class TransformerLanguageModel(DominoModule):
         self.use_rotary_position_embeddings = \
             args.position_embedding_type == 'rope'
         if self.use_rotary_position_embeddings:
-            self.seq_length = args.seq_length
-            rotary_dim = args.hidden_size // args.num_attention_heads \
-                if args.kv_channels is None else args.kv_channels
-            if args.rotary_percent < 1.0:
-                rotary_dim = int(rotary_dim * args.rotary_percent)
             self.rotary_pos_emb = RotaryEmbedding(
-                rotary_dim,
-                seq_len_interpolation_factor=args.rotary_seq_len_interpolation_factor
+                kv_channels=config.kv_channels,
+                rotary_percent=rotary_percent,
+                rotary_interleaved=config.rotary_interleaved,
+                seq_len_interpolation_factor=seq_len_interpolation_factor,
+                rotary_base=rotary_base,
+                rope_scaling=rope_scaling,
             )
 
         self.encoder = DominoTransformer(
             config, ModelType.encoder_or_decoder, mpu,
-            fused_layer_norm, _initialize_affine_weight_gpu,
+            get_norm, _initialize_affine_weight_gpu,
             ColumnParallelLinear, RowParallelLinearNoComm, apply_rotary_pos_emb,
             bias_dropout_add_fused_train, bias_dropout_add_fused_inference,
             self_attn_mask_type=self.encoder_attn_mask_type,

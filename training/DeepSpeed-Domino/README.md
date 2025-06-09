@@ -5,7 +5,6 @@
 pip install -r requirements.txt
 ```
 
-## Prepare the Dataset
 Follow the instructions from [Megatron-DeepSpeed](https://github.com/deepspeedai/Megatron-DeepSpeed/tree/main/examples_deepspeed/universal_checkpointing#download-and-pre-process-training-dataset) to prepare the training dataset.
 
 ## Execute Domino Training
@@ -38,16 +37,16 @@ The output should look like this:
 
 ```
 training ...
-iteration: 1 | loss: 11.318 | iteration time (ms): 2174.0469932556152
-iteration: 2 | loss: 11.307 | iteration time (ms): 1414.4024848937988
-iteration: 3 | loss: 11.323 | iteration time (ms): 1385.9455585479736
-iteration: 4 | loss: 11.310 | iteration time (ms): 1475.5175113677979
-iteration: 5 | loss: 11.306 | iteration time (ms): 1395.7207202911377
-iteration: 6 | loss: 11.315 | iteration time (ms): 1392.2104835510254
-iteration: 7 | loss: 11.314 | iteration time (ms): 1402.6703834533691
-iteration: 8 | loss: 11.309 | iteration time (ms): 1450.613260269165
-iteration: 9 | loss: 11.305 | iteration time (ms): 1473.1688499450684
-iteration: 10 | loss: 11.320 | iteration time (ms): 1398.4534740447998
+iteration: 1 | loss: 11.318 | iteration time (ms): 2174.0469932556152 
+iteration: 2 | loss: 11.307 | iteration time (ms): 1414.4024848937988 
+iteration: 3 | loss: 11.323 | iteration time (ms): 1385.9455585479736 
+iteration: 4 | loss: 11.310 | iteration time (ms): 1475.5175113677979 
+iteration: 5 | loss: 11.306 | iteration time (ms): 1395.7207202911377 
+iteration: 6 | loss: 11.315 | iteration time (ms): 1392.2104835510254 
+iteration: 7 | loss: 11.314 | iteration time (ms): 1402.6703834533691 
+iteration: 8 | loss: 11.309 | iteration time (ms): 1450.613260269165 
+iteration: 9 | loss: 11.305 | iteration time (ms): 1473.1688499450684 
+iteration: 10 | loss: 11.320 | iteration time (ms): 1398.4534740447998 
 [2024-11-04 15:32:30,918] [INFO] [launch.py:351:main] Process 73015 exits successfully.
 [2024-11-04 15:32:30,918] [INFO] [launch.py:351:main] Process 73017 exits successfully.
 [2024-11-04 15:32:30,919] [INFO] [launch.py:351:main] Process 73014 exits successfully.
