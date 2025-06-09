@@ -65,7 +65,7 @@ def parse_args():
         "--reward-model",
         type=lambda x: x.replace("facebook/opt-", ""),
         default="350m",
-        choices=("350m"),
+        choices=("350m", ),
         help="Which facebook/opt-* model to use for Reward (step 2)",
     )
     parser.add_argument(

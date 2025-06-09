@@ -1,0 +1,6 @@
+compute_environment: LOCAL_MACHINE
+debug: false
+distributed_type: NO
+main_training_function: main
+mixed_precision: bf16
+use_cpu: false
