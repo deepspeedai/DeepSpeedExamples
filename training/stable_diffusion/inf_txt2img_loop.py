@@ -2,13 +2,15 @@ import deepspeed
 import torch
 import os
 from local_pipeline_stable_diffusion import StableDiffusionPipeline
+from diffusers import DPMSolverMultistepScheduler
 from diffusers import StableDiffusionPipeline as StableDiffusionPipelineBaseline
 import argparse
 
+
 seed = 123450011
 parser = argparse.ArgumentParser()
-parser.add_argument("--ft_model", default="new_sd-distill-v21-10k-1e", type=str, help="Path to the fine-tuned model")
-parser.add_argument("--b_model", default="stabilityai/stable-diffusion-2-1-base", type=str, help="Path to the baseline model")
+parser.add_argument("--finetuned_model", default="./sd-distill-lora-multi-50k-50", type=str, help="Path to the fine-tuned model")
+parser.add_argument("--base_model", default="stabilityai/stable-diffusion-2-1-base", type=str, help="Path to the baseline model")
 parser.add_argument("--out_dir", default="image_out/", type=str, help="Path to the generated images")
 parser.add_argument('--guidance_scale', type=float, default=7.5, help='Guidance Scale')
 parser.add_argument("--use_local_pipe", action='store_true', help="Use local SD pipeline")
@@ -40,17 +42,27 @@ prompts = ["A boy is watching TV",
            "A person holding a cat"]
 
 
-for prompt in prompts:
-    #--- new image
-    pipe_new = StableDiffusionPipeline.from_pretrained(args.ft_model, torch_dtype=torch.float16).to("cuda")
-    generator = torch.Generator("cuda").manual_seed(seed)
-    pipe_new = deepspeed.init_inference(pipe_new, mp_size=world_size, dtype=torch.half)
-    image_new = pipe_new(prompt, num_inference_steps=50, guidance_scale=args.guidance_scale, generator=generator).images[0]
-    image_new.save(args.out_dir+"/NEW__seed_"+str(seed)+"_"+prompt[0:100]+".png")
+# Load the pipelines
+pipe_new = StableDiffusionPipeline.from_pretrained(args.base_model, torch_dtype=torch.float16).to("cuda")
+pipe_baseline = StableDiffusionPipelineBaseline.from_pretrained(args.base_model, torch_dtype=torch.float16).to("cuda")
 
-    #--- baseline image
-    pipe_baseline = StableDiffusionPipelineBaseline.from_pretrained(args.b_model, torch_dtype=torch.float16).to("cuda")
-    generator = torch.Generator("cuda").manual_seed(seed)                                              
-    pipe_baseline = deepspeed.init_inference(pipe_baseline, mp_size=world_size, dtype=torch.half)
-    image_baseline = pipe_baseline(prompt, num_inference_steps=50, guidance_scale=args.guidance_scale, generator=generator).images[0]
-    image_baseline.save(args.out_dir+"/BASELINE_seed_"+str(seed)+"_"+prompt[0:100]+".png")
+pipe_new.scheduler = DPMSolverMultistepScheduler.from_config(pipe_new.scheduler.config)
+pipe_baseline.scheduler = DPMSolverMultistepScheduler.from_config(pipe_baseline.scheduler.config)
+
+# Load the Lora weights
+pipe_new.unet.load_attn_procs(args.finetuned_model)
+
+pipe_new = deepspeed.init_inference(pipe_new, mp_size=world_size, dtype=torch.half)
+pipe_baseline = deepspeed.init_inference(pipe_baseline, mp_size=world_size, dtype=torch.half)
+
+# Generate the images
+for prompt in prompts:
+        #--- baseline image
+        generator = torch.Generator("cuda").manual_seed(seed)
+        image_baseline = pipe_baseline(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+        image_baseline.save(args.out_dir+"BASELINE_seed_"+str(seed)+"_"+prompt[0:100]+".png")
+
+        #--- new image
+        generator = torch.Generator("cuda").manual_seed(seed)
+        image_new = pipe_new(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+        image_new.save(args.out_dir+"NEW_seed_"+str(seed)+"_"+prompt[0:100]+".png")
