@@ -236,8 +236,7 @@ class DeepSpeedPPOTrainer():
         value = self.critic_model.forward_value(**batch,
                                                 return_value_only=True,
                                                 use_cache=False)[:, :-1]
-        critic_loss = self.critic_loss_fn(value[:, start:], old_values[:,
-                                                                       start:],
+        critic_loss = self.critic_loss_fn(value[:, start:], old_values[:, start:],
                                           returns, action_mask[:, start:])
         self.critic_model.backward(critic_loss)
 
