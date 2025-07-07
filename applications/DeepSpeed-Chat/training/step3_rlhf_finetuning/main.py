@@ -594,7 +594,8 @@ def main():
                     "-------------------------------------------------------------------------------------",
                     args.global_rank)
 
-                if args.enable_tensorboard and torch.distributed.get_rank() == 0:
+                if args.enable_tensorboard and torch.distributed.get_rank(
+                ) == 0:
                     writer.add_scalar('reward',
                                       average_reward / inner_iter,
                                       global_step=step)
