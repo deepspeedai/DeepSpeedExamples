@@ -40,15 +40,35 @@ time (ms) | fwd_microstep: 0.31 | bwd_microstep: 15.47 | bwd_inner_microstep: 1.
 ```python
 $ ./run_benchmark.sh
 ...
-+---------+--------------+--------------+-------------------+----------------+-------------+------------+-----------+-----------+--------------------------------+
-|   trial | pin_memory   |   topk_ratio |   update_interval | overlap_step   |   num_steps |   avg_step |   avg_bwd |   avg_fwd |   avg_selective_optimizer_step |
-|---------+--------------+--------------+-------------------+----------------+-------------+------------+-----------+-----------+--------------------------------|
-|       1 | False        |          0.1 |                 2 | False          |          30 |    24.0153 |   12.8377 |   1.91733 |                       0.247    |
-|       1 | False        |          0.1 |                 2 | True           |          28 |   805.425  |   22.5604 |   1.96821 |                       0.345714 |
-|       1 | False        |          0.1 |                 4 | False          |          50 |    14.2108 |   10.9072 |   1.2436  |                       0.1484   |
-|       1 | False        |          0.1 |                 4 | True           |          48 |   459.326  |   16.0385 |   1.30125 |                       0.221667 |
-|       1 | False        |          0.2 |                 2 | False          |          30 |    22.6567 |   12.6463 |   2.421   |                       0.346    |
-|       1 | False        |          0.2 |                 2 | True           |          28 |   817.919  |   22.1079 |   2.06179 |                       0.450714 |
-|       1 | False        |          0.2 |                 4 | False          |          50 |    14.12   |    9.4714 |   1.1766  |                       0.2072   |
-|       1 | False        |          0.2 |                 4 | True           |          48 |   471.339  |   15.945  |   1.2675  |                       0.262292 |...
++---------+--------------+-------------------+----------------+--------------+-----------------+----------------+----------------+-------------------------------------+
+|   trial |   topk_ratio |   update_interval | overlap_step   | pin_memory   |   avg_step (ms) |   avg_bwd (ms) |   avg_fwd (ms) |   avg_selective_optimizer_step (ms) |
+|---------+--------------+-------------------+----------------+--------------+-----------------+----------------+----------------+-------------------------------------|
+|       1 |          0.1 |                 2 | False          | False        |         24.0153 |        12.8377 |        1.91733 |                            0.247    |
+|       1 |          0.1 |                 2 | False          | False        |         22.8293 |        12.5187 |        1.73767 |                            0.258333 |
+|       1 |          0.1 |                 2 | False          | True         |         21.6523 |        10.2863 |        1.97767 |                            0.250333 |
+|       1 |          0.1 |                 4 | False          | False        |         14.2108 |        10.9072 |        1.2436  |                            0.1484   |
+|       1 |          0.1 |                 4 | False          | False        |         13.6408 |        10.8386 |        1.2208  |                            0.1456   |
+|       1 |          0.1 |                 4 | False          | True         |         12.863  |         9.0592 |        1.2148  |                            0.1464   |...
 ```
+
+
+**Notes:** Each row in the table represents the average performance metrics for a specific configuration of ZenFlow’s offloading setup, defined by:
+
+- **`topk_ratio`**: The fraction of parameters selected for offloading during each update.
+- **`update_interval`**: How often (in steps) the offloading state is updated.
+- **`overlap_step`**: Whether overlapping offloading with computation is enabled.
+- **`pin_memory`**: Whether pinned host memory is used to speed up data transfer between CPU and GPU.
+
+The performance metrics include:
+
+- **`avg_step (ms)`**: Total time per training step — the primary measure of end-to-end training performance.
+- **`avg_bwd (ms)`**: Time spent in the backward pass, including gradient computation and allreduce.
+- **`avg_fwd (ms)`**: Time spent in the forward pass.
+- **`avg_selective_optimizer_step (ms)`**: Time spent in the selective optimizer step — indicates overhead introduced by ZenFlow’s offloading logic.
+
+**Tips for Analysis:**
+
+- Lower **`avg_step`** means faster training.
+- Comparing configurations helps identify performance trade-offs (e.g., `pin_memory=True` often reduces transfer latency).
+- A higher **`update_interval`** typically reduces offloading frequency and overhead.
+- Enabling **`overlap_step=True`** can further hide offloading latency behind computation when the model update phase is longer.

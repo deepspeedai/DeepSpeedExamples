@@ -57,9 +57,23 @@ if __name__ == "__main__":
 
     log_file = "zf_benchmark.log"
     df = parse_log_file(log_file)
-    df = df.sort_values(by=["topk_ratio", "update_interval", "overlap_step", "pin_memory"])
+    df = df.sort_values(by=["topk_ratio", "overlap_step", "update_interval",  "pin_memory"])
     cols_to_display = [
-        "trial", "topk_ratio", "update_interval", "overlap_step", "pin_memory", "num_steps",
+        "trial", "topk_ratio", "update_interval", "overlap_step", "pin_memory",
         "avg_step", "avg_bwd", "avg_fwd", "avg_selective_optimizer_step"
     ]
-    print(tabulate(df[cols_to_display], headers="keys", tablefmt="psql", showindex=False))
+
+    headers_with_units = {
+        "trial": "trial",
+        "pin_memory": "pin_memory",
+        "update_interval": "update_interval",
+        "overlap_step": "overlap_step",
+        "topk_ratio": "topk_ratio",
+        "avg_step": "avg_step (ms)",
+        "avg_bwd": "avg_bwd (ms)",
+        "avg_fwd": "avg_fwd (ms)",
+        "avg_selective_optimizer_step": "avg_selective_optimizer_step (ms)"
+
+    }
+    headers = [headers_with_units[col] for col in cols_to_display]
+    print(tabulate(df[cols_to_display], headers=headers, tablefmt="psql", showindex=False))
