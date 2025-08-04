@@ -1,5 +1,5 @@
 {
-    "train_batch_size": 32,
+    "train_batch_size": 8,
     "bf16": { "enabled": true },
     "zero_optimization": {
       "stage": 2,

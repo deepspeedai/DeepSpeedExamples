@@ -17,7 +17,7 @@ DS_CONFIG_JSON="./zf_config.json"
 # Note: LR, batch_size, weight_decay are defined in the config file
 # These parameters are kept for fallback only
 LR=2e-5
-BATCH_SIZE=32
+BATCH_SIZE=8
 WARMUP=0.03
 WEIGHT_DECAY=0.01
 
