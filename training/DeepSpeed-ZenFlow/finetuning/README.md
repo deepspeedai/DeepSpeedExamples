@@ -37,7 +37,7 @@ Edit `zf_config.json` to enable ZenFlow:
 bash finetune_llama.sh
 ```
 
-This runs LLaMA-2 fine-tuning using DeepSpeed + ZenFlow, saving checkpoints to `./alpaca_output`.
+This runs LLaMA-2 fine-tuning on Alpaca-52K using DeepSpeed + ZenFlow, saving checkpoints to `./alpaca_output`.
 
 ## Example Output
 
@@ -59,7 +59,7 @@ Step 13, Loss: 0.2453, Time: 1061.80ms
 ## Key Insight
 Steps like 5，6 and 7 are accumulation steps where ZenFlow overlaps part of the optimizer step in the background. These steps remain fast (~700ms).
 
-Steps 8 performs the remaining part of optimizer step and updates parameters to the GPU (2–2.2s).
+Step 8 performs the remaining part of optimizer step and updates parameters to the GPU (2–2.2s).
 
 Without ZenFlow, a full update would take nearly 4 seconds, and ZenFlow distributes half of this cost across earlier accumulation steps via asynchronous overlap.
 
@@ -72,7 +72,7 @@ This demonstrates how ZenFlow hides much of the CPU offload cost, enabling near 
 
 ## Citation
 
-To cite DeepSpeed Chat, please cite our [arxiv report](https://arxiv.org/abs/2505.12242):
+To cite ZenFlow, please cite our [arxiv report](https://arxiv.org/abs/2505.12242):
 
 ```bib
 @misc{lan2025zenflowenablingstallfreeoffloading,
