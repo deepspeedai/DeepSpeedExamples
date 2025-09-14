@@ -96,7 +96,7 @@ Logs, DeepSpeed configs, and outputs are written beside the script location (e.g
 If you use SuperOffload, please cite:
 
 ```bib
-@inproceedings{autotm,
+@inproceedings{superoffload,
     author = {Xinyu Lian and Masahiro Tanaka and Olatunji Ruwase and Minjia Zhang},
     title = "{SuperOffload: Unleashing the Power of Large-Scale LLM Training on Superchips}",
     year = {2026},
