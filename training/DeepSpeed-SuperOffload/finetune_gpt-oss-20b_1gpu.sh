@@ -104,7 +104,7 @@ fi
 # Set number of GPUs
 GPUS_PER_NODE=1
 
-CMD="CUDA_VISIBLE_DEVICES=1 deepspeed --bind_cores_to_rank --bind_core_list 72-143 finetune_zero3.py \
+CMD="deepspeed --num_gpus=$GPUS_PER_NODE finetune_zero3.py \
     --deepspeed_config=$DS_CONFIG_JSON \
     --model_name $MODEL_NAME \
     --leaf_module "GptOssExperts" \
