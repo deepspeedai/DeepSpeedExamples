@@ -11,11 +11,17 @@ With common sequence length and batch size, SuperOffload can deliver up to ~500 
 
 ## Quick Start
 
-### 1. No custom model code required
+### 1. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. No custom model code required
 
 All examples use Hugging Face Transformers and DeepSpeed ZeRO Stage 3, no custom modeling code required.
 
-### 2. Enable SuperOffload (one line)
+### 3. Enable SuperOffload (one line)
 
 Add the `super_offload` flag to the `offload_optimizer` block in the ZeRO Stage 3 DeepSpeed config:
 
@@ -34,7 +40,7 @@ Add the `super_offload` flag to the `offload_optimizer` block in the ZeRO Stage 
 
 To fall back to ZeRO-Offload, remove `"super_offload": true` (and optionally `cpuadam_cores_perc`).
 
-### 3. Run a fine-tuning script
+### 4. Run a fine-tuning script
 
 Fine-tune GPT-OSS-20B (1× GH200):
 
