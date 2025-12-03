@@ -13,24 +13,37 @@ if [ "$ZERO_STAGE" == "" ]; then
 fi
 mkdir -p $OUTPUT
 
-deepspeed main.py \
-   --data_path Dahoas/rm-static Dahoas/full-hh-rlhf Dahoas/synthetic-instruct-gptj-pairwise yitingxie/rlhf-reward-datasets \
-   --data_split 2,4,4 \
-   --model_name_or_path meta-llama/Llama-2-7b-hf \
-   --per_device_train_batch_size 4 \
-   --per_device_eval_batch_size 4 \
-   --max_seq_len 512 \
-   --learning_rate 9.65e-6 \
-   --weight_decay 0. \
-   --num_train_epochs 4  \
-   --gradient_accumulation_steps 1 \
-   --lr_scheduler_type cosine \
-   --num_warmup_steps 0 \
-   --seed 1234 \
-   --gradient_checkpointing \
-   --zero_stage $ZERO_STAGE \
-   --deepspeed \
-   --lora_dim 128 \
-   --lora_module_name "layers." \
-   --output_dir $OUTPUT \
-   &> $OUTPUT/training.log
+# nsys profile --output=nsight_reports/llama2_mem \
+deepspeed --master_port=29600 main.py \
+    --offload \
+    --offload_optimizer_device nvme \
+    --offload_optimizer_nvme_path /mnt/nvme2/deepspeed \
+    --offload_optimizer_pin_memory true \
+    --offload_optimizer_ratio 0.3 \
+    --offload_optimizer_buffer_count 4 \
+    --offload_optimizer_fast_init false \
+    --dtype bf16 \
+    --data_path Dahoas/rm-static \
+    --data_split 2,4,4 \
+    --model_name_or_path meta-llama/Llama-2-7b-hf \
+    --per_device_train_batch_size 4 \
+    --per_device_eval_batch_size 4 \
+    --max_seq_len 512 \
+    --learning_rate 9.65e-6 \
+    --weight_decay 0. \
+    --num_train_epochs 4  \
+    --gradient_accumulation_steps 1 \
+    --lr_scheduler_type cosine \
+    --num_warmup_steps 0 \
+    --seed 1234 \
+    --gradient_checkpointing \
+    --zero_stage $ZERO_STAGE \
+    --deepspeed \
+    --lora_dim 128 \
+    --lora_module_name "layers." \
+    --data_output_path /tmp/data_files2 \
+    --output_dir $OUTPUT
+
+
+   
+#    &> $OUTPUT/training.log

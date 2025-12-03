@@ -22,7 +22,8 @@ def get_train_ds_config(offload,
                         enable_tensorboard=False,
                         enable_mixed_precision_lora=False,
                         tb_path="",
-                        tb_name=""):
+                        tb_name="",
+                        offload_optimizer_config=None):
 
     device = "cpu" if offload else "none"
     if dtype == "fp16":
@@ -45,6 +46,8 @@ def get_train_ds_config(offload,
         "stage3_prefetch_bucket_size": 3e7,
         "memory_efficient_linear": False
     }
+    if offload_optimizer_config:
+        zero_opt_dict["offload_optimizer"].update(offload_optimizer_config)
     if enable_mixed_precision_lora:
         zero_opt_dict["zero_quantized_nontrainable_weights"] = True
         if dist.get_world_size() != get_accelerator().device_count():

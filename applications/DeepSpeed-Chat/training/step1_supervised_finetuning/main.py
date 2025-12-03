@@ -5,6 +5,7 @@
 # DeepSpeed Team
 import argparse
 import math
+from pprint import pformat
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -27,6 +28,18 @@ from dschat.utils.ds_utils import get_train_ds_config
 from dschat.utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters, make_model_gradient_checkpointing_compatible
 from dschat.utils.model.model_utils import create_hf_model, causal_lm_model_to_fp32_loss
 from dschat.utils.perf import print_throughput
+
+
+def str2bool(value):
+    if isinstance(value, bool):
+        return value
+    lowered = value.lower()
+    if lowered in ("yes", "true", "t", "1"):
+        return True
+    if lowered in ("no", "false", "f", "0"):
+        return False
+    raise argparse.ArgumentTypeError(
+        f"Boolean value expected, got `{value}`.")
 
 
 def parse_args():
@@ -145,6 +158,31 @@ def parse_args():
     parser.add_argument('--offload',
                         action='store_true',
                         help='Enable ZeRO Offload techniques.')
+    parser.add_argument('--offload_optimizer_device',
+                        type=str,
+                        choices=['cpu', 'nvme'],
+                        default=None,
+                        help='Device to use for ZeRO optimizer state offload.')
+    parser.add_argument('--offload_optimizer_nvme_path',
+                        type=str,
+                        default=None,
+                        help='NVMe path used when offloading optimizer states to nvme.')
+    parser.add_argument('--offload_optimizer_pin_memory',
+                        type=str2bool,
+                        default=None,
+                        help='Whether to pin optimizer offload memory (true|false).')
+    parser.add_argument('--offload_optimizer_ratio',
+                        type=float,
+                        default=None,
+                        help='Ratio of optimizer state to keep on device when offloading.')
+    parser.add_argument('--offload_optimizer_buffer_count',
+                        type=int,
+                        default=None,
+                        help='Number of optimizer offload buffers.')
+    parser.add_argument('--offload_optimizer_fast_init',
+                        type=str2bool,
+                        default=None,
+                        help='Use fast init for optimizer offload buffers (true|false).')
     parser.add_argument('--dtype',
                         type=str,
                         default='fp16',
@@ -222,17 +260,38 @@ def main():
 
     args.global_rank = torch.distributed.get_rank()
 
+    offload_optimizer_overrides = {
+        "device": args.offload_optimizer_device,
+        "nvme_path": args.offload_optimizer_nvme_path,
+        "pin_memory": args.offload_optimizer_pin_memory,
+        "ratio": args.offload_optimizer_ratio,
+        "buffer_count": args.offload_optimizer_buffer_count,
+        "fast_init": args.offload_optimizer_fast_init
+    }
+    offload_optimizer_overrides = {
+        key: value
+        for key, value in offload_optimizer_overrides.items()
+        if value is not None
+    }
     ds_config = get_train_ds_config(offload=args.offload,
                                     dtype=args.dtype,
                                     stage=args.zero_stage,
                                     enable_tensorboard=args.enable_tensorboard,
                                     tb_path=args.tensorboard_path,
-                                    tb_name="step1_model")
+                                    tb_name="step1_model",
+                                    offload_optimizer_config=(
+                                        offload_optimizer_overrides
+                                        if offload_optimizer_overrides else None))
     ds_config[
         'train_micro_batch_size_per_gpu'] = args.per_device_train_batch_size
     ds_config[
         'train_batch_size'] = args.per_device_train_batch_size * torch.distributed.get_world_size(
         ) * args.gradient_accumulation_steps
+
+
+    # It seems that ds_config is completed here, so we print configuration here
+    print_rank_0("***** DeepSpeed config *****", args.global_rank)
+    print_rank_0(pformat(ds_config), args.global_rank)
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
@@ -319,6 +378,7 @@ def main():
         model, args.weight_decay, args.lora_learning_rate)
 
     AdamOptimizer = DeepSpeedCPUAdam if args.offload else FusedAdam
+    print_rank_0(f"offload: {args.offload}", args.global_rank)
     optimizer = AdamOptimizer(optimizer_grouped_parameters,
                               lr=args.learning_rate,
                               betas=(0.9, 0.95))
@@ -348,8 +408,9 @@ def main():
     print_rank_0(
         f"***** Evaluating perplexity, Epoch {0}/{args.num_train_epochs} *****",
         args.global_rank)
-    perplexity, eval_loss = evaluation(model, eval_dataloader)
-    print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
+    print_rank_0("Jump Evaluation", args.global_rank)
+    # perplexity, eval_loss = evaluation(model, eval_dataloader)
+    # print_rank_0(f"ppl: {perplexity}, loss: {eval_loss}", args.global_rank)
 
     for epoch in range(args.num_train_epochs):
         print_rank_0(
@@ -372,6 +433,11 @@ def main():
             if torch.distributed.get_rank() == 0:
                 print_throughput(model.model, args, end - start,
                                  args.global_rank)
+            
+            # return for debugging
+            if step > 20:
+                return 0
+
 
         # Evaluate perplexity on the validation set.
         print_rank_0(
