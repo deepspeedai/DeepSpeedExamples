@@ -183,6 +183,51 @@ def parse_args():
                         type=str2bool,
                         default=None,
                         help='Use fast init for optimizer offload buffers (true|false).')
+    parser.add_argument('--offload_param_device',
+                        type=str,
+                        choices=['cpu', 'nvme'],
+                        default=None,
+                        help='Device to use for ZeRO parameter offload.')
+    parser.add_argument('--offload_param_nvme_path',
+                        type=str,
+                        default=None,
+                        help='NVMe path used when offloading parameters to nvme.')
+    parser.add_argument('--offload_param_pin_memory',
+                        type=str2bool,
+                        default=None,
+                        help='Whether to pin parameter offload memory (true|false).')
+    parser.add_argument('--offload_param_buffer_size',
+                        type=int,
+                        default=None,
+                        help='Parameter offload buffer size (number of elements). Increase if embedding layer is larger than the default.')
+    parser.add_argument('--offload_param_buffer_count',
+                        type=int,
+                        default=None,
+                        help='Number of parameter offload buffers.')
+    parser.add_argument('--aio_block_size',
+                        type=int,
+                        default=1048576,
+                        help='AIO block size for NVMe offload (bytes).')
+    parser.add_argument('--aio_queue_depth',
+                        type=int,
+                        default=8,
+                        help='AIO queue depth for NVMe offload.')
+    parser.add_argument('--aio_intra_op_parallelism',
+                        type=int,
+                        default=1,
+                        help='AIO intra_op_parallelism for NVMe offload.')
+    parser.add_argument('--aio_single_submit',
+                        type=str2bool,
+                        default=False,
+                        help='AIO single_submit flag.')
+    parser.add_argument('--aio_overlap_events',
+                        type=str2bool,
+                        default=True,
+                        help='AIO overlap_events flag.')
+    parser.add_argument('--aio_use_gds',
+                        type=str2bool,
+                        default=False,
+                        help='AIO use_gds flag.')
     parser.add_argument('--dtype',
                         type=str,
                         default='fp16',
@@ -273,6 +318,26 @@ def main():
         for key, value in offload_optimizer_overrides.items()
         if value is not None
     }
+    offload_param_overrides = {
+        "device": args.offload_param_device,
+        "nvme_path": args.offload_param_nvme_path,
+        "pin_memory": args.offload_param_pin_memory,
+        "buffer_size": args.offload_param_buffer_size,
+        "buffer_count": args.offload_param_buffer_count
+    }
+    offload_param_overrides = {
+        key: value
+        for key, value in offload_param_overrides.items()
+        if value is not None
+    }
+    aio_config = {
+        "block_size": args.aio_block_size,
+        "queue_depth": args.aio_queue_depth,
+        "intra_op_parallelism": args.aio_intra_op_parallelism,
+        "single_submit": args.aio_single_submit,
+        "overlap_events": args.aio_overlap_events,
+        "use_gds": args.aio_use_gds,
+    }
     ds_config = get_train_ds_config(offload=args.offload,
                                     dtype=args.dtype,
                                     stage=args.zero_stage,
@@ -281,7 +346,11 @@ def main():
                                     tb_name="step1_model",
                                     offload_optimizer_config=(
                                         offload_optimizer_overrides
-                                        if offload_optimizer_overrides else None))
+                                        if offload_optimizer_overrides else None),
+                                    offload_param_config=(
+                                        offload_param_overrides
+                                        if offload_param_overrides else None),
+                                    aio_config=aio_config)
     ds_config[
         'train_micro_batch_size_per_gpu'] = args.per_device_train_batch_size
     ds_config[
@@ -290,7 +359,7 @@ def main():
 
 
     # It seems that ds_config is completed here, so we print configuration here
-    print_rank_0("***** DeepSpeed config *****", args.global_rank)
+    print_rank_0("***** DeepSpeed User Provided config *****", args.global_rank)
     print_rank_0(pformat(ds_config), args.global_rank)
 
     # If passed along, set the training seed now.
@@ -303,6 +372,9 @@ def main():
     tokenizer = load_hf_tokenizer(args.model_name_or_path,
                                   fast_tokenizer=True,
                                   add_special_tokens=additional_special_tokens)
+
+    print_rank_0("***** Tokenizer *****", args.global_rank)
+    print_rank_0(tokenizer, args.global_rank)
 
     model = create_hf_model(AutoModelForCausalLM,
                             args.model_name_or_path,
@@ -322,6 +394,10 @@ def main():
         if args.only_optimize_lora:
             model = only_optimize_lora_parameters(model)
             model = make_model_gradient_checkpointing_compatible(model)
+
+    # Print full model architecture (rank 0 only to avoid log spam)
+    print_rank_0("***** Model architecture *****", args.global_rank)
+    print_rank_0(model, args.global_rank)
 
     # Prepare the data
     train_phase = 1

@@ -13,15 +13,20 @@ if [ "$ZERO_STAGE" == "" ]; then
 fi
 mkdir -p $OUTPUT
 
-# nsys profile --output=nsight_reports/llama2_mem \
-deepspeed --master_port=29600 main.py \
+CUDA_VISIBLE_DEVICES=0 deepspeed --master_port=29600 main.py \
     --offload \
     --offload_optimizer_device nvme \
-    --offload_optimizer_nvme_path /mnt/nvme2/deepspeed \
+    --offload_optimizer_nvme_path /mnt/nvme0/deepspeed2 \
     --offload_optimizer_pin_memory true \
     --offload_optimizer_ratio 0.3 \
     --offload_optimizer_buffer_count 4 \
     --offload_optimizer_fast_init false \
+    --offload_param_device nvme \
+    --offload_param_nvme_path /mnt/nvme0/deepspeed2 \
+    --offload_param_pin_memory true \
+    --offload_param_buffer_size 200000000 \
+    --offload_param_buffer_count 5 \
+    --aio_use_gds true \
     --dtype bf16 \
     --data_path Dahoas/rm-static \
     --data_split 2,4,4 \
@@ -42,8 +47,5 @@ deepspeed --master_port=29600 main.py \
     --lora_dim 128 \
     --lora_module_name "layers." \
     --data_output_path /tmp/data_files2 \
-    --output_dir $OUTPUT
-
-
-   
-#    &> $OUTPUT/training.log
+    --output_dir $OUTPUT \
+   &> $OUTPUT/training.log
