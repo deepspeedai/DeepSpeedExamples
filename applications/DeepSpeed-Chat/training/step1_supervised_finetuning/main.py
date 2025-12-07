@@ -204,6 +204,10 @@ def parse_args():
                         type=int,
                         default=None,
                         help='Number of parameter offload buffers.')
+    parser.add_argument('--offload_param_max_in_cpu',
+                        type=float,
+                        default=None,
+                        help='Maximum number of parameters to keep in CPU memory during offload.')
     parser.add_argument('--aio_block_size',
                         type=int,
                         default=1048576,
@@ -323,7 +327,8 @@ def main():
         "nvme_path": args.offload_param_nvme_path,
         "pin_memory": args.offload_param_pin_memory,
         "buffer_size": args.offload_param_buffer_size,
-        "buffer_count": args.offload_param_buffer_count
+        "buffer_count": args.offload_param_buffer_count,
+        "max_in_cpu": args.offload_param_max_in_cpu
     }
     offload_param_overrides = {
         key: value
