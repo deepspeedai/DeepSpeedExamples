@@ -16,16 +16,16 @@ mkdir -p $OUTPUT
 CUDA_VISIBLE_DEVICES=0 deepspeed --master_port=29600 main.py \
     --offload \
     --offload_optimizer_device nvme \
-    --offload_optimizer_nvme_path /mnt/nvme0/deepspeed2 \
+    --offload_optimizer_nvme_path /mnt/nvme_deepspeed \
     --offload_optimizer_pin_memory true \
     --offload_optimizer_ratio 0.3 \
     --offload_optimizer_buffer_count 8 \
     --offload_optimizer_fast_init false \
     --offload_param_device nvme \
-    --offload_param_nvme_path /mnt/nvme0/deepspeed2 \
+    --offload_param_nvme_path /mnt/nvme_deepspeed \
     --offload_param_pin_memory true \
-    --offload_param_buffer_size 199950336 \
-    --offload_param_buffer_count 10 \
+    --offload_param_buffer_size 134217728 \
+    --offload_param_buffer_count 32 \
     --offload_param_max_in_cpu 0 \
     --aio_use_gds true \
     --dtype bf16 \
