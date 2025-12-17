@@ -5,6 +5,7 @@
 # DeepSpeed Team
 import argparse
 import math
+import os
 from pprint import pformat
 
 import torch
@@ -309,6 +310,33 @@ def main():
 
     args.global_rank = torch.distributed.get_rank()
 
+    # 根据 local_rank 动态设置 NVMe 路径
+    # 如果命令行参数中已经指定了路径，则使用命令行参数；否则根据 local_rank 设置
+    local_rank = args.local_rank if args.local_rank != -1 else 0
+    
+    # 支持通过环境变量配置 NVMe 路径列表（用冒号分隔）
+    # 例如：export NVME_PATHS="/mnt/deepspeed_nvme0:/mnt/deepspeed_nvme1"
+    nvme_paths_env = os.environ.get('NVME_PATHS', '')
+    if nvme_paths_env:
+        nvme_paths = [path.strip() for path in nvme_paths_env.split(':') if path.strip()]
+        if local_rank < len(nvme_paths):
+            default_nvme_path = nvme_paths[local_rank]
+        else:
+            default_nvme_path = nvme_paths[0] if nvme_paths else None
+    else:
+        # 默认映射：GPU 0 -> /mnt/deepspeed_nvme0, GPU 1 -> /mnt/deepspeed_nvme1, 以此类推
+        default_nvme_path = f"/mnt/deepspeed_nvme{local_rank}"
+    
+    # 如果命令行参数中没有指定 optimizer nvme_path，则使用根据 local_rank 确定的路径
+    if args.offload_optimizer_nvme_path is None and default_nvme_path:
+        args.offload_optimizer_nvme_path = default_nvme_path
+        print_rank_0(f"Rank {args.global_rank} (local_rank {local_rank}) using optimizer NVMe path: {args.offload_optimizer_nvme_path}", args.global_rank)
+    
+    # 如果命令行参数中没有指定 param nvme_path，则使用根据 local_rank 确定的路径
+    if args.offload_param_nvme_path is None and default_nvme_path:
+        args.offload_param_nvme_path = default_nvme_path
+        print_rank_0(f"Rank {args.global_rank} (local_rank {local_rank}) using param NVMe path: {args.offload_param_nvme_path}", args.global_rank)
+
     offload_optimizer_overrides = {
         "device": args.offload_optimizer_device,
         "nvme_path": args.offload_optimizer_nvme_path,
@@ -516,7 +544,7 @@ def main():
                                  args.global_rank)
             
             # return for debugging
-            if step > 20:
+            if step > 5:
                 return 0
 
 
