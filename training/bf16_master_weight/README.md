@@ -10,8 +10,7 @@ This example demonstrates DeepSpeed's [new low-precision training options](https
 
 The following commands run training for 1000 steps on the Wikitext-103 dataset using both the baseline and BF16 low-precision configurations, then generates a loss comparison plot.
 The model has approximately 6.86 billion parameters (hidden=4096, layers=32, heads=32, batch=1, seq=512).
-For BF16 low-precision training, we use `torch.autocast`.
-
+For BF16 low-precision training, we use `torch.autocast`. ZeRO stage is set to 3 for both.
 
 ```bash
 # Run 1000 steps with wikitext dataset
@@ -59,13 +58,16 @@ For a model with N parameters:
 | Component | Baseline | BF16 Low-Precision |
 |-----------|----------|-------------------|
 | Model params | 2N bytes (BF16) | 2N bytes (BF16) |
+| Gradients | 2N bytes (BF16) | 2N bytes (BF16) |
 | Master weights | 4N bytes (FP32) | 2N bytes (BF16) |
-| Gradients | 4N bytes (FP32) | 2N bytes (BF16) |
+| Master Gradients | 4N bytes (FP32) | 2N bytes (BF16) |
 | Adam momentum | 4N bytes (FP32) | 2N bytes (BF16) |
 | Adam variance | 4N bytes (FP32) | 2N bytes (BF16) |
-| **Total** | **18N bytes** | **10N bytes** |
+| **Total** | **20 bytes** | **12N bytes** |
 
-This gives a theoretical ~44% reduction in optimizer-related memory. The actual savings depend on activation memory and other factors, but our results show a very close match to the theoretical savings.
+Note that DeepSpeed ZeRO partitions model states across multiple GPUs. ZeRO Stage 1 partitions master parameters, gradients, and Adam’s momentum and variance. ZeRO Stage 2 additionally partitions gradients. With ZeRO Stage 3, all of these model states are partitioned.
+
+With ZeRO-3, BF16 low-precision configurations provide a theoretical ~40% reduction in optimizer-related memory. Actual savings depend on activation memory and other factors, but our results show a close match to the theoretical estimate.
 
 ## Related Resources
 
