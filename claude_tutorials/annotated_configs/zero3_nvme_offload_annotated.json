@@ -1,0 +1,181 @@
+{
+  // =========================================================================
+  // ZERO-3 with NVMe Offloading Configuration
+  // Original: inference/sglang/ds_offload_nvme_aio.json
+  //
+  // PURPOSE: Offload parameters to NVMe SSD for extremely large models
+  // USE CASE: Models that don't fit in GPU memory OR CPU RAM
+  // EXAMPLE: Training 175B+ models on limited hardware
+  //
+  // MEMORY HIERARCHY:
+  // 1. GPU Memory (fastest, most expensive): Activations, working parameters
+  // 2. CPU Memory (fast, moderate): Optimizer states
+  // 3. NVMe SSD (slower, cheap): Parameters when not in use
+  // =========================================================================
+
+  "zero_optimization": {
+    // -----------------------------------------------------------------------
+    // ZERO STAGE 3: Full parameter + optimizer + gradient partitioning
+    // -----------------------------------------------------------------------
+    "stage": 3,
+    // [EXPLANATION] Each GPU stores only 1/N of model parameters
+    // Parameters are gathered (All-Gather) when needed, then released
+
+    // -----------------------------------------------------------------------
+    // AUTO-TUNING PARAMETERS
+    // -----------------------------------------------------------------------
+    // [ANNOTATION] These "auto" settings let DeepSpeed tune for your hardware
+
+    "stage3_prefetch_bucket_size": "auto",
+    // [EXPLANATION] How many parameters to prefetch ahead of time
+    // Larger = more memory usage, better performance (less waiting)
+    // "auto" = DeepSpeed estimates based on model size
+    // Manual: Set to bytes, e.g., 50000000 (50MB)
+
+    "stage3_param_persistence_threshold": "auto",
+    // [EXPLANATION] Parameters larger than this stay in GPU memory
+    // Small parameters: Repeatedly gathered, better to keep persistent
+    // Large parameters: Rarely used, offload to save memory
+    // "auto" = DeepSpeed estimates based on access patterns
+    // Manual: Set to bytes, e.g., 10000 (10KB)
+
+    "stage3_max_live_parameters": "auto",
+    // [EXPLANATION] Maximum number of parameters to keep in GPU at once
+    // Lower = more memory savings, more communication overhead
+    // Higher = less memory savings, better performance
+    // "auto" = DeepSpeed balances memory vs. speed
+    // Manual: Set to number of parameters, e.g., 1000000000 (1B params)
+
+    // -----------------------------------------------------------------------
+    // PARAMETER OFFLOADING TO NVME
+    // -----------------------------------------------------------------------
+    "offload_param": {
+      "device": "nvme",
+      // [EXPLANATION] Offload parameters to NVMe SSD instead of CPU RAM
+      // Flow: GPU → CPU → NVMe (when parameter not in use)
+      //       NVMe → CPU → GPU (when parameter needed)
+
+      "nvme_path": "/local_nvme/sglang",
+      // [EXPLANATION] Path to NVMe mount point
+      // CRITICAL: Must be local NVMe SSD, NOT network storage
+      // Create this directory before running: mkdir -p /local_nvme/sglang
+      // DeepSpeed will create swap files here
+
+      "pin_memory": true,
+      // [EXPLANATION] Use pinned (page-locked) CPU memory for staging
+      // Enables faster GPU ↔ CPU transfers via DMA
+      // Tradeoff: Pinned memory cannot be swapped to disk
+
+      "buffer_size": "auto",
+      // [EXPLANATION] Size of CPU buffer for staging NVMe ↔ GPU transfers
+      // Larger buffer = more CPU memory used, fewer NVMe I/O operations
+      // "auto" = DeepSpeed tunes based on available memory
+
+      "buffer_count": 5
+      // [EXPLANATION] Number of staging buffers in CPU memory
+      // More buffers = better overlap of I/O and computation
+      // Typical: 3-6 buffers
+      // Memory usage: buffer_count × buffer_size
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // ASYNC I/O (AIO) CONFIGURATION FOR NVME
+  // -------------------------------------------------------------------------
+  "aio": {
+    // [ANNOTATION] Async I/O settings for NVMe transfers
+    // AIO enables non-blocking I/O - GPU continues while NVMe loads data
+
+    "block_size": 8388608,
+    // [EXPLANATION] I/O block size in bytes (8MB in this example)
+    // Larger blocks = fewer I/O operations, better throughput
+    // Must be aligned with NVMe device requirements
+    // Typical: 4MB to 16MB
+    // Formula: 1048576 × N (where N is megabytes)
+
+    "queue_depth": 32,
+    // [EXPLANATION] Number of concurrent I/O requests
+    // Higher queue depth = better NVMe utilization
+    // Typical: 8 to 128
+    // Limited by NVMe drive capability
+
+    "intra_op_parallelism": 8,
+    // [EXPLANATION] Number of threads for parallel I/O operations
+    // More threads = better parallelism for multiple files
+    // Should match or exceed number of CPU cores available
+
+    "single_submit": false,
+    // [EXPLANATION] Submit I/O requests individually or in batches
+    // false = batch submission (better throughput)
+    // true = individual submission (lower latency)
+
+    "overlap_events": true,
+    // [EXPLANATION] Overlap multiple I/O operations
+    // true = Start next I/O before previous completes
+    // Critical for hiding I/O latency
+
+    "use_gds": false
+    // [EXPLANATION] Use NVIDIA GPUDirect Storage (GDS)
+    // GDS allows GPU to read from NVMe directly, bypassing CPU
+    // Requires: NVIDIA GPUDirect Storage drivers + supported NVMe
+    // Performance: 2-3x faster than traditional path (GPU → CPU → NVMe)
+    // See zero3_nvme_offload_gds.json for GDS configuration
+  },
+
+  // -------------------------------------------------------------------------
+  // TRAINING CONFIGURATION
+  // -------------------------------------------------------------------------
+  "train_batch_size": 1
+  // [EXPLANATION] Total batch size across all GPUs
+  // With extreme offloading, start small to test I/O performance
+  // Formula: train_batch_size = micro_batch_size × num_gpus × grad_accum_steps
+
+  // =========================================================================
+  // PERFORMANCE CONSIDERATIONS
+  // =========================================================================
+  //
+  // NVME TRANSFER LATENCY:
+  // - CPU memory: ~10 GB/s
+  // - NVMe SSD: ~3-7 GB/s (PCIe 4.0 NVMe)
+  // - Network storage: ~1 GB/s (DO NOT USE!)
+  //
+  // WHEN TO USE NVME OFFLOAD:
+  // 1. Model doesn't fit in GPU memory + CPU memory combined
+  // 2. Have fast local NVMe storage (not network storage!)
+  // 3. Can accept 2-5x training slowdown for ability to train large models
+  //
+  // OPTIMIZATION TIPS:
+  // 1. Use largest block_size your NVMe supports (8MB-16MB)
+  // 2. Maximize buffer_count (limited by CPU memory)
+  // 3. Enable overlap_events and use_gds if available
+  // 4. Monitor NVMe utilization: iostat -x 1
+  //
+  // EXAMPLE PERFORMANCE (GPT-3 175B):
+  // - Without offload: Out of memory
+  // - CPU offload only: Out of memory (175B × 2 bytes = 350GB RAM needed)
+  // - NVMe offload: ~8 samples/sec on 8x A100 (vs ~25 samples/sec with CPU offload for smaller models)
+  //
+  // =========================================================================
+  // MEMORY CALCULATION
+  // =========================================================================
+  //
+  // Example: 70B parameter model, 8 GPUs, BF16
+  //
+  // GPU Memory per device:
+  //   - Working parameters (1/N): ~70B × 2 bytes / 8 = 17.5 GB
+  //   - Gradients (1/N): 17.5 GB
+  //   - Activations: ~40 GB (depends on sequence length, batch size)
+  //   - Total GPU: ~75 GB (fits in A100-80GB)
+  //
+  // CPU Memory per process:
+  //   - Staging buffers: buffer_size × buffer_count
+  //   - Example: 100MB × 5 = 500MB
+  //   - Optimizer states can also be on CPU (add ~35GB per process if enabled)
+  //
+  // NVMe Storage:
+  //   - Parameters: 70B × 2 bytes = 140 GB
+  //   - Swap file overhead: ~20% = 168 GB total
+  //   - Shared across all processes on same node
+  //
+  // =========================================================================
+}

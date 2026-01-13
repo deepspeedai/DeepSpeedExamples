@@ -1,0 +1,86 @@
+{
+  "train_batch_size": 512,
+  "train_micro_batch_size_per_gpu": 1,
+  "gradient_accumulation_steps": 16,
+  "gradient_clipping": 1.0,
+  "steps_per_print": 50,
+
+  "bf16": {
+    "enabled": true
+  },
+
+  "zero_optimization": {
+    "stage": 3,
+    "overlap_comm": true,
+    "contiguous_gradients": true,
+    "reduce_bucket_size": 100000000,
+    "stage3_prefetch_bucket_size": 100000000,
+    "stage3_param_persistence_threshold": 200000,
+    "stage3_max_live_parameters": 3000000000,
+    "stage3_max_reuse_distance": 3000000000,
+    "stage3_gather_16bit_weights_on_model_save": true,
+
+    "offload_optimizer": {
+      "device": "cpu",
+      "pin_memory": true,
+      "buffer_count": 4,
+      "fast_init": false
+    },
+
+    "offload_param": {
+      "device": "cpu",
+      "pin_memory": true,
+      "buffer_count": 5,
+      "buffer_size": 200000000,
+      "max_in_cpu": 2000000000
+    }
+  },
+
+  "optimizer": {
+    "type": "OneBitAdam",
+    "params": {
+      "lr": 2e-5,
+      "betas": [0.9, 0.999],
+      "eps": 1e-8,
+      "weight_decay": 0.01,
+      "freeze_step": 1000,
+      "cuda_aware": false,
+      "comm_backend_name": "nccl"
+    }
+  },
+
+  "scheduler": {
+    "type": "WarmupDecayLR",
+    "params": {
+      "warmup_min_lr": 0,
+      "warmup_max_lr": 2e-5,
+      "warmup_num_steps": 10000,
+      "warmup_type": "linear",
+      "total_num_steps": 500000
+    }
+  },
+
+  "activation_checkpointing": {
+    "partition_activations": true,
+    "cpu_checkpointing": true,
+    "contiguous_memory_optimization": true,
+    "number_checkpoints": 8,
+    "synchronize_checkpoint_boundary": false,
+    "profile": false
+  },
+
+  "flops_profiler": {
+    "enabled": false,
+    "profile_step": 1,
+    "module_depth": -1,
+    "top_modules": 3,
+    "detailed": true
+  },
+
+  "wall_clock_breakdown": false,
+  "tensorboard": {
+    "enabled": true,
+    "output_path": "./tensorboard_logs/",
+    "job_name": "t5_xl_training"
+  }
+}
