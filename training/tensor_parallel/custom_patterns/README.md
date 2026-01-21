@@ -1,4 +1,5 @@
-# AutoTP custom patterns example
+# AutoTP (Tensor Parallel) Custom Patterns Example
+
 This example extends the minimal AutoTP script with:
 
 - custom layer sharding patterns (`partition_config`)
@@ -10,6 +11,7 @@ AutoTP is enabled by the DeepSpeed config (`tensor_parallel.autotp_size`), so
 you do not need to call any initialization helpers before `deepspeed.initialize`.
 
 ## Key code (custom patterns)
+
 The config below targets **Pythia 6.9B (GPT-NeoX)**, which uses a fused
 `query_key_value` projection. We provide a `shape` so AutoTP can split the
 fused Q/K/V tensor cleanly across tensor-parallel ranks. The MLP uses
