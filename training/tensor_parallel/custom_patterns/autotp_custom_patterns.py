@@ -124,6 +124,11 @@ def parse_args():
     parser.add_argument("--num_steps", type=int, default=20)
     parser.add_argument("--learning_rate", type=float, default=2e-5)
     parser.add_argument("--precision", type=str, default="bf16", choices=["bf16", "fp16", "fp32"])
+    parser.add_argument(
+        "--trust_remote_code",
+        action="store_true",
+        help="Allow loading models with custom code from the Hub.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -165,11 +170,15 @@ def main():
         rank, world_size, args.tp_size, args.dp_size
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=False)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model_name, use_fast=False, trust_remote_code=args.trust_remote_code
+    )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token or tokenizer.unk_token
 
-    model = AutoModelForCausalLM.from_pretrained(args.model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model_name, trust_remote_code=args.trust_remote_code
+    )
     model.config.pad_token_id = tokenizer.pad_token_id
     model = model.to(device)
 

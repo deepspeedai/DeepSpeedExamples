@@ -39,6 +39,7 @@ class ModelParallelUnit:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="AutoTP training example (distilled from verify_autotp).")
+    parser.add_argument("--local_rank", type=int, default=-1, help="Passed by deepspeed/torchrun.")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B")
     parser.add_argument("--tp_size", type=int, default=4)
     parser.add_argument("--dp_size", type=int, default=2)
@@ -76,9 +77,9 @@ def build_tp_dp_groups(rank, world_size, tp_size, dp_size):
     return tp_group, dp_group, tp_rank, dp_rank
 
 
-def broadcast_inputs(input_ids, labels, tp_group):
-    dist.broadcast(input_ids, src=0, group=tp_group)
-    dist.broadcast(labels, src=0, group=tp_group)
+def broadcast_inputs(input_ids, labels, tp_group, tp_src_rank):
+    dist.broadcast(input_ids, src=tp_src_rank, group=tp_group)
+    dist.broadcast(labels, src=tp_src_rank, group=tp_group)
 
 
 def main():
@@ -122,7 +123,8 @@ def main():
             input_ids = torch.empty((args.batch_size, args.seq_length), dtype=torch.long, device=device)
             labels = torch.empty((args.batch_size, args.seq_length), dtype=torch.long, device=device)
 
-        broadcast_inputs(input_ids, labels, tp_group)
+        tp_src_rank = dp_rank * args.tp_size
+        broadcast_inputs(input_ids, labels, tp_group, tp_src_rank)
         outputs = engine(input_ids=input_ids, labels=labels)
         engine.backward(outputs.loss)
         engine.step()
