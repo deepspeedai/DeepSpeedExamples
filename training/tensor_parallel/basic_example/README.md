@@ -11,9 +11,8 @@ This example provides a compact AutoTP + ZeRO-2 training script,
 pieces required to launch AutoTP:
 
 - create TP/DP process groups
-- enable AutoTP before model creation
-- shard with `deepspeed.tp_model_init`
-- initialize DeepSpeed with `tensor_parallel.autotp_size`
+- configure AutoTP with `tensor_parallel.autotp_size`
+- initialize DeepSpeed with the AutoTP config
 
 The example feeds synthetic token batches (broadcast within each TP group) so
 you can validate the AutoTP setup without extra dataset plumbing.
@@ -29,16 +28,7 @@ for custom layer pattern configuration.
 The core setup mirrors the verification script but is trimmed down:
 
 ```python
-from deepspeed.module_inject.layers import set_autotp_mode
-
-set_autotp_mode(training=True)
 model = AutoModelForCausalLM.from_pretrained(args.model_name)
-model = deepspeed.tp_model_init(
-    model,
-    tp_size=args.tp_size,
-    dtype=dtype,
-    tp_group=tp_group,
-)
 
 ds_config = {
     "train_batch_size": args.batch_size * args.dp_size,

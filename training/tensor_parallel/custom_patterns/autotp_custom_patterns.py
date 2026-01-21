@@ -7,7 +7,6 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader, Dataset, Sampler
 import deepspeed
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from deepspeed.module_inject.layers import set_autotp_mode
 
 IGNORE_INDEX = -100
 
@@ -166,7 +165,6 @@ def main():
         rank, world_size, args.tp_size, args.dp_size
     )
 
-    set_autotp_mode(training=True)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=False)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token or tokenizer.unk_token
@@ -175,9 +173,7 @@ def main():
     model.config.pad_token_id = tokenizer.pad_token_id
     model = model.to(device)
 
-    dtype = torch.bfloat16 if args.precision == "bf16" else torch.float16 if args.precision == "fp16" else torch.float32
-    model = deepspeed.tp_model_init(model, tp_size=args.tp_size, dtype=dtype, tp_group=tp_group)
-
+    # AutoTP is enabled via the DeepSpeed config.
     ds_config = {
         "train_batch_size": args.batch_size * args.dp_size,
         "train_micro_batch_size_per_gpu": args.batch_size,

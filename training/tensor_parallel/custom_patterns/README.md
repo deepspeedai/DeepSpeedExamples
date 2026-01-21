@@ -6,6 +6,8 @@ This example extends the minimal AutoTP script with:
 - a DP-rank random sampler so each DP rank sees different samples
 
 The TP ranks inside the same DP group share the same data order.
+AutoTP is enabled by the DeepSpeed config (`tensor_parallel.autotp_size`), so
+you do not need to call any initialization helpers before `deepspeed.initialize`.
 
 ## Key code (custom patterns)
 The config below targets **Phi-4**, which uses fused QKV and a fused

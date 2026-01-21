@@ -5,7 +5,6 @@ import torch
 import torch.distributed as dist
 import deepspeed
 from transformers import AutoModelForCausalLM
-from deepspeed.module_inject.layers import set_autotp_mode
 
 
 @dataclass
@@ -94,15 +93,10 @@ def main():
         rank, world_size, args.tp_size, args.dp_size
     )
 
-    # Enable AutoTP mode before model creation
-    set_autotp_mode(training=True)
-
     model = AutoModelForCausalLM.from_pretrained(args.model_name)
     model = model.to(device)
 
-    dtype = torch.bfloat16 if args.precision == "bf16" else torch.float16 if args.precision == "fp16" else torch.float32
-    model = deepspeed.tp_model_init(model, tp_size=args.tp_size, dtype=dtype, tp_group=tp_group)
-
+    # AutoTP is enabled via the DeepSpeed config.
     ds_config = {
         "train_batch_size": args.batch_size * args.dp_size,
         "train_micro_batch_size_per_gpu": args.batch_size,
