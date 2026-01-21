@@ -1,7 +1,7 @@
 # AutoTP custom patterns example
 This example extends the minimal AutoTP script with:
 
-- custom layer sharding patterns (`autotp_config`)
+- custom layer sharding patterns (`partition_config`)
 - a small text dataset and tokenizer
 - a DP-rank random sampler so each DP rank sees different samples
 
@@ -18,7 +18,7 @@ ds_config = {
     "zero_optimization": {"stage": 2},
     "tensor_parallel": {
         "autotp_size": args.tp_size,
-        "autotp_config": {
+        "partition_config": {
             "use_default_specs": False,
             "layer_specs": [
                 {

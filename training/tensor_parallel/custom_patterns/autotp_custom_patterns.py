@@ -184,7 +184,7 @@ def main():
         "zero_optimization": {"stage": args.zero_stage},
         "tensor_parallel": {
             "autotp_size": args.tp_size,
-            "autotp_config": {
+            "partition_config": {
                 "use_default_specs": False,
                 "layer_specs": [
                     {
