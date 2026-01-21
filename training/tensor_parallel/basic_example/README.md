@@ -69,3 +69,10 @@ deepspeed --num_gpus 2 autotp_example.py \
   --num_steps 5
 ```
 
+## Backward Compatibility
+
+Historically, AutoTP training required calling `set_autotp_mode(training=True)`
+and `deepspeed.tp_model_init(...)` before initialization. The traditional path
+is preserved for reference in
+[`autotp_memory_compare.py`](autotp_memory_compare.py) (see the `--mode traditional`
+branch), alongside the config-driven path in the same script.

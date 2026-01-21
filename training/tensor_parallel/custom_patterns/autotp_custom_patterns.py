@@ -1,4 +1,5 @@
 import argparse
+import os
 from dataclasses import dataclass
 from typing import Iterable, List
 
@@ -115,19 +116,25 @@ def collate_batch(samples: List[dict], pad_token_id: int) -> dict:
 
 def parse_args():
     parser = argparse.ArgumentParser(description="AutoTP custom patterns example.")
-    parser.add_argument("--model_name", type=str, default="microsoft/Phi-4-multimodal-instruct")
+    parser.add_argument("--model_name", type=str, default="EleutherAI/pythia-6.9b")
     parser.add_argument("--tp_size", type=int, default=4)
     parser.add_argument("--dp_size", type=int, default=2)
     parser.add_argument("--zero_stage", type=int, default=2)
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--seq_length", type=int, default=512)
     parser.add_argument("--num_steps", type=int, default=20)
-    parser.add_argument("--learning_rate", type=float, default=2e-5)
+    parser.add_argument("--learning_rate", type=float, default=2e-6)
     parser.add_argument("--precision", type=str, default="bf16", choices=["bf16", "fp16", "fp32"])
     parser.add_argument(
         "--trust_remote_code",
         action="store_true",
-        help="Allow loading models with custom code from the Hub.",
+        help="Allow loading models with custom code from the Hub (auto-enabled for ChatGLM).",
+    )
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=0,
+        help="Local rank passed by the launcher.",
     )
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -164,23 +171,73 @@ def main():
 
     rank = dist.get_rank()
     world_size = dist.get_world_size()
-    device = torch.device(f"cuda:{rank % torch.cuda.device_count()}")
+    local_rank = int(os.environ.get("LOCAL_RANK", args.local_rank))
+    torch.cuda.set_device(local_rank)
+    device = torch.device(f"cuda:{local_rank}")
+
+    if args.precision == "bf16":
+        torch_dtype = torch.bfloat16
+    elif args.precision == "fp16":
+        torch_dtype = torch.float16
+    else:
+        torch_dtype = torch.float32
 
     tp_group, dp_group, tp_rank, dp_rank = build_tp_dp_groups(
         rank, world_size, args.tp_size, args.dp_size
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.model_name, use_fast=False, trust_remote_code=args.trust_remote_code
-    )
+    trust_remote_code = args.trust_remote_code
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.model_name, use_fast=False, trust_remote_code=trust_remote_code
+        )
+    except ValueError:
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.model_name, use_fast=True, trust_remote_code=trust_remote_code
+        )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token or tokenizer.unk_token
 
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_name, trust_remote_code=args.trust_remote_code
+        args.model_name,
+        dtype=torch_dtype,
+        low_cpu_mem_usage=True,
+        trust_remote_code=trust_remote_code,
     )
     model.config.pad_token_id = tokenizer.pad_token_id
     model = model.to(device)
+
+    num_heads = model.config.num_attention_heads
+    kv_heads = getattr(model.config, "num_kv_heads", None)
+    if kv_heads is None:
+        kv_heads = getattr(model.config, "num_key_value_heads", None)
+    if kv_heads is None:
+        kv_heads = num_heads
+    head_dim = getattr(model.config, "head_dim", None)
+    if head_dim is None:
+        head_dim = model.config.hidden_size // num_heads
+    uses_mqa = bool(getattr(model.config, "multi_query", False))
+    if kv_heads % args.tp_size != 0:
+        uses_mqa = True
+    q_size = num_heads * head_dim
+    kv_size = kv_heads * head_dim
+
+    if rank == 0 and uses_mqa:
+        print("Using row-parallel QKV for MQA (KV heads not shardable).")
+
+    qkv_spec = {
+        "patterns": [".*(self_attention|attention)\\.query_key_value\\.weight$"],
+        "partition_type": "row" if uses_mqa else "column",
+    }
+    if not uses_mqa:
+        q_size = num_heads * head_dim
+        kv_size = kv_heads * head_dim
+        qkv_spec.update(
+            {
+                "shape": ((q_size, kv_size, kv_size), -1),
+                "partition_dim": 0,
+            }
+        )
 
     # AutoTP is enabled via the DeepSpeed config.
     ds_config = {
@@ -192,24 +249,17 @@ def main():
             "partition_config": {
                 "use_default_specs": False,
                 "layer_specs": [
+                    qkv_spec,
                     {
-                        "patterns": [".*\\.self_attn\\.qkv_proj\\.weight$"],
-                        "partition_type": "column",
-                        "shape": (3, -1),
-                        "partition_dim": 0,
-                    },
-                    {
-                        "patterns": [".*\\.self_attn\\.o_proj\\.weight$"],
+                        "patterns": [".*(self_attention|attention)\\.dense\\.weight$"],
                         "partition_type": "row",
                     },
                     {
-                        "patterns": [".*\\.mlp\\.gate_up_proj\\.weight$"],
+                        "patterns": [".*mlp\\.dense_h_to_4h\\.weight$"],
                         "partition_type": "column",
-                        "shape": (2, -1),
-                        "partition_dim": 0,
                     },
                     {
-                        "patterns": [".*\\.mlp\\.down_proj\\.weight$"],
+                        "patterns": [".*mlp\\.dense_4h_to_h\\.weight$"],
                         "partition_type": "row",
                     },
                 ],

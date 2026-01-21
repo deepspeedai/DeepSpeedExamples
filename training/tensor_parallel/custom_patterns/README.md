@@ -10,10 +10,10 @@ AutoTP is enabled by the DeepSpeed config (`tensor_parallel.autotp_size`), so
 you do not need to call any initialization helpers before `deepspeed.initialize`.
 
 ## Key code (custom patterns)
-The config below targets **Phi-4**, which uses fused QKV and a fused
-`gate_up_proj` FFN weight. Both require a `shape` to describe the
-sub-parameters inside the fused tensor. Adjust patterns and shapes if your
-model uses different names or fused layouts.
+The config below targets **Pythia 6.9B (GPT-NeoX)**, which uses a fused
+`query_key_value` projection. We provide a `shape` so AutoTP can split the
+fused Q/K/V tensor cleanly across tensor-parallel ranks. The MLP uses
+`dense_h_to_4h` / `dense_4h_to_h`, so no extra shape is needed there.
 
 ```python
 ds_config = {
@@ -24,23 +24,21 @@ ds_config = {
             "use_default_specs": False,
             "layer_specs": [
                 {
-                    "patterns": [".*\\.self_attn\\.qkv_proj\\.weight$"],
+                    "patterns": [".*(self_attention|attention)\\.query_key_value\\.weight$"],
                     "partition_type": "column",
-                    "shape": (3, -1),  # [Q, K, V] fused on dim 0
-                    "partition_dim": 0,  # shard along fused dim 0
+                    "shape": ((q_size, kv_size, kv_size), -1),
+                    "partition_dim": 0,
                 },
                 {
-                    "patterns": [".*\\.self_attn\\.o_proj\\.weight$"],
+                    "patterns": [".*(self_attention|attention)\\.dense\\.weight$"],
                     "partition_type": "row",
                 },
                 {
-                    "patterns": [".*\\.mlp\\.gate_up_proj\\.weight$"],
+                    "patterns": [".*mlp\\.dense_h_to_4h\\.weight$"],
                     "partition_type": "column",
-                    "shape": (2, -1),  # [gate, up] fused on dim 0
-                    "partition_dim": 0,  # shard along fused dim 0
                 },
                 {
-                    "patterns": [".*\\.mlp\\.down_proj\\.weight$"],
+                    "patterns": [".*mlp\\.dense_4h_to_h\\.weight$"],
                     "partition_type": "row",
                 },
             ],
@@ -50,17 +48,12 @@ ds_config = {
 }
 ```
 
-The diagram below illustrates how the fused `gate_up_proj` tensor is split
-into sub-parameters for sharding:
-
-![Fused gate_up_proj sub-parameters](./autotp-subparams-gate-up.png)
-
 ## How to run
 Pick a world size where `tp_size * dp_size = world_size`.
 
 ```bash
 deepspeed --num_gpus 8 autotp_custom_patterns.py \
-  --model_name microsoft/Phi-4-multimodal-instruct \
+  --model_name EleutherAI/pythia-6.9b \
   --tp_size 4 \
   --dp_size 2 \
   --seq_length 512 \
