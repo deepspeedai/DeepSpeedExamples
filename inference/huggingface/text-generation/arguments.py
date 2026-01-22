@@ -19,3 +19,4 @@ parser.add_argument("--local_rank", type=int, default=int(os.getenv("LOCAL_RANK"
 parser.add_argument("--world_size", type=int, default=int(os.getenv("WORLD_SIZE", "1")), help="world_size")
 parser.add_argument("--test_hybrid_engine", action='store_true', help="enable hybrid engine testing")
 parser.add_argument("--trust_remote_code", action='store_true', help="Trust remote code for hugging face models")
+parser.add_argument("--quantize_groups", type=int, required=False, default=0, help="number of weight quantization groups to use")

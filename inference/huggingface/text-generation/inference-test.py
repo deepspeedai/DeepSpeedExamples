@@ -51,6 +51,7 @@ else:
                                     replace_with_kernel_inject=args.use_kernel,
                                     max_tokens=args.max_tokens,
                                     save_mp_checkpoint_path=args.save_mp_checkpoint_path,
+                                    quantize_groups=args.quantize_groups,
                                     **ds_kwargs
                                     )
 
