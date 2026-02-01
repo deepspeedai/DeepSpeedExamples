@@ -228,16 +228,10 @@ def main():
     qkv_spec = {
         "patterns": [".*(self_attention|attention)\\.query_key_value\\.weight$"],
         "partition_type": "row" if uses_mqa else "column",
+        # Provide explicit fused Q/K/V shape so sharding is config-driven.
+        "shape": ((q_size, kv_size, kv_size), -1),
+        "partition_dim": 0,
     }
-    if not uses_mqa:
-        q_size = num_heads * head_dim
-        kv_size = kv_heads * head_dim
-        qkv_spec.update(
-            {
-                "shape": ((q_size, kv_size, kv_size), -1),
-                "partition_dim": 0,
-            }
-        )
 
     # AutoTP is enabled via the DeepSpeed config.
     ds_config = {
