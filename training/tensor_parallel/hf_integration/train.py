@@ -252,7 +252,13 @@ def train():
         def on_step_end(self, args, state, control, **kwargs):
             see_memory_usage("After step end", force=True)
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args,callbacks=[MemoryCallback], **data_module)
+    trainer = Trainer(
+        model=model,
+        processing_class=tokenizer,
+        args=training_args,
+        callbacks=[MemoryCallback],
+        **data_module,
+    )
     
     trainer.train()
     # load&save distributed checkpoint 

@@ -1,10 +1,10 @@
-weight_path=/host/ssd/hf_models/llama2-7b-hf
-# weight_path=/host/ssd/hf_models/Meta-Llama-3.1-8B
+# Default to a public HF model for out-of-the-box runs.
+weight_path=facebook/opt-125m
 export WANDB_MODE=disabled
-num_gpus=8
+num_gpus=${NUM_GPUS:-8}
 epoch=3
 mbs=2
-MODE=${1:-zero1tp} 
+MODE=${1:-zero2tp} 
 if [ "$MODE" == "zero1tp" ]; then
   ZERO_STAGE=1
   AUTOTP_SIZE=4
@@ -33,6 +33,13 @@ else
   echo "error '$MODE',please use 'zero' or 'tp'。"
   exit 1
 fi
+
+# HF Trainer + Accelerate currently builds a 1D device mesh of size AUTOTP_SIZE.
+# If num_gpus > AUTOTP_SIZE, ranks outside the mesh fail during init_device_mesh.
+if [ "$AUTOTP_SIZE" -gt 1 ] && [ "$num_gpus" -ne "$AUTOTP_SIZE" ]; then
+  echo "Adjusting num_gpus to AUTOTP_SIZE=$AUTOTP_SIZE to avoid device_mesh init failure."
+  num_gpus=$AUTOTP_SIZE
+fi
 TEMPLATE_FILE="configs/ds_config_temp.json"
 OUTPUT_FILE="configs/ds_config.json"
 sed -e "s/\${zero_stage}/${ZERO_STAGE}/g" \
@@ -50,14 +57,14 @@ deepspeed --num_gpus $num_gpus  \
     --gradient_checkpointing false \
     --per_device_train_batch_size $per_device_train_batch_size \
     --per_device_eval_batch_size 1 \
-    --evaluation_strategy no \
+    --eval_strategy no \
     --save_strategy steps  \
     --save_steps 10000 \
     --gradient_accumulation_steps 4 \
     --learning_rate 0 \
     --learning_rate 2e-5 \
     --weight_decay 0. \
-    --warmup_ratio 0.03 \
+    --warmup_steps 0 \
     --lr_scheduler_type cosine \
     --logging_steps 1 \
     --tf32 True \
