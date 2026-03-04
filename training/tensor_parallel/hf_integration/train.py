@@ -19,7 +19,7 @@ from typing import Dict, Optional, Sequence
 
 import torch
 import transformers
-import utils
+import json
 from torch.utils.data import Dataset
 from transformers import Trainer
 
@@ -131,7 +131,7 @@ class SupervisedDataset(Dataset):
     def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer):
         super(SupervisedDataset, self).__init__()
         logging.warning("Loading data...")
-        list_data_dict = utils.jload(data_path)
+        list_data_dict = json.load(open(data_path))
 
         logging.warning("Formatting inputs...")
         prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
@@ -252,7 +252,13 @@ def train():
         def on_step_end(self, args, state, control, **kwargs):
             see_memory_usage("After step end", force=True)
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    trainer = Trainer(model=model, tokenizer=tokenizer, args=training_args,callbacks=[MemoryCallback], **data_module)
+    trainer = Trainer(
+        model=model,
+        processing_class=tokenizer,
+        args=training_args,
+        callbacks=[MemoryCallback],
+        **data_module,
+    )
     
     trainer.train()
     # load&save distributed checkpoint 
