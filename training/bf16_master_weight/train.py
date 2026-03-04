@@ -292,7 +292,7 @@ def main():
             input_ids = torch.randint(0, actual_vocab_size, (args.batch_size, args.seq_length), device=device)
             labels = torch.randint(0, actual_vocab_size, (args.batch_size, args.seq_length), device=device)
 
-        # Forward pass with optional autocast.
+        # Forward pass with an optional autocast.
         # DeepSpeed already applies torch.autocast inside engine.forward(), but
         # we wrap the entire forward+loss block so that loss_fn also runs under
         # autocast.  The nested autocast on engine.forward() is harmless —
