@@ -1,0 +1,21 @@
+{
+    
+    "bf16": {
+        "enabled": true
+    },
+    
+    "zero_optimization": {
+        "stage": 0
+    },
+    "compile": {
+        "deepcompile": true,
+	"passes": ["autosp"]
+    },
+    "gradient_accumulation_steps": 1,
+    "gradient_clipping": "auto",
+    "steps_per_print": 2000,
+    "train_batch_size": 1,
+    "train_micro_batch_size_per_gpu": 1,
+    "wall_clock_breakdown": false,
+    "sequence_parallel_size": 2
+}
