@@ -42,7 +42,8 @@ pip install \
   accelerate \
   scipy \
   tqdm \
-  pyyaml
+  pyyaml \
+  flash-attn 
 ```
 
 ## Benchmarking

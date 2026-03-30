@@ -20,7 +20,7 @@ from transformers import AutoTokenizer, AutoConfig, AutoModelForCausalLM, enable
 from deepspeed.compile.passes.sp_compile import prepare_autosp_inputs
 
 from distributed_attention import ulysses_attention_forward, set_padding_mask
-# from ring_attention import ring_attention_forward
+from ring_attention import ring_attention_forward
 from sp_dp_registry import get_group, populate_registry, get_registry
 
 torch.set_float32_matmul_precision("high")
