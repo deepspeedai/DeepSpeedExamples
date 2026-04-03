@@ -1,0 +1,48 @@
+{
+  "train_batch_size": 256,
+  "train_micro_batch_size_per_gpu": 1,
+  "gradient_accumulation_steps": 8,
+  "gradient_clipping": 1.0,
+  "steps_per_print": 50,
+
+  "bf16": {
+    "enabled": true
+  },
+
+  "zero_optimization": {
+    "stage": 3,
+    "overlap_comm": true,
+    "contiguous_gradients": true,
+    "reduce_bucket_size": 500000000,
+    "stage3_prefetch_bucket_size": 300000000,
+    "stage3_param_persistence_threshold": 100000,
+    "stage3_max_live_parameters": 1000000000,
+    "stage3_max_reuse_distance": 1000000000,
+    "stage3_gather_16bit_weights_on_model_save": true
+  },
+
+  "optimizer": {
+    "type": "OneBitAdam",
+    "params": {
+      "lr": 1e-5,
+      "betas": [0.9, 0.95],
+      "eps": 1e-8,
+      "weight_decay": 0.1,
+      "freeze_step": 2000,
+      "cuda_aware": false,
+      "comm_backend_name": "nccl"
+    }
+  },
+
+  "scheduler": {
+    "type": "WarmupDecayLR",
+    "params": {
+      "warmup_min_lr": 0,
+      "warmup_max_lr": 1e-5,
+      "warmup_num_steps": 1000,
+      "total_num_steps": 50000
+    }
+  },
+
+  "communication_data_type": "fp16"
+}
