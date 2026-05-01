@@ -7,6 +7,36 @@ import subprocess
 from typing import Any
 
 
+def _native_sparse_moe_block_types() -> tuple[type, ...]:
+    """HF MoE block classes that DeepSpeed AutoEP replaces (subset used in this example)."""
+    types: list[type] = []
+    try:
+        from transformers.models.mixtral.modeling_mixtral import MixtralSparseMoeBlock
+
+        types.append(MixtralSparseMoeBlock)
+    except ImportError:
+        pass
+    try:
+        from transformers.models.qwen3_5_moe.modeling_qwen3_5_moe import (
+            Qwen3_5MoeSparseMoeBlock,
+        )
+
+        types.append(Qwen3_5MoeSparseMoeBlock)
+    except ImportError:
+        pass
+    try:
+        from transformers.models.qwen3_moe.modeling_qwen3_moe import Qwen3MoeSparseMoeBlock
+
+        types.append(Qwen3MoeSparseMoeBlock)
+    except ImportError:
+        pass
+    return tuple(types)
+
+
+def _is_native_sparse_moe_block(module: Any) -> bool:
+    return isinstance(module, _native_sparse_moe_block_types())
+
+
 def validate_autoep_engine(
     engine: Any,
     autoep_size: int,
@@ -42,26 +72,21 @@ def validate_autoep_engine(
     if not getattr(engine, "has_moe_layers", False):
         errors.append("engine.has_moe_layers is False; expected True for AutoEP mode.")
 
-    # Replacement integrity: AutoEPMoELayer present, MixtralSparseMoeBlock absent
+    # Replacement integrity: AutoEPMoELayer present, native HF MoE blocks absent
     autoep_layers = []
     original_moe_blocks = []
-    try:
-        from transformers.models.mixtral.modeling_mixtral import MixtralSparseMoeBlock
-        has_mixtral_cls = True
-    except ImportError:
-        has_mixtral_cls = False
 
     for name, module in engine.module.named_modules():
         if isinstance(module, AutoEPMoELayer):
             autoep_layers.append(name)
-        if has_mixtral_cls and isinstance(module, MixtralSparseMoeBlock):
+        if _is_native_sparse_moe_block(module):
             original_moe_blocks.append(name)
 
     if not autoep_layers:
         errors.append("No AutoEPMoELayer modules found in the model.")
     if original_moe_blocks:
         errors.append(
-            f"Found unreplaced MixtralSparseMoeBlock modules: {original_moe_blocks[:3]}..."
+            f"Found unreplaced native MoE block modules: {original_moe_blocks[:3]}..."
         )
 
     # Expert param attributes
@@ -160,23 +185,22 @@ def validate_zero3_leaf_engine(engine: Any) -> dict[str, Any]:
     errors = []
     warnings = []
 
-    # MixtralSparseMoeBlock modules should be present (not replaced)
-    try:
-        from transformers.models.mixtral.modeling_mixtral import MixtralSparseMoeBlock
-    except ImportError:
+    # Native HF MoE blocks should be present (not replaced by AutoEP)
+    native_types = _native_sparse_moe_block_types()
+    if not native_types:
         return {
             "valid": False,
             "warnings": [],
-            "errors": ["Cannot import MixtralSparseMoeBlock from transformers."],
+            "errors": ["Cannot import any known HF SparseMoeBlock class from transformers."],
         }
 
     moe_blocks = []
     for name, module in engine.module.named_modules():
-        if isinstance(module, MixtralSparseMoeBlock):
+        if _is_native_sparse_moe_block(module):
             moe_blocks.append(name)
 
     if not moe_blocks:
-        errors.append("No MixtralSparseMoeBlock modules found in the model.")
+        errors.append("No native HF SparseMoeBlock modules found in the model.")
 
     # ZeRO-3 leaf does NOT use DeepSpeed MoE; has_moe_layers should be False
     if getattr(engine, "has_moe_layers", False):
@@ -222,6 +246,8 @@ def collect_run_metadata(
 ) -> dict[str, Any]:
     """Collect runtime metadata for reproducibility."""
     import torch
+    import transformers
+    import deepspeed
 
     # Git SHAs
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -281,6 +307,8 @@ def collect_run_metadata(
         "torch_version": torch.__version__,
         "transformers_version": importlib.metadata.version("transformers"),
         "deepspeed_version": ds_version,
+        "deepspeed_file": getattr(deepspeed, "__file__", "unknown"),
+        "transformers_file": getattr(transformers, "__file__", "unknown"),
         "cuda_version": torch.version.cuda or "unknown",
         "nccl_version": nccl_version,
         "driver_version": driver_version,

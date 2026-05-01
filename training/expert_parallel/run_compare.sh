@@ -7,7 +7,7 @@
 # This script:
 #   1. Runs find_max_layers.py to determine largest feasible shared layer count
 #   2. Generates shared init weights artifact
-#   3. Runs train_compare.py in both modes at the determined layer count
+#   3. Runs train.py in both modes at the determined layer count
 #   4. Generates comparison plots and summary via compare_metrics.py
 
 set -euo pipefail
@@ -218,9 +218,8 @@ m['stages'].append({
 })
 "
 
-conda run -n ds python train_compare.py \
+conda run -n ds python train.py \
     --mode autoep \
-    --deepspeed_config configs/ds_autoep_zero1.json \
     --num_layers "$L_FINAL" \
     --seq_len "$SEQ_LEN" \
     --micro_batch_size "$MICRO_BATCH_SIZE" \
@@ -263,9 +262,8 @@ m['stages'].append({
 
 AUTOEP_PORT=$((MASTER_PORT + 100))
 conda run -n ds deepspeed --num_gpus "$NUM_GPUS" --master_port "$AUTOEP_PORT" \
-    train_compare.py \
+    train.py \
     --mode autoep \
-    --deepspeed_config configs/ds_autoep_zero1.json \
     --steps "$STEPS" \
     --warmup_steps "$WARMUP_STEPS" \
     --num_layers "$L_FINAL" \
@@ -300,9 +298,8 @@ m['stages'].append({
 
 ZERO3_PORT=$((MASTER_PORT + 200))
 conda run -n ds deepspeed --num_gpus "$NUM_GPUS" --master_port "$ZERO3_PORT" \
-    train_compare.py \
+    train.py \
     --mode zero3_leaf \
-    --deepspeed_config configs/ds_zero3_leaf.json \
     --steps "$STEPS" \
     --warmup_steps "$WARMUP_STEPS" \
     --num_layers "$L_FINAL" \

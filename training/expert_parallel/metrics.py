@@ -65,24 +65,30 @@ class MetricsLogger:
             self._writer = None
 
 
-def reduce_loss(loss_tensor: torch.Tensor, dp_world_size: int) -> float:
+def reduce_loss(
+    loss_tensor: torch.Tensor,
+    dp_world_size: int,
+    group: dist.ProcessGroup | None = None,
+) -> float:
     """All-reduce loss across DP ranks and return DP-mean as Python float.
 
-    Uses torch.distributed.all_reduce with ReduceOp.SUM on the DEFAULT process group
-    (all ranks), then divides by dp_world_size.
+    ``group`` must be the DeepSpeed data-parallel process group (e.g.
+    ``engine.data_parallel_group``). Using the default global group while
+    ``dp_world_size`` reflects only the DP replica count mixes unrelated ranks
+    (e.g. expert-parallel peers) and can yield NaNs.
     """
     loss_clone = loss_tensor.clone().detach()
-    dist.all_reduce(loss_clone, op=dist.ReduceOp.SUM)
+    dist.all_reduce(loss_clone, op=dist.ReduceOp.SUM, group=group)
     return (loss_clone / dp_world_size).item()
 
 
-def reduce_max(value: float) -> float:
-    """All-reduce a scalar across all ranks and return the max.
+def reduce_max(value: float, group: dist.ProcessGroup | None = None) -> float:
+    """All-reduce a scalar across ranks in ``group`` and return the max.
 
-    Creates a 1-element tensor on current device, all_reduces with ReduceOp.MAX.
+    When ``group`` is None, uses the default (world) process group.
     """
     tensor = torch.tensor([value], device=torch.cuda.current_device())
-    dist.all_reduce(tensor, op=dist.ReduceOp.MAX)
+    dist.all_reduce(tensor, op=dist.ReduceOp.MAX, group=group)
     return tensor.item()
 
 

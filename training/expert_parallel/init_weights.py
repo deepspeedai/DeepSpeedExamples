@@ -27,12 +27,19 @@ def sha256_file(path: str) -> str:
 
 def build_config_fingerprint(model_config: object) -> str:
     """Build a stable fingerprint from shape-defining model config fields."""
+    num_experts = getattr(model_config, "num_local_experts", None)
+    if num_experts is None:
+        num_experts = getattr(model_config, "num_experts", None)
+    intermediate = getattr(model_config, "intermediate_size", None)
+    if intermediate is None:
+        intermediate = getattr(model_config, "moe_intermediate_size", None)
     fields = {
+        "num_hidden_layers": getattr(model_config, "num_hidden_layers", None),
         "hidden_size": getattr(model_config, "hidden_size"),
-        "intermediate_size": getattr(model_config, "intermediate_size"),
+        "intermediate_size": intermediate,
         "num_attention_heads": getattr(model_config, "num_attention_heads"),
         "num_key_value_heads": getattr(model_config, "num_key_value_heads"),
-        "num_local_experts": getattr(model_config, "num_local_experts"),
+        "num_experts": num_experts,
         "num_experts_per_tok": getattr(model_config, "num_experts_per_tok"),
         "vocab_size": getattr(model_config, "vocab_size"),
         "max_position_embeddings": getattr(model_config, "max_position_embeddings"),

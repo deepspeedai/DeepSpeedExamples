@@ -1,6 +1,6 @@
 """Binary search for maximum stable layer count per mode.
 
-Launches train_compare.py as subprocesses with increasing layer counts to find
+Launches train.py as subprocesses with increasing layer counts to find
 the maximum stable configuration for both AutoEP and ZeRO-3 leaf modes.
 
 Run as a regular Python script (NOT via deepspeed launcher):
@@ -15,6 +15,8 @@ import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+
+from train import MODEL_PRESETS, default_autoep_parallel_size_for_model
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,10 +33,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--allow_untested_versions", action="store_true")
     parser.add_argument("--target_global_tokens_per_update", type=int, default=None)
     parser.add_argument(
-        "--autoep_config", type=str, default="configs/ds_autoep_zero1.json"
+        "--autoep_config",
+        type=str,
+        default="",
+        help="Optional DeepSpeed JSON for AutoEP trials (default: built-in train.py config)",
     )
     parser.add_argument(
-        "--zero3_leaf_config", type=str, default="configs/ds_zero3_leaf.json"
+        "--zero3_leaf_config",
+        type=str,
+        default="",
+        help="Optional DeepSpeed JSON for ZeRO-3 leaf trials (default: built-in)",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="default",
+        choices=sorted(MODEL_PRESETS.keys()),
+        help="Same as train.py --model (affects built-in AutoEP preset / leaf class)",
     )
     parser.add_argument("--output_json", type=str, required=True)
     parser.add_argument(
@@ -108,9 +123,9 @@ def run_trial(
         "deepspeed",
         "--num_gpus", str(args.num_gpus),
         "--master_port", str(master_port),
-        "train_compare.py",
+        "train.py",
         "--mode", mode,
-        "--deepspeed_config", config_path,
+        "--model", args.model,
         "--steps", str(args.trial_steps),
         "--warmup_steps", "2",
         "--num_layers", str(num_layers),
@@ -121,6 +136,8 @@ def run_trial(
         "--metrics_out", metrics_path,
         "--run_metadata_out", metadata_path,
     ]
+    if config_path:
+        cmd.extend(["--deepspeed_config", config_path])
     if args.allow_untested_versions:
         cmd.append("--allow_untested_versions")
 
@@ -301,9 +318,15 @@ def main():
 
     # Derive per-mode grad_accum
     if args.target_global_tokens_per_update is not None:
-        with open(args.autoep_config) as f:
-            autoep_cfg = json.load(f)
-        autoep_size = autoep_cfg.get("expert_parallel", {}).get("autoep_size", 1)
+        if args.autoep_config:
+            with open(args.autoep_config) as f:
+                autoep_cfg = json.load(f)
+            ep = autoep_cfg.get("expert_parallel") or {}
+            autoep_size = ep.get("autoep_size")
+            if autoep_size is None:
+                autoep_size = default_autoep_parallel_size_for_model(args.model)
+        else:
+            autoep_size = default_autoep_parallel_size_for_model(args.model)
         dp_ws_autoep = args.num_gpus // autoep_size
         dp_ws_zero3 = args.num_gpus
 
@@ -345,6 +368,7 @@ def main():
         "search_config": {
             "min_layers": args.min_layers,
             "max_layers": args.max_layers,
+            "model": args.model,
             "seq_len": args.seq_len,
             "micro_batch_size": args.micro_batch_size,
             "grad_accum_autoep": grad_accum_autoep,

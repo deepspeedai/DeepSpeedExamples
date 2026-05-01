@@ -1,0 +1,31 @@
+{
+    "bf16": {"enabled": true},
+    "zero_optimization": {
+        "stage": 1
+    },
+    "expert_parallel": {
+        "enabled": true,
+        "autoep_size": 8,
+        "preset_model": "qwen3_5_moe",
+        "load_balance_coeff": null
+    },
+    "optimizer": {
+        "type": "AdamW",
+        "params": {
+            "lr": 1e-4
+        }
+    },
+    "scheduler": {
+        "type": "WarmupCosineLR",
+        "params": {
+            "total_num_steps": 1000,
+            "warmup_min_ratio": 0,
+            "warmup_num_steps": 100,
+            "cos_min_ratio": 0.001,
+            "warmup_type": "linear"
+        }
+    },
+    "train_micro_batch_size_per_gpu": 2,
+    "gradient_accumulation_steps": 1,
+    "steps_per_print": 10
+}

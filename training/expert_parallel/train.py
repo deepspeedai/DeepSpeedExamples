@@ -1,11 +1,16 @@
-"""AutoEP vs ZeRO-3 leaf training comparison script.
+"""MoE causal LM training entry point (AutoEP or ZeRO-3 leaf).
 
-Runs a randomly-initialized Mixtral MoE model in either AutoEP+ZeRO-1 mode
-or HF-native+ZeRO-3 leaf-module mode, collecting per-step metrics for comparison.
+Runs a randomly initialized Mixtral- or Qwen3.5-MoE-style model in either
+AutoEP+ZeRO-1 mode or HF-native+ZeRO-3 leaf-module mode (no expert-parallel
+routing in the latter), collecting per-step metrics when configured.
 
-Launch via deepspeed launcher:
-    deepspeed --num_gpus 8 train_compare.py --mode autoep --deepspeed_config configs/ds_autoep_zero1.json
-    deepspeed --num_gpus 8 train_compare.py --mode zero3_leaf --deepspeed_config configs/ds_zero3_leaf.json
+Training data is loaded from Hugging Face (tokenization aligned with ``ds_verify_loss``).
+
+Launch via deepspeed launcher (built-in DeepSpeed JSON is derived from ``--mode`` and ``--model``;
+optional ``--deepspeed_config`` merges a JSON file and still syncs AutoEP ``preset_model`` /
+ZeRO-3 ``leaf_module`` to the model architecture):
+    deepspeed --num_gpus 8 train.py --mode autoep
+    deepspeed --num_gpus 8 train.py --mode zero3_leaf
 """
 
 import argparse
@@ -16,14 +21,19 @@ import os
 import random
 import sys
 import time
+from typing import Any, NamedTuple
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, Qwen3_5MoeForCausalLM
 
 import deepspeed
 
-from data_utils import SyntheticBatchGenerator, build_mixtral_config
+from data_utils import (
+    build_hf_batch_generator,
+    build_mixtral_config,
+    build_qwen3_5_moe_text_config,
+)
 from init_weights import load_init_weights_artifact, save_init_weights_artifact
 from metrics import MetricsLogger, reduce_loss, reduce_max, write_run_metadata
 from validation import (
@@ -34,23 +44,243 @@ from validation import (
 
 logger = logging.getLogger(__name__)
 
+# Preset entries: ``architecture`` is ``mixtral`` (MixtralConfig) or ``qwen3_5_moe``
+# (Qwen3_5MoeTextConfig + Qwen3_5MoeForCausalLM). Remaining keys are forwarded to the
+# matching builder (excluding num_layers / default_tokenizer_name, applied to args).
+MODEL_PRESETS: dict[str, dict[str, Any]] = {
+    "tiny": {
+        "architecture": "mixtral",
+        "num_layers": 2,
+        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
+        "num_local_experts": 4,
+        "num_experts_per_tok": 2,
+        "hidden_size": 512,
+        "intermediate_size": 2048,
+        "num_attention_heads": 8,
+        "num_key_value_heads": 2,
+        "vocab_size": 32000,
+        "max_position_embeddings": 4096,
+    },
+    "small": {
+        "architecture": "mixtral",
+        "num_layers": 4,
+        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
+        "num_local_experts": 8,
+        "num_experts_per_tok": 2,
+        "hidden_size": 2048,
+        "intermediate_size": 7168,
+        "num_attention_heads": 16,
+        "num_key_value_heads": 4,
+        "vocab_size": 32000,
+        "max_position_embeddings": 4096,
+    },
+    "default": {
+        "architecture": "mixtral",
+        "num_layers": 4,
+        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
+        "num_local_experts": 8,
+        "num_experts_per_tok": 2,
+        "hidden_size": 4096,
+        "intermediate_size": 14336,
+        "num_attention_heads": 32,
+        "num_key_value_heads": 8,
+        "vocab_size": 32000,
+        "max_position_embeddings": 4096,
+    },
+    "mixtral_8x7b": {
+        "architecture": "mixtral",
+        "num_layers": 32,
+        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
+        "num_local_experts": 8,
+        "num_experts_per_tok": 2,
+        "hidden_size": 4096,
+        "intermediate_size": 14336,
+        "num_attention_heads": 32,
+        "num_key_value_heads": 8,
+        "vocab_size": 32000,
+        "max_position_embeddings": 32768,
+    },
+    "qwen3_5": {
+        "architecture": "qwen3_5_moe",
+        "num_layers": 4,
+        "default_tokenizer_name": "Qwen/Qwen3-0.6B",
+        # Must cover all tokenizer ids (len=151669); pad_token_id==151643 == old vocab_size edge.
+        "vocab_size": 151669,
+        "hidden_size": 1024,
+        "num_attention_heads": 8,
+        "num_key_value_heads": 2,
+        "head_dim": 128,
+        "moe_intermediate_size": 512,
+        "shared_expert_intermediate_size": 256,
+        "num_experts": 8,
+        "num_experts_per_tok": 2,
+        "max_position_embeddings": 8192,
+    },
+}
+
+# DeepSpeed AutoEP structural preset id (must match HF MoE layout for this example).
+DEEPSPEED_AUTOEP_PRESET_ID: dict[str, str] = {
+    "mixtral": "mixtral",
+    "qwen3_5_moe": "qwen3_5_moe",
+}
+
+# ZeRO-3 leaf module: full class path for the HF SparseMoeBlock used by each architecture.
+DEEPSPEED_LEAF_MOE_BLOCK_CLASS: dict[str, str] = {
+    "mixtral": (
+        "transformers.models.mixtral.modeling_mixtral.MixtralSparseMoeBlock"
+    ),
+    "qwen3_5_moe": (
+        "transformers.models.qwen3_5_moe.modeling_qwen3_5_moe."
+        "Qwen3_5MoeSparseMoeBlock"
+    ),
+}
+
+
+def default_autoep_parallel_size(architecture: str) -> int:
+    """Default ``expert_parallel.autoep_size`` when not set in JSON or ``--autoep_size``."""
+    return 8 if architecture == "qwen3_5_moe" else 4
+
+
+def default_autoep_parallel_size_for_model(model: str) -> int:
+    """Same as ``default_autoep_parallel_size`` for a ``--model`` preset name."""
+    if model not in MODEL_PRESETS:
+        raise ValueError(f"Unknown model preset: {model!r}")
+    return default_autoep_parallel_size(MODEL_PRESETS[model]["architecture"])
+
+
+def _ds_scheduler_dict() -> dict[str, Any]:
+    return {
+        "type": "WarmupCosineLR",
+        "params": {
+            "total_num_steps": 1000,
+            "warmup_min_ratio": 0,
+            "warmup_num_steps": 100,
+            "cos_min_ratio": 0.001,
+            "warmup_type": "linear",
+        },
+    }
+
+
+def _ds_optimizer_dict() -> dict[str, Any]:
+    return {
+        "type": "AdamW",
+        "params": {"lr": 1e-4},
+    }
+
+
+def build_default_deepspeed_config(mode: str, architecture: str) -> dict[str, Any]:
+    """Full DeepSpeed config dict aligned with ``--mode`` and model ``architecture``."""
+    if architecture not in DEEPSPEED_AUTOEP_PRESET_ID:
+        raise ValueError(f"No DeepSpeed mapping for architecture: {architecture!r}")
+    base: dict[str, Any] = {
+        "bf16": {"enabled": True},
+        "optimizer": _ds_optimizer_dict(),
+        "scheduler": _ds_scheduler_dict(),
+        "train_micro_batch_size_per_gpu": 2,
+        "gradient_accumulation_steps": 1,
+        "steps_per_print": 10,
+    }
+    if mode == "autoep":
+        base["zero_optimization"] = {"stage": 1}
+        base["expert_parallel"] = {
+            "enabled": True,
+            "autoep_size": default_autoep_parallel_size(architecture),
+            "preset_model": DEEPSPEED_AUTOEP_PRESET_ID[architecture],
+            "load_balance_coeff": None,
+        }
+    elif mode == "zero3_leaf":
+        base["zero_optimization"] = {
+            "stage": 3,
+            "stage3_param_persistence_threshold": 1e5,
+            "leaf_module": {
+                "classes": [DEEPSPEED_LEAF_MOE_BLOCK_CLASS[architecture]],
+            },
+        }
+    else:
+        raise ValueError(f"Unknown mode: {mode!r}")
+    return base
+
+
+def apply_architecture_to_ds_config(
+    ds_config: dict[str, Any], mode: str, architecture: str
+) -> None:
+    """Force AutoEP / ZeRO-3 leaf fields to match ``architecture`` (mutates ``ds_config``)."""
+    if architecture not in DEEPSPEED_AUTOEP_PRESET_ID:
+        raise ValueError(f"No DeepSpeed mapping for architecture: {architecture!r}")
+    if mode == "autoep":
+        ep = ds_config.setdefault("expert_parallel", {})
+        ep["enabled"] = True
+        ep["preset_model"] = DEEPSPEED_AUTOEP_PRESET_ID[architecture]
+        if "autoep_size" not in ep:
+            ep["autoep_size"] = default_autoep_parallel_size(architecture)
+        if "load_balance_coeff" not in ep:
+            ep["load_balance_coeff"] = None
+    elif mode == "zero3_leaf":
+        zo = ds_config.setdefault("zero_optimization", {})
+        lm = zo.setdefault("leaf_module", {})
+        lm["classes"] = [DEEPSPEED_LEAF_MOE_BLOCK_CLASS[architecture]]
+    else:
+        raise ValueError(f"Unknown mode: {mode!r}")
+
+
+def resolve_deepspeed_config(
+    config_path: str | None, mode: str, architecture: str
+) -> dict[str, Any]:
+    """Load JSON from ``config_path`` or use built-in defaults; always sync architecture fields."""
+    if config_path is not None:
+        ds_config = load_ds_config(config_path)
+        apply_architecture_to_ds_config(ds_config, mode, architecture)
+        return ds_config
+    return build_default_deepspeed_config(mode, architecture)
+
+
+class ResolvedModelPreset(NamedTuple):
+    architecture: str
+    build_kwargs: dict[str, Any]
+
+
+def apply_model_preset(args: argparse.Namespace) -> ResolvedModelPreset:
+    """Resolve ``--model`` into architecture tag and builder kwargs."""
+    if args.model not in MODEL_PRESETS:
+        raise ValueError(f"Unknown model preset: {args.model!r}")
+    preset = MODEL_PRESETS[args.model]
+    if args.num_layers is None:
+        args.num_layers = preset["num_layers"]
+    if args.tokenizer_name is None:
+        args.tokenizer_name = preset["default_tokenizer_name"]
+    build_kwargs = {
+        k: v
+        for k, v in preset.items()
+        if k
+        not in (
+            "architecture",
+            "num_layers",
+            "default_tokenizer_name",
+        )
+    }
+    return ResolvedModelPreset(preset["architecture"], build_kwargs)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="AutoEP vs ZeRO-3 leaf training comparison"
+        description="MoE causal LM training (AutoEP or ZeRO-3 leaf; Mixtral or Qwen3.5-MoE presets)"
     )
     parser.add_argument(
         "--mode",
         type=str,
-        required=True,
+        default="autoep",
         choices=["autoep", "zero3_leaf"],
-        help="Training mode",
+        help="Training mode (default: autoep)",
     )
     parser.add_argument(
         "--deepspeed_config",
         type=str,
-        required=True,
-        help="Path to DeepSpeed JSON config",
+        default=None,
+        help=(
+            "Optional path to DeepSpeed JSON; merged then AutoEP preset_model / "
+            "ZeRO-3 leaf_module.classes are forced to match --model. "
+            "If omitted, a built-in config is used."
+        ),
     )
     parser.add_argument("--steps", type=int, default=50, help="Total optimizer steps")
     parser.add_argument(
@@ -73,7 +303,17 @@ def parse_args() -> argparse.Namespace:
         help="Target global tokens per optimizer update; derives grad_accum per mode",
     )
     parser.add_argument(
-        "--num_layers", type=int, default=4, help="Number of transformer layers"
+        "--model",
+        type=str,
+        default="default",
+        choices=sorted(MODEL_PRESETS.keys()),
+        help="Architecture preset (Mixtral or Qwen3.5-MoE); sets width/depth/experts/tokenizer",
+    )
+    parser.add_argument(
+        "--num_layers",
+        type=int,
+        default=None,
+        help="Transformer layers (default: from --model preset)",
     )
     parser.add_argument(
         "--autoep_size",
@@ -147,6 +387,30 @@ def parse_args() -> argparse.Namespace:
         default=-1,
         help="Local rank passed by deepspeed launcher",
     )
+    parser.add_argument(
+        "--dataset_name",
+        type=str,
+        default="wikitext",
+        help="HF dataset preset or hub id (see ds_verify_loss)",
+    )
+    parser.add_argument(
+        "--dataset_percentage",
+        type=float,
+        default=10.0,
+        help="Percent of train split to use (e.g. 10.0 = ten percent)",
+    )
+    parser.add_argument(
+        "--tokenizer_name",
+        type=str,
+        default=None,
+        help="HF tokenizer id; must match model vocab_size (default: from --model preset)",
+    )
+    parser.add_argument(
+        "--hf_num_dataloader_workers",
+        type=int,
+        default=0,
+        help="DataLoader worker processes (0 is safest for distributed)",
+    )
     args = parser.parse_args()
     validate_init_weight_args(args, parser)
     return args
@@ -195,6 +459,7 @@ def load_ds_config(config_path: str) -> dict:
 
 def main():
     args = parse_args()
+    resolved_preset = apply_model_preset(args)
 
     # Set defaults for output paths
     if args.metrics_out is None:
@@ -232,8 +497,23 @@ def main():
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    # Load DS config
-    ds_config = load_ds_config(args.deepspeed_config)
+    # Load or build DS config (always align AutoEP / ZeRO-3 leaf with --model)
+    ds_config = resolve_deepspeed_config(
+        args.deepspeed_config, args.mode, resolved_preset.architecture
+    )
+    if rank == 0:
+        if args.deepspeed_config:
+            logger.info(
+                "DeepSpeed config from %s (architecture fields synced to %s).",
+                args.deepspeed_config,
+                resolved_preset.architecture,
+            )
+        else:
+            logger.info(
+                "DeepSpeed config built-in for mode=%s, architecture=%s.",
+                args.mode,
+                resolved_preset.architecture,
+            )
 
     # Validate precision
     bf16_enabled = ds_config.get("bf16", {}).get("enabled", False)
@@ -305,20 +585,45 @@ def main():
 
     # Build model config
     output_router_logits = args.include_router_aux_loss == "on"
-    model_config = build_mixtral_config(
-        num_layers=args.num_layers,
-        output_router_logits=output_router_logits,
-    )
-    num_experts = model_config.num_local_experts  # HF "num_local_experts" = total experts per layer
+    if resolved_preset.architecture == "mixtral":
+        model_config = build_mixtral_config(
+            num_layers=args.num_layers,
+            output_router_logits=output_router_logits,
+            **resolved_preset.build_kwargs,
+        )
+        num_experts = model_config.num_local_experts
+    elif resolved_preset.architecture == "qwen3_5_moe":
+        model_config = build_qwen3_5_moe_text_config(
+            num_hidden_layers=args.num_layers,
+            output_router_logits=output_router_logits,
+            **resolved_preset.build_kwargs,
+        )
+        num_experts = model_config.num_experts
+    else:
+        logger.error(f"Unsupported architecture: {resolved_preset.architecture}")
+        sys.exit(2)
 
     if rank == 0:
         logger.info(f"Mode: {args.mode}")
-        logger.info(f"Model: Mixtral with {args.num_layers} layers, {num_experts} experts")
+        logger.info(
+            f"Model preset: {args.model} ({resolved_preset.architecture}), "
+            f"{args.num_layers} layers, hidden={model_config.hidden_size}, "
+            f"{num_experts} experts"
+        )
+        if not args.init_weights_only:
+            logger.info(
+                f"HF dataset: {args.dataset_name!r}, "
+                f"dataset_percentage={args.dataset_percentage}, "
+                f"tokenizer={args.tokenizer_name!r}"
+            )
         logger.info(f"Seq len: {args.seq_len}, Micro batch: {args.micro_batch_size}")
         logger.info(f"Grad accum: {args.grad_accum}, Steps: {args.steps}")
 
     # Build model with random weights
-    model = AutoModelForCausalLM.from_config(model_config)
+    if resolved_preset.architecture == "mixtral":
+        model = AutoModelForCausalLM.from_config(model_config)
+    else:
+        model = Qwen3_5MoeForCausalLM(model_config)
 
     init_weights_context = {
         "init_weights_path": None,
@@ -461,17 +766,26 @@ def main():
     dp_rank = dist_comm.get_rank(engine.data_parallel_group)
     dp_world_size = engine.dp_world_size
 
-    # Create batch generator
-    batch_gen = SyntheticBatchGenerator(
-        vocab_size=model_config.vocab_size,
-        seq_len=args.seq_len,
-        micro_batch_size=args.micro_batch_size,
-        total_steps=args.steps,
-        grad_accum=args.grad_accum,
-        dp_world_size=dp_world_size,
-        dp_rank=dp_rank,
-        seed=args.seed,
-    )
+    # Hugging Face text batches (DistributedSampler over DP ranks)
+    try:
+        batch_gen = build_hf_batch_generator(
+            dataset_name=args.dataset_name,
+            dataset_percentage=args.dataset_percentage,
+            tokenizer_name=args.tokenizer_name,
+            expected_vocab_size=model_config.vocab_size,
+            seq_len=args.seq_len,
+            micro_batch_size=args.micro_batch_size,
+            dp_world_size=dp_world_size,
+            dp_rank=dp_rank,
+            seed=args.seed,
+            rank=rank,
+            hf_num_dataloader_workers=args.hf_num_dataloader_workers,
+        )
+    except ValueError as e:
+        logger.error(f"HF dataset setup failed: {e}")
+        sys.exit(2)
+    if torch.distributed.is_initialized():
+        torch.distributed.barrier()
 
     # Collect run metadata
     metadata = collect_run_metadata(
@@ -544,7 +858,9 @@ def main():
         iter_time = step_end - step_start
 
         # Reduce loss (DP-mean) - use last microstep loss
-        reduced_loss = reduce_loss(last_loss, dp_world_size)
+        reduced_loss = reduce_loss(
+            last_loss, dp_world_size, group=engine.data_parallel_group
+        )
 
         # Non-finite loss check (every step including warmup)
         if not math.isfinite(reduced_loss):
