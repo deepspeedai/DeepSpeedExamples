@@ -1,6 +1,11 @@
 # 5.x: Llama 4, Qwen3 MoE, Qwen3_5 / Qwen3.6 MoE VLM, Mixtral (5.6.2 is a stable patch floor; 5.7+ OK)
 transformers>=5.6.2
 datasets>=2.14.0
+# Mandatory for Qwen3.5 verification: the model's linear-attention layers must not use torch fallbacks.
+flash-linear-attention>=0.2.2
+causal-conv1d
+# Mandatory when Qwen3.5 full-attention layers use the FlashAttention2 implementation.
+flash-attn
 # AutoEP: PR #7938 head on upstream (not on PyPI yet). Same commits as tohtana/add_autoep on tohtana/DeepSpeed.
 deepspeed @ git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head
 matplotlib>=3.5.0

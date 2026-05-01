@@ -13,6 +13,8 @@ This example offers a quick start for AutoEP in DeepSpeed.
   - **DeepSpeed** with AutoEP: `requirements.txt` installs the **tip of [PR #7938](https://github.com/deepspeedai/DeepSpeed/pull/7938)**.
  Manual install: `pip install "git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head#egg=deepspeed"`.
   - **`transformers` `>= 5.6.2`** (5.x line; see `requirements.txt`) — stable patch floor that includes Mixtral, Llama 4, Qwen3 MoE, and Qwen3.5 / Qwen3.6 (`qwen3_5_moe`) in current Hub checkpoints. Newer 5.7+ releases will be fine.
+  - **Qwen3.5 kernel dependencies are mandatory for verification**:
+    `flash-linear-attention` (`import fla`) and `causal-conv1d` (`import causal_conv1d`) must be installed so linear-attention layers use the specialized `fla.ops.gated_delta_rule` and `causal_conv1d` kernels, not the Transformers torch fallbacks. `flash-attn` (`import flash_attn`) must also be importable for Qwen3.5 full-attention layers when the FlashAttention2 attention implementation is requested.
   - See `requirements.txt` for other dependencies.
 
 ### Run
@@ -91,6 +93,12 @@ Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults t
 ### Grouped GEMM backend
 
 `torch._grouped_mm` is required for production performance. Without it, the code falls back to a sequential for-loop over experts. On A100 (SM80), verify availability and actual throughput since the Hopper fast path may not activate.
+
+### Qwen3.5 linear-attention kernels
+
+For `--model qwen3_5`, `flash-linear-attention` and `causal-conv1d` are verification requirements, not optional accelerators. The verification should fail if `transformers.utils.import_utils.is_flash_linear_attention_available()` or `is_causal_conv1d_available()` is false, or if a runtime inspection shows `Qwen3_5MoeGatedDeltaNet` using `torch_causal_conv1d_update` or `torch_chunk_gated_delta_rule`.
+
+`flash-attn` is also required when full-attention layers are configured to use `attn_implementation="flash_attention_2"`; record the active attention implementation in verification metadata.
 
 
 ### bf16 requirement
