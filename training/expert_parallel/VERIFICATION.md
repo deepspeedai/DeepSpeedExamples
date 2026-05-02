@@ -4,11 +4,12 @@ This procedure verifies the current expert-parallel sample with the `qwen3_5`
 model preset, Hugging Face Wikitext data, an 8-layer Qwen3.5-MoE-style model,
 shared initialization weights, and an AutoEP vs HF ZeRO-3 leaf comparison.
 
-The verification run for dev_ds issue 78 used:
+The Qwen3.5 AutoEP aux-loss verification uses:
 
-- artifact root: `/mnt/local_storage/autoep_current_sample_qwen35_20260501`
+- artifact root: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502`
 - sample path: `/home/ray/default/dev_ds/DeepSpeedExamples/training/expert_parallel`
 - DeepSpeed path on `PYTHONPATH`: `/mnt/user_storage/ds_gittrees/verify-autoep-qwen35-release-evidence`
+- Transformers path on `PYTHONPATH`: `/mnt/user_storage/ds_dep_libs/transformers/src`
 - model preset: `qwen3_5`
 - AutoEP preset: `qwen3_5_moe`
 - layers: `8`
@@ -33,6 +34,24 @@ The Wikitext loader filters empty/whitespace-only text rows before tokenization.
 Without that filter, Wikitext rows containing only padding can produce all
 `-100` labels and a non-finite first loss.
 
+## HF Aux-Loss Contract
+
+The aux-loss verification consumes the Hugging Face Qwen3.5-MoE contract
+directly from
+`/mnt/user_storage/ds_dep_libs/transformers/src/transformers/models/qwen3_5_moe/modeling_qwen3_5_moe.py`
+at git SHA `6ed93c04c43f8f4c16b1cd10b9244446f8865095`.
+
+`Qwen3_5MoeCausalLMOutputWithPast(ModelOutput)` exposes both `router_logits`
+and `aux_loss`. When `output_router_logits` is enabled,
+`Qwen3_5MoeForCausalLM.forward` computes
+`aux_loss = load_balancing_loss_func(outputs.router_logits, self.num_experts, self.num_experts_per_tok, attention_mask)`,
+adds `router_aux_loss_coef * aux_loss` to `loss` when labels exist, and returns
+`MoeCausalLMOutputWithPast(loss=loss, aux_loss=aux_loss, router_logits=outputs.router_logits, ...)`.
+
+The sample records `loss_total=outputs.loss`, `loss_aux=outputs.aux_loss`, and
+uses `loss_ce = loss_total - router_aux_loss_coef * loss_aux` only as a
+reporting decomposition.
+
 ## Mandatory Qwen3.5 Kernels
 
 Qwen3.5 verification must use the specialized linear-attention kernels. Treat
@@ -44,6 +63,8 @@ these as required packages, not optional accelerators:
   convolution kernels.
 - `flash-attn` (`import flash_attn`) for Qwen3.5 full-attention layers when
   the FlashAttention2 attention implementation is requested.
+- `tilelang` (`import tilelang`) on H100 with Triton `>= 3.4` for the Qwen3.5
+  fast path.
 
 The run is invalid if either
 `transformers.utils.import_utils.is_flash_linear_attention_available()` or
@@ -60,16 +81,120 @@ Run from:
 
 ```bash
 cd /home/ray/default/dev_ds/DeepSpeedExamples/training/expert_parallel
-export PYTHONPATH=/mnt/user_storage/ds_gittrees/verify-autoep-qwen35-release-evidence${PYTHONPATH:+:$PYTHONPATH}
+export PYTHONPATH=/mnt/user_storage/ds_gittrees/verify-autoep-qwen35-release-evidence:/mnt/user_storage/ds_dep_libs/transformers/src${PYTHONPATH:+:$PYTHONPATH}
 export TOKENIZERS_PARALLELISM=false
 export HF_HOME=/mnt/local_storage/hf_cache
 export HF_DATASETS_CACHE=/mnt/local_storage/hf_datasets_cache
-RUN_ROOT=/mnt/local_storage/autoep_current_sample_qwen35_20260501
-SMOKE_ROOT=$RUN_ROOT/smoke_100
-LONG_ROOT=$RUN_ROOT/long_10000
-INIT=$SMOKE_ROOT/init_weights_qwen35_current_8l_seed42.safetensors
-LONG_INIT=$LONG_ROOT/init_weights_qwen35_current_8l_seed42.safetensors
+RUN_ROOT=/mnt/local_storage/qwen35_kernel_speed_aux_20260502
+SMOKE_ROOT=$RUN_ROOT/task_b_aux_smoke
+LONG_ROOT=$RUN_ROOT/task_b_aux_10k
+INIT=$RUN_ROOT/shared_init/qwen35_l8_seed42.safetensors
 ```
+
+## Reproduce a Qwen3.5 Throughput Example
+
+The broad throughput sweep used for internal release evidence is intentionally
+not part of this public-facing sample procedure. To reproduce the same Qwen3.5
+environment and run one representative long-sequence configuration, use the
+single configuration below:
+
+- sequence length: `1024`
+- micro batch size: `1`
+- gradient accumulation: `4`
+- steps: `100`
+- warmup steps: `50`
+- model layers: `8`
+- dataset: `wikitext`, `dataset_percentage=10.0`
+- tokenizer: `Qwen/Qwen3-0.6B`
+- shared init: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/shared_init/qwen35_l8_seed42.safetensors`
+- aux loss: disabled for this throughput example with `--output_router_logits false`
+
+The verified Anyscale H100 environment used:
+
+| Package | Version / source |
+| --- | --- |
+| PyTorch | `2.9.1+cu126` |
+| Triton | `3.5.1` |
+| Transformers | source checkout on `PYTHONPATH`: `/mnt/user_storage/ds_dep_libs/transformers/src` (`5.2.0.dev0` at verification time) |
+| DeepSpeed | source checkout on `PYTHONPATH`: `/mnt/user_storage/ds_gittrees/verify-autoep-qwen35-release-evidence` (`0.18.10+851c2841` at verification time) |
+| `flash-linear-attention` / `fla` | `0.5.0` |
+| `causal-conv1d` | `1.6.1` |
+| `flash-attn` | `2.8.3` |
+| `tilelang` | `0.1.9` |
+
+Install the Qwen3.5 fast-path kernel dependencies in the `ds` environment before
+running verification:
+
+```bash
+conda activate ds
+python -m pip install \
+  flash-linear-attention==0.5.0 \
+  causal-conv1d==1.6.1 \
+  flash-attn==2.8.3 \
+  tilelang==0.1.9
+```
+
+Then set the source checkouts and caches:
+
+```bash
+cd /home/ray/default/dev_ds/DeepSpeedExamples/training/expert_parallel
+export PYTHONPATH=/mnt/user_storage/ds_gittrees/verify-autoep-qwen35-release-evidence:/mnt/user_storage/ds_dep_libs/transformers/src${PYTHONPATH:+:$PYTHONPATH}
+export TOKENIZERS_PARALLELISM=false
+export HF_HOME=/mnt/local_storage/hf_cache
+export HF_DATASETS_CACHE=/mnt/local_storage/hf_datasets_cache
+RUN_ROOT=/mnt/local_storage/qwen35_kernel_speed_aux_20260502
+INIT=$RUN_ROOT/shared_init/qwen35_l8_seed42.safetensors
+```
+
+Run AutoEP for the representative configuration:
+
+```bash
+conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 29104 train.py \
+  --model qwen3_5 \
+  --mode autoep \
+  --num_layers 8 \
+  --steps 100 \
+  --warmup_steps 50 \
+  --log_interval 1 \
+  --seq_len 1024 \
+  --micro_batch_size 1 \
+  --grad_accum 4 \
+  --seed 42 \
+  --dataset_name wikitext \
+  --dataset_percentage 10.0 \
+  --tokenizer_name Qwen/Qwen3-0.6B \
+  --output_router_logits false \
+  --load_init_weights "$INIT" \
+  --metrics_out "$RUN_ROOT/reproduce_qwen35_bs1_seq1024_ga4/autoep_metrics.csv" \
+  --run_metadata_out "$RUN_ROOT/reproduce_qwen35_bs1_seq1024_ga4/autoep_metadata.json"
+```
+
+Run the matching ZeRO-3 leaf baseline:
+
+```bash
+conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 29105 train.py \
+  --model qwen3_5 \
+  --mode zero3_leaf \
+  --num_layers 8 \
+  --steps 100 \
+  --warmup_steps 50 \
+  --log_interval 1 \
+  --seq_len 1024 \
+  --micro_batch_size 1 \
+  --grad_accum 4 \
+  --seed 42 \
+  --dataset_name wikitext \
+  --dataset_percentage 10.0 \
+  --tokenizer_name Qwen/Qwen3-0.6B \
+  --output_router_logits false \
+  --load_init_weights "$INIT" \
+  --metrics_out "$RUN_ROOT/reproduce_qwen35_bs1_seq1024_ga4/zero3_leaf_metrics.csv" \
+  --run_metadata_out "$RUN_ROOT/reproduce_qwen35_bs1_seq1024_ga4/zero3_leaf_metadata.json"
+```
+
+Use `--output_router_logits true` for the same configuration when measuring
+aux-loss throughput overhead. Keep aux-enabled metrics separate from this
+throughput-only example.
 
 ## Import Provenance
 
@@ -110,6 +235,7 @@ print the Transformers missing-fast-path warning.
 conda run --no-capture-output -n ds python - <<'PY'
 import importlib
 import json
+import triton
 import torch
 from transformers.utils.import_utils import (
     is_causal_conv1d_available,
@@ -125,12 +251,14 @@ from transformers.models.qwen3_5_moe.modeling_qwen3_5_moe import (
     torch_chunk_gated_delta_rule,
 )
 
-for module_name in ("fla", "causal_conv1d", "flash_attn"):
+for module_name in ("fla", "causal_conv1d", "flash_attn", "tilelang"):
     importlib.import_module(module_name)
 
 assert is_flash_linear_attention_available(), "flash-linear-attention / fla unavailable"
 assert is_causal_conv1d_available(), "causal-conv1d unavailable"
 assert is_flash_attn_2_available(), "flash-attn unavailable or too old for FlashAttention2"
+triton_major_minor = tuple(int(part) for part in triton.__version__.split(".")[:2])
+assert triton_major_minor >= (3, 4), f"Triton >= 3.4 required, got {triton.__version__}"
 
 preset = train.MODEL_PRESETS["qwen3_5"]
 cfg = train.build_qwen3_5_moe_text_config(
@@ -158,6 +286,8 @@ print(json.dumps({
     "flash_linear_attention_available": is_flash_linear_attention_available(),
     "causal_conv1d_available": is_causal_conv1d_available(),
     "flash_attn_2_available": is_flash_attn_2_available(),
+    "tilelang_available": True,
+    "triton_version": triton.__version__,
     "attn_implementation": cfg._attn_implementation,
 }, indent=2, sort_keys=True))
 PY
@@ -165,25 +295,10 @@ PY
 
 ## Shared Init
 
-Generate one pre-DeepSpeed initialization artifact and reuse it for both modes:
+Reuse the existing pre-DeepSpeed initialization artifact for both modes:
 
 ```bash
-mkdir -p "$SMOKE_ROOT/results" "$LONG_ROOT/results"
-
-conda run --no-capture-output -n ds python train.py \
-  --model qwen3_5 \
-  --mode autoep \
-  --num_layers 8 \
-  --seq_len 128 \
-  --micro_batch_size 2 \
-  --grad_accum 1 \
-  --seed 42 \
-  --init_weights_only \
-  --save_init_weights "$INIT"
-
-sha256sum "$INIT" | tee "$SMOKE_ROOT/init_weights.sha256"
-ln -f "$INIT" "$LONG_INIT"
-ln -f "${INIT%.safetensors}_meta.json" "${LONG_INIT%.safetensors}_meta.json"
+sha256sum "$INIT"
 ```
 
 ## 100-Step Smoke
@@ -197,7 +312,7 @@ conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32701 t
   --mode autoep \
   --num_layers 8 \
   --steps 100 \
-  --warmup_steps 10 \
+  --warmup_steps 50 \
   --log_interval 1 \
   --seq_len 128 \
   --micro_batch_size 2 \
@@ -205,16 +320,18 @@ conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32701 t
   --seed 42 \
   --dataset_name wikitext \
   --dataset_percentage 10.0 \
+  --tokenizer_name Qwen/Qwen3-0.6B \
+  --output_router_logits true \
   --load_init_weights "$INIT" \
-  --metrics_out "$SMOKE_ROOT/metrics_autoep.csv" \
-  --run_metadata_out "$SMOKE_ROOT/metadata_autoep.json"
+  --metrics_out "$SMOKE_ROOT/autoep/metrics_autoep.csv" \
+  --run_metadata_out "$SMOKE_ROOT/autoep/metadata_autoep.json"
 
 conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32711 train.py \
   --model qwen3_5 \
   --mode zero3_leaf \
   --num_layers 8 \
   --steps 100 \
-  --warmup_steps 10 \
+  --warmup_steps 50 \
   --log_interval 1 \
   --seq_len 128 \
   --micro_batch_size 2 \
@@ -222,20 +339,22 @@ conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32711 t
   --seed 42 \
   --dataset_name wikitext \
   --dataset_percentage 10.0 \
+  --tokenizer_name Qwen/Qwen3-0.6B \
+  --output_router_logits true \
   --load_init_weights "$INIT" \
-  --metrics_out "$SMOKE_ROOT/metrics_zero3_leaf.csv" \
-  --run_metadata_out "$SMOKE_ROOT/metadata_zero3_leaf.json"
+  --metrics_out "$SMOKE_ROOT/zero3_leaf/metrics_zero3_leaf.csv" \
+  --run_metadata_out "$SMOKE_ROOT/zero3_leaf/metadata_zero3_leaf.json"
 
 conda run --no-capture-output -n ds python compare_metrics.py \
-  --autoep_csv "$SMOKE_ROOT/metrics_autoep.csv" \
-  --zero3_leaf_csv "$SMOKE_ROOT/metrics_zero3_leaf.csv" \
-  --autoep_metadata "$SMOKE_ROOT/metadata_autoep.json" \
-  --zero3_leaf_metadata "$SMOKE_ROOT/metadata_zero3_leaf.json" \
+  --autoep_csv "$SMOKE_ROOT/autoep/metrics_autoep.csv" \
+  --zero3_leaf_csv "$SMOKE_ROOT/zero3_leaf/metrics_zero3_leaf.csv" \
+  --autoep_metadata "$SMOKE_ROOT/autoep/metadata_autoep.json" \
+  --zero3_leaf_metadata "$SMOKE_ROOT/zero3_leaf/metadata_zero3_leaf.json" \
   --out_dir "$SMOKE_ROOT/results" \
   --out_json "$SMOKE_ROOT/results/summary.json" \
   --autoep_label "AutoEP + ZeRO-1" \
   --zero3_leaf_label "HF + ZeRO-3 leaf" \
-  --warmup_steps 10 \
+  --warmup_steps 50 \
   --require_same_init_hash
 ```
 
@@ -257,9 +376,11 @@ conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32721 t
   --seed 42 \
   --dataset_name wikitext \
   --dataset_percentage 10.0 \
-  --load_init_weights "$LONG_INIT" \
-  --metrics_out "$LONG_ROOT/metrics_autoep.csv" \
-  --run_metadata_out "$LONG_ROOT/metadata_autoep.json"
+  --tokenizer_name Qwen/Qwen3-0.6B \
+  --output_router_logits true \
+  --load_init_weights "$INIT" \
+  --metrics_out "$LONG_ROOT/autoep/metrics_autoep.csv" \
+  --run_metadata_out "$LONG_ROOT/autoep/metadata_autoep.json"
 
 conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32731 train.py \
   --model qwen3_5 \
@@ -274,15 +395,17 @@ conda run --no-capture-output -n ds deepspeed --num_gpus 8 --master_port 32731 t
   --seed 42 \
   --dataset_name wikitext \
   --dataset_percentage 10.0 \
-  --load_init_weights "$LONG_INIT" \
-  --metrics_out "$LONG_ROOT/metrics_zero3_leaf.csv" \
-  --run_metadata_out "$LONG_ROOT/metadata_zero3_leaf.json"
+  --tokenizer_name Qwen/Qwen3-0.6B \
+  --output_router_logits true \
+  --load_init_weights "$INIT" \
+  --metrics_out "$LONG_ROOT/zero3_leaf/metrics_zero3_leaf.csv" \
+  --run_metadata_out "$LONG_ROOT/zero3_leaf/metadata_zero3_leaf.json"
 
 conda run --no-capture-output -n ds python compare_metrics.py \
-  --autoep_csv "$LONG_ROOT/metrics_autoep.csv" \
-  --zero3_leaf_csv "$LONG_ROOT/metrics_zero3_leaf.csv" \
-  --autoep_metadata "$LONG_ROOT/metadata_autoep.json" \
-  --zero3_leaf_metadata "$LONG_ROOT/metadata_zero3_leaf.json" \
+  --autoep_csv "$LONG_ROOT/autoep/metrics_autoep.csv" \
+  --zero3_leaf_csv "$LONG_ROOT/zero3_leaf/metrics_zero3_leaf.csv" \
+  --autoep_metadata "$LONG_ROOT/autoep/metadata_autoep.json" \
+  --zero3_leaf_metadata "$LONG_ROOT/zero3_leaf/metadata_zero3_leaf.json" \
   --out_dir "$LONG_ROOT/results" \
   --out_json "$LONG_ROOT/results/summary.json" \
   --autoep_label "AutoEP + ZeRO-1" \
