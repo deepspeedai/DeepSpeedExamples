@@ -252,6 +252,123 @@ def num_experts_for_config(architecture: str, model_config: Any) -> int:
     raise ValueError(f"Unsupported architecture: {architecture!r}")
 
 
+class _MixtralAutoEPMoEOutputAdapter(torch.nn.Module):
+    """Keep Mixtral decoder output shape while HF hooks record AutoEP router logits."""
+
+    def __init__(self, autoep_layer: torch.nn.Module) -> None:
+        super().__init__()
+        self.autoep_layer = autoep_layer
+
+    def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        output = self.autoep_layer(hidden_states)
+        if isinstance(output, tuple):
+            return output[0]
+        return output
+
+
+def enable_mixtral_autoep_router_logits(engine_module: torch.nn.Module) -> dict[str, int]:
+    """Retarget HF Mixtral router-logit capture after AutoEP module replacement.
+
+    Transformers 5 captures Mixtral router logits from ``MixtralTopKRouter`` child
+    modules via model-class metadata. AutoEP replaces those routers and does not
+    infer a Mixtral router-logit capture hook from the router class itself, so HF
+    returns an empty ``router_logits`` tuple unless the AutoEP replacement exposes
+    logits explicitly. Qwen3.5 decoder layers already unpack tuple MoE outputs;
+    Mixtral decoder layers do not, so an adapter preserves their hidden-state-only
+    contract while hooks capture output index 1 from the inner AutoEP layer.
+    """
+    try:
+        from deepspeed.module_inject.auto_ep_layer import AutoEPMoELayer
+        from transformers.utils.output_capturing import (
+            _CAN_RECORD_REGISTRY,
+            OutputRecorder,
+        )
+    except ImportError as exc:
+        raise RuntimeError(
+            "Could not import AutoEP or Transformers output-capturing internals "
+            "needed for Mixtral router-logit capture."
+        ) from exc
+
+    retargeted_models = 0
+    seen_model_classes: set[str] = set()
+    for module in engine_module.modules():
+        module_config = getattr(module, "config", None)
+        if getattr(module_config, "model_type", None) != "mixtral":
+            continue
+
+        registry_key = str(module.__class__)
+        if registry_key in seen_model_classes:
+            continue
+
+        registry_outputs = _CAN_RECORD_REGISTRY.get(registry_key)
+        class_outputs = getattr(module.__class__, "_can_record_outputs", None)
+        instance_outputs = getattr(module, "_can_record_outputs", None)
+        base_outputs = (
+            registry_outputs
+            if isinstance(registry_outputs, dict)
+            else class_outputs
+            if isinstance(class_outputs, dict)
+            else instance_outputs
+        )
+        if not isinstance(base_outputs, dict) or "router_logits" not in base_outputs:
+            continue
+
+        retargeted_outputs = dict(base_outputs)
+        retargeted_outputs["router_logits"] = OutputRecorder(AutoEPMoELayer, index=1)
+        _CAN_RECORD_REGISTRY[registry_key] = retargeted_outputs
+        module._can_record_outputs = retargeted_outputs
+        module._output_capturing_hooks_installed = False
+        seen_model_classes.add(registry_key)
+        retargeted_models += 1
+
+    targets = []
+    already_wrapped = 0
+    for module in engine_module.modules():
+        mlp = getattr(module, "mlp", None)
+        if isinstance(mlp, _MixtralAutoEPMoEOutputAdapter):
+            autoep_layer = mlp.autoep_layer
+            if (
+                isinstance(autoep_layer, AutoEPMoELayer)
+                and getattr(autoep_layer, "model_family", None) == "mixtral"
+            ):
+                if (
+                    getattr(autoep_layer, "router_logits_capture_target", None)
+                    != "router"
+                ):
+                    autoep_layer.router_logits_capture_target = "router"
+                    autoep_layer._register_logit_hook()
+                autoep_layer.return_router_logits = True
+                already_wrapped += 1
+            continue
+        if (
+            isinstance(mlp, AutoEPMoELayer)
+            and getattr(mlp, "model_family", None) == "mixtral"
+        ):
+            targets.append((module, mlp))
+
+    for module, autoep_layer in targets:
+        if getattr(autoep_layer, "router_logits_capture_target", None) != "router":
+            autoep_layer.router_logits_capture_target = "router"
+            autoep_layer._register_logit_hook()
+        autoep_layer.return_router_logits = True
+        module.mlp = _MixtralAutoEPMoEOutputAdapter(autoep_layer)
+
+    wrapped_layers = len(targets) + already_wrapped
+    if retargeted_models == 0:
+        raise RuntimeError(
+            "No Mixtral model class with router_logits capture was retargeted."
+        )
+    if wrapped_layers == 0:
+        raise RuntimeError(
+            "No Mixtral AutoEP MoE layers were adapted for router-logit capture."
+        )
+
+    return {
+        "retargeted_model_classes": retargeted_models,
+        "adapted_moe_layers": wrapped_layers,
+    }
+
+
 def validate_autoep_size(
     *,
     architecture: str,
@@ -830,6 +947,20 @@ def main():
 
     if rank == 0:
         logger.info(f"DeepSpeed engine initialized. dp_world_size={engine.dp_world_size}")
+
+    if args.mode == "autoep" and resolved_preset.architecture == "mixtral":
+        try:
+            mixtral_router_capture = enable_mixtral_autoep_router_logits(engine.module)
+        except RuntimeError as e:
+            logger.error(f"Mixtral AutoEP router-logit setup failed: {e}")
+            sys.exit(2)
+        if rank == 0:
+            logger.info(
+                "Mixtral AutoEP router-logit capture enabled: "
+                "%s model class(es) retargeted, %s MoE layer(s) adapted.",
+                mixtral_router_capture["retargeted_model_classes"],
+                mixtral_router_capture["adapted_moe_layers"],
+            )
 
     # Post-init validation
     gc_enabled = args.gradient_checkpointing == "on"

@@ -51,13 +51,13 @@ Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults t
 
 ## Observed Results
 
-Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, 8 layers, sequence length 1024, micro batch size 1, gradient accumulation 4, `--output_router_logits true`, 100 optimizer steps, and steps 50-99 measured. Artifacts are under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models`. Reproducible Qwen3.5 environment details and 10k aux-loss charts are in [VERIFICATION.md](VERIFICATION.md).
+Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, 8 layers, sequence length 1024, micro batch size 1, gradient accumulation 4, `--output_router_logits true`, 100 optimizer steps, and steps 50-99 measured. Matrix artifacts are under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models`; the fixed Mixtral AutoEP rerun is under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_f_mixtral_autoep_gate_logits_fix`. Reproducible Qwen3.5 environment details and 10k aux-loss charts are in [VERIFICATION.md](VERIFICATION.md).
 
 | Model | ZeRO-3 leaf | AutoEP (+ZeRO-1) |
 | --- | --- | --- |
 | Qwen3.5 MoE | Complete: 42,128.05 tok/s, 34.99 GB | Complete: 87,540.15 tok/s, 25.58 GB (`2.08x` throughput, `0.73x` memory vs ZeRO-3) |
 | Llama4 | Failed before metrics: CUDA OOM during backward on rank 4 while 78.12 GiB was in use and a 2.50 GiB allocation was requested. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/llama4/zero3_leaf/train.log`. | Complete: 53,927.17 tok/s, 66.68 GB. ZeRO-3 failed, so no ratio is reported. |
-| Mixtral 8x7B | Complete: 32,622.11 tok/s, 50.47 GB | Failed before metrics: Hugging Face Mixtral aux-loss handling raised `IndexError: tuple index out of range` at `modeling_mixtral.py:543` because `gate_logits` was empty when `output_router_logits=true`. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/mixtral_8x7b/autoep/train.log`. |
+| Mixtral 8x7B | Complete: 32,622.11 tok/s, 50.47 GB | Complete: 69,052.31 tok/s, 35.03 GB (`2.12x` throughput, `0.69x` memory vs ZeRO-3) |
 
 
 ## Important Constraints
