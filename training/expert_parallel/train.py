@@ -1,6 +1,6 @@
 """MoE causal LM training entry point (AutoEP or ZeRO-3 leaf).
 
-Runs a randomly initialized Mixtral- or Qwen3.5-MoE-style model in either
+Runs a randomly initialized Mixtral-, Llama4-, or Qwen3.5-MoE-style model in either
 AutoEP+ZeRO-1 mode or HF-native+ZeRO-3 leaf-module mode (no expert-parallel
 routing in the latter), collecting per-step metrics when configured.
 
@@ -25,14 +25,17 @@ from typing import Any, NamedTuple
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, Qwen3_5MoeForCausalLM
+from transformers import AutoModelForCausalLM, Llama4ForCausalLM, Qwen3_5MoeForCausalLM
 
 import deepspeed
 
 from data_utils import (
     build_hf_batch_generator,
+    build_llama4_text_config,
     build_mixtral_config,
     build_qwen3_5_moe_text_config,
+    get_tokenizer,
+    validate_tokenizer_vocab_size,
 )
 from init_weights import load_init_weights_artifact, save_init_weights_artifact
 from metrics import MetricsLogger, reduce_loss, reduce_max, write_run_metadata
@@ -44,88 +47,39 @@ from validation import (
 
 logger = logging.getLogger(__name__)
 
-# Preset entries: ``architecture`` is ``mixtral`` (MixtralConfig) or ``qwen3_5_moe``
-# (Qwen3_5MoeTextConfig + Qwen3_5MoeForCausalLM). Remaining keys are forwarded to the
-# matching builder (excluding num_layers / default_tokenizer_name, applied to args).
+# Public model presets describe original Hugging Face model-family layouts.
+# DeepSpeed's ``preset_model`` is structural injection metadata and must not
+# encode synthetic sizes or layer counts.
 MODEL_PRESETS: dict[str, dict[str, Any]] = {
-    "tiny": {
-        "architecture": "mixtral",
-        "num_layers": 2,
-        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
-        "num_local_experts": 4,
-        "num_experts_per_tok": 2,
-        "hidden_size": 512,
-        "intermediate_size": 2048,
-        "num_attention_heads": 8,
-        "num_key_value_heads": 2,
-        "vocab_size": 32000,
-        "max_position_embeddings": 4096,
-    },
-    "small": {
-        "architecture": "mixtral",
-        "num_layers": 4,
-        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
-        "num_local_experts": 8,
-        "num_experts_per_tok": 2,
-        "hidden_size": 2048,
-        "intermediate_size": 7168,
-        "num_attention_heads": 16,
-        "num_key_value_heads": 4,
-        "vocab_size": 32000,
-        "max_position_embeddings": 4096,
-    },
-    "default": {
-        "architecture": "mixtral",
-        "num_layers": 4,
-        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
-        "num_local_experts": 8,
-        "num_experts_per_tok": 2,
-        "hidden_size": 4096,
-        "intermediate_size": 14336,
-        "num_attention_heads": 32,
-        "num_key_value_heads": 8,
-        "vocab_size": 32000,
-        "max_position_embeddings": 4096,
-    },
     "mixtral_8x7b": {
         "architecture": "mixtral",
-        "num_layers": 32,
-        "default_tokenizer_name": "mistralai/Mistral-7B-v0.1",
-        "num_local_experts": 8,
-        "num_experts_per_tok": 2,
-        "hidden_size": 4096,
-        "intermediate_size": 14336,
-        "num_attention_heads": 32,
-        "num_key_value_heads": 8,
-        "vocab_size": 32000,
-        "max_position_embeddings": 32768,
+        "display_name": "Mixtral 8x7B",
+        "default_tokenizer_name": "mistralai/Mixtral-8x7B-v0.1",
     },
     "qwen3_5": {
         "architecture": "qwen3_5_moe",
-        "num_layers": 4,
+        "display_name": "Qwen3.5 MoE",
         "default_tokenizer_name": "Qwen/Qwen3-0.6B",
-        # Must cover all tokenizer ids (len=151669); pad_token_id==151643 == old vocab_size edge.
-        "vocab_size": 151669,
-        "hidden_size": 1024,
-        "num_attention_heads": 8,
-        "num_key_value_heads": 2,
-        "head_dim": 128,
-        "moe_intermediate_size": 512,
-        "shared_expert_intermediate_size": 256,
-        "num_experts": 8,
-        "num_experts_per_tok": 2,
-        "max_position_embeddings": 8192,
+    },
+    "llama4": {
+        "architecture": "llama4",
+        "display_name": "Llama4 Scout",
+        "default_tokenizer_name": "meta-llama/Llama-4-Scout-17B-16E",
     },
 }
 
 # DeepSpeed AutoEP structural preset id (must match HF MoE layout for this example).
 DEEPSPEED_AUTOEP_PRESET_ID: dict[str, str] = {
+    "llama4": "llama4",
     "mixtral": "mixtral",
     "qwen3_5_moe": "qwen3_5_moe",
 }
 
 # ZeRO-3 leaf module: full class path for the HF SparseMoeBlock used by each architecture.
 DEEPSPEED_LEAF_MOE_BLOCK_CLASS: dict[str, str] = {
+    "llama4": (
+        "transformers.models.llama4.modeling_llama4.Llama4TextMoe"
+    ),
     "mixtral": (
         "transformers.models.mixtral.modeling_mixtral.MixtralSparseMoeBlock"
     ),
@@ -138,7 +92,11 @@ DEEPSPEED_LEAF_MOE_BLOCK_CLASS: dict[str, str] = {
 
 def default_autoep_parallel_size(architecture: str) -> int:
     """Default ``expert_parallel.autoep_size`` when not set in JSON or ``--autoep_size``."""
-    return 8 if architecture == "qwen3_5_moe" else 4
+    if architecture == "qwen3_5_moe":
+        return 8
+    if architecture in {"llama4", "mixtral"}:
+        return 4
+    raise ValueError(f"Unknown architecture for autoep_size default: {architecture!r}")
 
 
 def default_autoep_parallel_size_for_model(model: str) -> int:
@@ -146,6 +104,25 @@ def default_autoep_parallel_size_for_model(model: str) -> int:
     if model not in MODEL_PRESETS:
         raise ValueError(f"Unknown model preset: {model!r}")
     return default_autoep_parallel_size(MODEL_PRESETS[model]["architecture"])
+
+
+def parse_boolish(value: str) -> bool:
+    """Parse common CLI spellings for booleans."""
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(
+        "expected one of: true/false, yes/no, 1/0, on/off"
+    )
+
+
+def resolve_output_router_logits(args: argparse.Namespace) -> bool:
+    """Resolve new ``--output_router_logits`` alias while preserving legacy behavior."""
+    if args.output_router_logits is not None:
+        return bool(args.output_router_logits)
+    return args.include_router_aux_loss == "on"
 
 
 def _ds_scheduler_dict() -> dict[str, Any]:
@@ -236,7 +213,79 @@ def resolve_deepspeed_config(
 
 class ResolvedModelPreset(NamedTuple):
     architecture: str
-    build_kwargs: dict[str, Any]
+    display_name: str
+    default_tokenizer_name: str
+    num_layers_overridden: bool
+
+
+def build_original_model_config(
+    architecture: str,
+    *,
+    num_layers: int | None,
+    output_router_logits: bool,
+) -> Any:
+    """Build an original HF model-family config, overriding only layer count."""
+    if architecture == "mixtral":
+        return build_mixtral_config(
+            num_layers=num_layers,
+            output_router_logits=output_router_logits,
+        )
+    if architecture == "qwen3_5_moe":
+        return build_qwen3_5_moe_text_config(
+            num_hidden_layers=num_layers,
+            output_router_logits=output_router_logits,
+        )
+    if architecture == "llama4":
+        return build_llama4_text_config(
+            num_hidden_layers=num_layers,
+            output_router_logits=output_router_logits,
+        )
+    raise ValueError(f"Unsupported architecture: {architecture!r}")
+
+
+def num_experts_for_config(architecture: str, model_config: Any) -> int:
+    """Return the routed expert count for a built HF config."""
+    if architecture in {"mixtral", "llama4"}:
+        return int(model_config.num_local_experts)
+    if architecture == "qwen3_5_moe":
+        return int(model_config.num_experts)
+    raise ValueError(f"Unsupported architecture: {architecture!r}")
+
+
+def validate_autoep_size(
+    *,
+    architecture: str,
+    autoep_size: int,
+    num_experts: int,
+    world_size: int,
+) -> None:
+    """Fail fast on invalid AutoEP topology before DeepSpeed engine init."""
+    valid_expert_divisors = [d for d in range(1, num_experts + 1) if num_experts % d == 0]
+    valid_world_divisors = [d for d in range(1, world_size + 1) if world_size % d == 0]
+    valid_sizes = [d for d in valid_expert_divisors if d in valid_world_divisors]
+    if autoep_size not in valid_sizes:
+        raise ValueError(
+            "Invalid AutoEP size for "
+            f"architecture={architecture!r}: autoep_size={autoep_size}, "
+            f"num_experts={num_experts}, world_size={world_size}. "
+            f"Valid values that divide both num_experts and world_size: {valid_sizes}"
+        )
+
+
+def validate_autoep_structural_preset_available(preset_id: str) -> None:
+    """Fail early when the imported DeepSpeed does not expose the needed AutoEP preset."""
+    try:
+        from deepspeed.module_inject.auto_ep_config import PRESET_MODELS
+    except ImportError as exc:
+        raise ValueError(
+            "Imported DeepSpeed does not expose AutoEP preset metadata; "
+            "install an AutoEP-enabled DeepSpeed build."
+        ) from exc
+    if preset_id not in PRESET_MODELS:
+        raise ValueError(
+            f"Imported DeepSpeed does not provide AutoEP preset_model={preset_id!r}. "
+            f"Available presets: {sorted(PRESET_MODELS)}"
+        )
 
 
 def apply_model_preset(args: argparse.Namespace) -> ResolvedModelPreset:
@@ -244,26 +293,32 @@ def apply_model_preset(args: argparse.Namespace) -> ResolvedModelPreset:
     if args.model not in MODEL_PRESETS:
         raise ValueError(f"Unknown model preset: {args.model!r}")
     preset = MODEL_PRESETS[args.model]
+    architecture = preset["architecture"]
+    num_layers_overridden = args.num_layers is not None
     if args.num_layers is None:
-        args.num_layers = preset["num_layers"]
+        original_config = build_original_model_config(
+            architecture,
+            num_layers=None,
+            output_router_logits=False,
+        )
+        args.num_layers = int(original_config.num_hidden_layers)
     if args.tokenizer_name is None:
         args.tokenizer_name = preset["default_tokenizer_name"]
-    build_kwargs = {
-        k: v
-        for k, v in preset.items()
-        if k
-        not in (
-            "architecture",
-            "num_layers",
-            "default_tokenizer_name",
-        )
-    }
-    return ResolvedModelPreset(preset["architecture"], build_kwargs)
+    args.num_layers_overridden = num_layers_overridden
+    return ResolvedModelPreset(
+        architecture=architecture,
+        display_name=preset["display_name"],
+        default_tokenizer_name=preset["default_tokenizer_name"],
+        num_layers_overridden=num_layers_overridden,
+    )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="MoE causal LM training (AutoEP or ZeRO-3 leaf; Mixtral or Qwen3.5-MoE presets)"
+        description=(
+            "MoE causal LM training (AutoEP or ZeRO-3 leaf; original "
+            "Qwen3.5-MoE, Llama4, or Mixtral presets)"
+        )
     )
     parser.add_argument(
         "--mode",
@@ -305,15 +360,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="default",
+        default="qwen3_5",
         choices=sorted(MODEL_PRESETS.keys()),
-        help="Architecture preset (Mixtral or Qwen3.5-MoE); sets width/depth/experts/tokenizer",
+        help=(
+            "Original model-family preset. Public presets do not encode "
+            "synthetic sizes; use --num_layers to override only depth."
+        ),
     )
     parser.add_argument(
         "--num_layers",
         type=int,
         default=None,
-        help="Transformer layers (default: from --model preset)",
+        help="Override only the HF config layer-count field.",
     )
     parser.add_argument(
         "--autoep_size",
@@ -334,6 +392,16 @@ def parse_args() -> argparse.Namespace:
         choices=["on", "off"],
         default="off",
         help="Include router auxiliary loss",
+    )
+    parser.add_argument(
+        "--output_router_logits",
+        "--output-router-logits",
+        type=parse_boolish,
+        default=None,
+        help=(
+            "Enable/disable model config output_router_logits. If omitted, "
+            "the legacy --include_router_aux_loss setting is used."
+        ),
     )
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument(
@@ -403,7 +471,10 @@ def parse_args() -> argparse.Namespace:
         "--tokenizer_name",
         type=str,
         default=None,
-        help="HF tokenizer id; must match model vocab_size (default: from --model preset)",
+        help=(
+            "HF tokenizer id; tokenizer ids must fit within model vocab_size "
+            "(default: from --model preset)"
+        ),
     )
     parser.add_argument(
         "--hf_num_dataloader_workers",
@@ -584,31 +655,65 @@ def main():
         )
 
     # Build model config
-    output_router_logits = args.include_router_aux_loss == "on"
-    if resolved_preset.architecture == "mixtral":
-        model_config = build_mixtral_config(
-            num_layers=args.num_layers,
-            output_router_logits=output_router_logits,
-            **resolved_preset.build_kwargs,
+    output_router_logits = resolve_output_router_logits(args)
+    args.resolved_output_router_logits = output_router_logits
+    model_config = build_original_model_config(
+        resolved_preset.architecture,
+        num_layers=args.num_layers,
+        output_router_logits=output_router_logits,
+    )
+    num_experts = num_experts_for_config(resolved_preset.architecture, model_config)
+
+    try:
+        tokenizer = get_tokenizer(args.tokenizer_name, trust_remote_code=True)
+        tokenizer_vocab_context = validate_tokenizer_vocab_size(
+            tokenizer,
+            args.tokenizer_name,
+            model_config.vocab_size,
         )
-        num_experts = model_config.num_local_experts
-    elif resolved_preset.architecture == "qwen3_5_moe":
-        model_config = build_qwen3_5_moe_text_config(
-            num_hidden_layers=args.num_layers,
-            output_router_logits=output_router_logits,
-            **resolved_preset.build_kwargs,
-        )
-        num_experts = model_config.num_experts
-    else:
-        logger.error(f"Unsupported architecture: {resolved_preset.architecture}")
+    except ValueError as e:
+        logger.error(f"Tokenizer validation failed: {e}")
         sys.exit(2)
+
+    if args.mode == "autoep":
+        try:
+            validate_autoep_size(
+                architecture=resolved_preset.architecture,
+                autoep_size=autoep_size,
+                num_experts=num_experts,
+                world_size=world_size,
+            )
+            validate_autoep_structural_preset_available(
+                ds_config["expert_parallel"]["preset_model"]
+            )
+        except ValueError as e:
+            logger.error(f"AutoEP preflight failed: {e}")
+            sys.exit(2)
 
     if rank == 0:
         logger.info(f"Mode: {args.mode}")
         logger.info(
-            f"Model preset: {args.model} ({resolved_preset.architecture}), "
-            f"{args.num_layers} layers, hidden={model_config.hidden_size}, "
-            f"{num_experts} experts"
+            "Model preset: %s (%s, %s), %s layers%s, hidden=%s, %s experts",
+            args.model,
+            resolved_preset.display_name,
+            resolved_preset.architecture,
+            args.num_layers,
+            " from --num_layers" if resolved_preset.num_layers_overridden else " original default",
+            model_config.hidden_size,
+            num_experts,
+        )
+        logger.info(
+            "output_router_logits=%s (legacy include_router_aux_loss=%s)",
+            output_router_logits,
+            args.include_router_aux_loss,
+        )
+        logger.info(
+            "Tokenizer %s: len=%s, vocab_size=%s, model_vocab_size=%s, exact_match=%s",
+            args.tokenizer_name,
+            tokenizer_vocab_context["tokenizer_len"],
+            tokenizer_vocab_context["tokenizer_vocab_size"],
+            tokenizer_vocab_context["model_vocab_size"],
+            tokenizer_vocab_context["exact_vocab_match"],
         )
         if not args.init_weights_only:
             logger.info(
@@ -622,8 +727,13 @@ def main():
     # Build model with random weights
     if resolved_preset.architecture == "mixtral":
         model = AutoModelForCausalLM.from_config(model_config)
-    else:
+    elif resolved_preset.architecture == "qwen3_5_moe":
         model = Qwen3_5MoeForCausalLM(model_config)
+    elif resolved_preset.architecture == "llama4":
+        model = Llama4ForCausalLM(model_config)
+    else:
+        logger.error(f"Unsupported architecture: {resolved_preset.architecture}")
+        sys.exit(2)
 
     init_weights_context = {
         "init_weights_path": None,
@@ -802,6 +912,7 @@ def main():
 
     # Determine loss objective tag
     loss_tag = "ce_plus_aux" if output_router_logits else "ce_only"
+    aux_loss_coef = float(getattr(model_config, "router_aux_loss_coef", 0.0))
 
     # Static metric fields from validation
     static_metrics = {}
@@ -831,12 +942,15 @@ def main():
         logger.info(f"Starting training for {args.steps} optimizer steps (warmup={args.warmup_steps})...")
 
     tokens_per_microstep = args.seq_len * args.micro_batch_size
+    aux_loss_missing_warned = False
 
     for step in range(start_step, args.steps):
         torch.cuda.synchronize()
         step_start = time.time()
 
         last_loss = None
+        last_ce_loss = None
+        last_aux_loss = None
 
         for accum_idx in range(args.grad_accum):
             batch = batch_gen.get_batch(step, accum_idx)
@@ -848,7 +962,22 @@ def main():
 
             outputs = engine(**batch_dict)
             loss = outputs.loss
+            aux_loss = getattr(outputs, "aux_loss", None)
+            if aux_loss is not None:
+                ce_loss = loss - aux_loss.to(loss.device) * aux_loss_coef
+            else:
+                ce_loss = loss
+                if output_router_logits and not aux_loss_missing_warned and rank == 0:
+                    logger.warning(
+                        "output_router_logits is enabled but model outputs did not "
+                        "include aux_loss; loss_aux metrics will be blank."
+                    )
+                    aux_loss_missing_warned = True
             last_loss = loss.detach().clone()
+            last_ce_loss = ce_loss.detach().clone()
+            last_aux_loss = (
+                aux_loss.detach().clone() if torch.is_tensor(aux_loss) else None
+            )
 
             engine.backward(loss)
             engine.step()
@@ -858,14 +987,35 @@ def main():
         iter_time = step_end - step_start
 
         # Reduce loss (DP-mean) - use last microstep loss
-        reduced_loss = reduce_loss(
+        reduced_total_loss = reduce_loss(
             last_loss, dp_world_size, group=engine.data_parallel_group
+        )
+        reduced_ce_loss = reduce_loss(
+            last_ce_loss, dp_world_size, group=engine.data_parallel_group
+        )
+        reduced_aux_loss = (
+            reduce_loss(last_aux_loss, dp_world_size, group=engine.data_parallel_group)
+            if last_aux_loss is not None
+            else None
         )
 
         # Non-finite loss check (every step including warmup)
-        if not math.isfinite(reduced_loss):
+        if not math.isfinite(reduced_total_loss) or not math.isfinite(reduced_ce_loss):
             if rank == 0:
-                logger.error(f"Non-finite loss at step {step}: {reduced_loss}")
+                logger.error(
+                    "Non-finite loss at step %s: total=%s ce=%s",
+                    step,
+                    reduced_total_loss,
+                    reduced_ce_loss,
+                )
+            sys.exit(3)
+        if reduced_aux_loss is not None and not math.isfinite(reduced_aux_loss):
+            if rank == 0:
+                logger.error(
+                    "Non-finite aux loss at step %s: aux=%s",
+                    step,
+                    reduced_aux_loss,
+                )
             sys.exit(3)
 
         # Reset peak memory stats after warmup
@@ -897,8 +1047,9 @@ def main():
 
             step_metrics = {
                 "step": step,
-                "loss_ce": reduced_loss,
-                "loss_total": reduced_loss,
+                "loss_ce": reduced_ce_loss,
+                "loss_total": reduced_total_loss,
+                "loss_aux": "" if reduced_aux_loss is None else reduced_aux_loss,
                 "loss_objective_tag": loss_tag,
                 "iter_time_sec": max_iter_time,
                 "tokens_per_sec": tokens_per_sec,
@@ -911,8 +1062,14 @@ def main():
             metrics_logger.log_step(step_metrics)
 
             if rank == 0:
+                aux_msg = (
+                    f", aux={reduced_aux_loss:.6f}"
+                    if reduced_aux_loss is not None
+                    else ""
+                )
                 logger.info(
-                    f"Step {step}: loss={reduced_loss:.6f}, "
+                    f"Step {step}: loss_total={reduced_total_loss:.6f}, "
+                    f"loss_ce={reduced_ce_loss:.6f}{aux_msg}, "
                     f"time={max_iter_time:.3f}s, "
                     f"global_tps={global_tokens_per_sec:.0f}"
                 )

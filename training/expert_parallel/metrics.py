@@ -12,6 +12,7 @@ METRICS_COLUMNS: list[str] = [
     "step",
     "loss_ce",
     "loss_total",
+    "loss_aux",
     "loss_objective_tag",
     "iter_time_sec",
     "tokens_per_sec",

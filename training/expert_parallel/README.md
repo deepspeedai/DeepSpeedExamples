@@ -7,19 +7,19 @@ This example offers a quick start for AutoEP in DeepSpeed.
 
 ### Prerequisites
 
-- 2+ GPUs (The fast grouped GEMM path works only on Hopper and Blackwell GPUs)
+- 2+ GPUs (the fast grouped GEMM path works only on Hopper and Blackwell GPUs; the Qwen3.5 fast-path verification target is H100 with Triton `>= 3.4`)
 - Dependencies:
   - PyTorch `>= 2.9.1`
   - **DeepSpeed** with AutoEP: `requirements.txt` installs the **tip of [PR #7938](https://github.com/deepspeedai/DeepSpeed/pull/7938)**.
  Manual install: `pip install "git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head#egg=deepspeed"`.
   - **`transformers` `>= 5.6.2`** (5.x line; see `requirements.txt`) — stable patch floor that includes Mixtral, Llama 4, Qwen3 MoE, and Qwen3.5 / Qwen3.6 (`qwen3_5_moe`) in current Hub checkpoints. Newer 5.7+ releases will be fine.
-  - **Qwen3.5 kernel dependencies are mandatory for verification**:
-    `flash-linear-attention` (`import fla`) and `causal-conv1d` (`import causal_conv1d`) must be installed so linear-attention layers use the specialized `fla.ops.gated_delta_rule` and `causal_conv1d` kernels, not the Transformers torch fallbacks. `flash-attn` (`import flash_attn`) must also be importable for Qwen3.5 full-attention layers when the FlashAttention2 attention implementation is requested.
+  - **Qwen3.5 requires specific kernel dependencies**:
+    `flash-linear-attention` (`import fla`) and `causal-conv1d` (`import causal_conv1d`) must be installed so linear-attention layers use the specialized `fla.ops.gated_delta_rule` and `causal_conv1d` kernels, not the Transformers torch fallbacks. `flash-attn` (`import flash_attn`) must also be importable for Qwen3.5 full-attention layers when the FlashAttention2 attention implementation is requested. On H100 with Triton `>= 3.4`, `tilelang` (`import tilelang`) is also required for the Qwen3.5 fast path.
   - See `requirements.txt` for other dependencies.
 
 ### Run
 
-The following launches causal LM training with **AutoEP + ZeRO-1** on a randomly initialized **Qwen3.5-MoE**-style text model and **Hugging Face text** data (default corpus: **WikiText-103**).
+The following launches causal LM training with **AutoEP + ZeRO-1** on a randomly initialized model built from the original **Qwen3.5-MoE** Hugging Face text config and **Hugging Face text** data (default corpus: **WikiText-103**).
 
 ```bash
 deepspeed --num_gpus 8 train.py \
@@ -40,45 +40,24 @@ deepspeed --num_gpus 8 train.py \
     }
 ```
 
-Here **`preset_model` is `qwen3_5_moe`**: the **AutoEP structural preset id** in DeepSpeed (how layers are found and experts are wired). Mixtral-style presets use **`preset_model`: `mixtral`** and default **`autoep_size`**: `4`.
+Here **`preset_model` is `qwen3_5_moe`**: the **AutoEP structural preset id** in DeepSpeed (how layers are found and experts are wired), not a model-size preset. Public model presets are original Hugging Face model families: `qwen3_5`, `llama4`, and `mixtral_8x7b`. They use the original config dimensions by default; **only `--num_layers` overrides depth**, leaving hidden size, expert count, vocabulary size, and other dimensions unchanged. Llama4 uses **`preset_model`: `llama4`** and Mixtral uses **`preset_model`: `mixtral`**; both default to **`autoep_size`: `4`.
 
 Optional **`--deepspeed_config path.json`** loads a JSON file and then overwrites only the architecture-specific fields above (and the ZeRO-3 leaf MoE block class) so a stray preset in the file cannot disagree with **`--model`**.
 
 Files under `configs/` remain as **reference overrides** (optimizer, scheduler, batch defaults).
 
 
-Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults to `wikitext`** (WikiText-103 raw) and **`--dataset_percentage` defaults to `10.0`** (ten percent of the train split), matching the presets in [`ds_verify_loss`](https://github.com/tohtana/ds_verify_loss). Override **`--dataset_name`**, **`--dataset_percentage`**, or **`--tokenizer_name`** as needed (the tokenizer vocabulary must match the model config; the `qwen3_5` preset defaults to the **Qwen3-0.6B** tokenizer, `len(tokenizer)=151669`).
+Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults to `wikitext`** (WikiText-103 raw) and **`--dataset_percentage` defaults to `10.0`** (ten percent of the train split), matching the presets in [`ds_verify_loss`](https://github.com/tohtana/ds_verify_loss). Override **`--dataset_name`**, **`--dataset_percentage`**, or **`--tokenizer_name`** as needed (the tokenizer length must fit within the model config vocabulary; the `qwen3_5` preset defaults to the **Qwen3-0.6B** tokenizer, `len(tokenizer)=151669`).
 
 ## Observed Results
 
-### Loss curve
+Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, 8 layers, sequence length 1024, micro batch size 1, gradient accumulation 4, `--output_router_logits true`, 100 optimizer steps, and steps 50-99 measured. Artifacts are under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models`. Reproducible Qwen3.5 environment details and 10k aux-loss charts are in [VERIFICATION.md](VERIFICATION.md).
 
-![Loss Curve Comparison](loss_curve.png)
-
-### Peak memory
-
-![Peak Memory Comparison](peak_memory_bar.png)
-
-### Throughput
-
-![Throughput Comparison](throughput_bar.png)
-
-| Metric | AutoEP + ZeRO-1 | HF + ZeRO-3 leaf |
-|--------|------------------|-------------------|
-| Final loss (step 999) | 10.415 | 10.418 |
-| Peak GPU memory | 55.32 GB | 75.36 GB |
-| Avg throughput (post-warmup) | 8,997 tok/s | 2,189 tok/s |
-
-| Comparison metric | Value |
-|-------------------|-------|
-| Final abs loss diff | 0.0031 |
-| Last 100-step mean abs loss diff | 0.0085 |
-| Mean abs loss diff (950 aligned steps) | 0.0222 |
-| Max abs loss diff | 0.1428 |
-| Pearson correlation | 0.9958 |
-| Memory ratio (autoep/zero3) | 0.73x |
-| Throughput ratio (autoep/zero3) | 4.11x |
-| Same init hash | true |
+| Model | ZeRO-3 leaf | AutoEP (+ZeRO-1) |
+| --- | --- | --- |
+| Qwen3.5 MoE | Complete: 42,128.05 tok/s, 34.99 GB | Complete: 87,540.15 tok/s, 25.58 GB (`2.08x` throughput, `0.73x` memory vs ZeRO-3) |
+| Llama4 | Failed before metrics: CUDA OOM during backward on rank 4 while 78.12 GiB was in use and a 2.50 GiB allocation was requested. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/llama4/zero3_leaf/train.log`. | Complete: 53,927.17 tok/s, 66.68 GB. ZeRO-3 failed, so no ratio is reported. |
+| Mixtral 8x7B | Complete: 32,622.11 tok/s, 50.47 GB | Failed before metrics: Hugging Face Mixtral aux-loss handling raised `IndexError: tuple index out of range` at `modeling_mixtral.py:543` because `gate_logits` was empty when `output_router_logits=true`. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/mixtral_8x7b/autoep/train.log`. |
 
 
 ## Important Constraints
@@ -96,7 +75,7 @@ Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults t
 
 ### Qwen3.5 linear-attention kernels
 
-For `--model qwen3_5`, `flash-linear-attention` and `causal-conv1d` are verification requirements, not optional accelerators. The verification should fail if `transformers.utils.import_utils.is_flash_linear_attention_available()` or `is_causal_conv1d_available()` is false, or if a runtime inspection shows `Qwen3_5MoeGatedDeltaNet` using `torch_causal_conv1d_update` or `torch_chunk_gated_delta_rule`.
+For `--model qwen3_5`, `flash-linear-attention`, `causal-conv1d`, `flash-attn`, and `tilelang` on H100/Triton `>= 3.4` are verification requirements, not optional accelerators. The verification should fail if `transformers.utils.import_utils.is_flash_linear_attention_available()` or `is_causal_conv1d_available()` is false, or if a runtime inspection shows `Qwen3_5MoeGatedDeltaNet` using `torch_causal_conv1d_update` or `torch_chunk_gated_delta_rule`.
 
 `flash-attn` is also required when full-attention layers are configured to use `attn_implementation="flash_attention_2"`; record the active attention implementation in verification metadata.
 

@@ -1,4 +1,4 @@
-"""Hugging Face text data loading and MoE config helpers (Mixtral, Qwen3.5-MoE) for the AutoEP example."""
+"""Hugging Face text data loading and MoE config helpers for the AutoEP example."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from datasets import DownloadConfig, load_dataset
 from datasets.utils.logging import disable_progress_bar
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from transformers import AutoTokenizer, MixtralConfig, Qwen3_5MoeTextConfig
+from transformers import AutoTokenizer, Llama4TextConfig, MixtralConfig, Qwen3_5MoeTextConfig
 
 
 def qwen3_5_moe_layer_types(
@@ -27,38 +27,26 @@ def qwen3_5_moe_layer_types(
 
 def build_qwen3_5_moe_text_config(
     *,
-    num_hidden_layers: int,
-    vocab_size: int,
-    hidden_size: int,
-    num_attention_heads: int,
-    num_key_value_heads: int,
-    head_dim: int,
-    moe_intermediate_size: int,
-    shared_expert_intermediate_size: int,
-    num_experts: int,
-    num_experts_per_tok: int,
-    max_position_embeddings: int = 8192,
+    num_hidden_layers: int | None = None,
     output_router_logits: bool = False,
-    full_attention_interval: int = 4,
 ) -> Qwen3_5MoeTextConfig:
-    """Small Qwen3.5-MoE text config for random init (matches HF module layout for AutoEP ``qwen3_5_moe`` preset)."""
-    return Qwen3_5MoeTextConfig(
-        vocab_size=vocab_size,
-        hidden_size=hidden_size,
-        num_hidden_layers=num_hidden_layers,
-        num_attention_heads=num_attention_heads,
-        num_key_value_heads=num_key_value_heads,
-        head_dim=head_dim,
-        moe_intermediate_size=moe_intermediate_size,
-        shared_expert_intermediate_size=shared_expert_intermediate_size,
-        num_experts=num_experts,
-        num_experts_per_tok=num_experts_per_tok,
-        max_position_embeddings=max_position_embeddings,
-        output_router_logits=output_router_logits,
-        layer_types=qwen3_5_moe_layer_types(
-            num_hidden_layers, full_attention_interval=full_attention_interval
-        ),
-    )
+    """Build the original Qwen3.5-MoE text config with an optional layer-count override."""
+    kwargs: dict[str, Any] = {"output_router_logits": output_router_logits}
+    if num_hidden_layers is not None:
+        kwargs["num_hidden_layers"] = num_hidden_layers
+    return Qwen3_5MoeTextConfig(**kwargs)
+
+
+def build_llama4_text_config(
+    *,
+    num_hidden_layers: int | None = None,
+    output_router_logits: bool = False,
+) -> Llama4TextConfig:
+    """Build the original Llama4 text config with an optional layer-count override."""
+    kwargs: dict[str, Any] = {"output_router_logits": output_router_logits}
+    if num_hidden_layers is not None:
+        kwargs["num_hidden_layers"] = num_hidden_layers
+    return Llama4TextConfig(**kwargs)
 
 
 @dataclass
@@ -71,39 +59,14 @@ class CausalLmBatch:
 
 
 def build_mixtral_config(
-    num_layers: int,
-    num_local_experts: int = 8,
-    num_experts_per_tok: int = 2,
-    hidden_size: int = 4096,
-    intermediate_size: int = 14336,
-    num_attention_heads: int = 32,
-    num_key_value_heads: int = 8,
-    vocab_size: int = 32000,
-    max_position_embeddings: int = 4096,
+    num_layers: int | None = None,
     output_router_logits: bool = False,
-    attention_dropout: float = 0.0,
-    router_jitter_noise: float = 0.0,
 ) -> MixtralConfig:
-    """Build a MixtralConfig for random-weight initialization.
-
-    Returns a config suitable for AutoModelForCausalLM.from_config().
-    Sets max_position_embeddings = 4096 (Mixtral default).
-    The caller must ensure max_position_embeddings >= seq_len used in training.
-    """
-    return MixtralConfig(
-        num_hidden_layers=num_layers,
-        num_local_experts=num_local_experts,
-        num_experts_per_tok=num_experts_per_tok,
-        hidden_size=hidden_size,
-        intermediate_size=intermediate_size,
-        num_attention_heads=num_attention_heads,
-        num_key_value_heads=num_key_value_heads,
-        vocab_size=vocab_size,
-        max_position_embeddings=max_position_embeddings,
-        output_router_logits=output_router_logits,
-        attention_dropout=attention_dropout,
-        router_jitter_noise=router_jitter_noise,
-    )
+    """Build the original Mixtral config with an optional layer-count override."""
+    kwargs: dict[str, Any] = {"output_router_logits": output_router_logits}
+    if num_layers is not None:
+        kwargs["num_hidden_layers"] = num_layers
+    return MixtralConfig(**kwargs)
 
 
 def get_tokenizer(model_name: str, *, trust_remote_code: bool = True) -> Any:
@@ -117,6 +80,30 @@ def get_tokenizer(model_name: str, *, trust_remote_code: bool = True) -> Any:
         else:
             tokenizer.pad_token = tokenizer.convert_ids_to_tokens(2)
     return tokenizer
+
+
+def validate_tokenizer_vocab_size(
+    tokenizer: Any,
+    tokenizer_name: str,
+    expected_vocab_size: int,
+) -> dict[str, Any]:
+    """Validate that tokenizer ids fit inside the model embedding table."""
+    tokenizer_len = len(tokenizer)
+    tokenizer_vocab_size = getattr(tokenizer, "vocab_size", None)
+    if tokenizer_len > expected_vocab_size:
+        raise ValueError(
+            f"Tokenizer {tokenizer_name!r} len(tokenizer)={tokenizer_len} "
+            f"(vocab_size={tokenizer_vocab_size}) exceeds model "
+            f"vocab_size={expected_vocab_size}. "
+            "Pick a tokenizer whose ids fit within the model config."
+        )
+    return {
+        "tokenizer_name": tokenizer_name,
+        "tokenizer_len": tokenizer_len,
+        "tokenizer_vocab_size": tokenizer_vocab_size,
+        "model_vocab_size": expected_vocab_size,
+        "exact_vocab_match": tokenizer_len == expected_vocab_size,
+    }
 
 
 def _hf_train_split_string(dataset_fraction: float) -> str:
@@ -319,14 +306,7 @@ def build_hf_batch_generator(
     fraction = min(dataset_percentage / 100.0, 1.0)
 
     tokenizer = get_tokenizer(tokenizer_name, trust_remote_code=True)
-    tokenizer_len = len(tokenizer)
-    if tokenizer_len != expected_vocab_size:
-        raise ValueError(
-            f"Tokenizer {tokenizer_name!r} len(tokenizer)={tokenizer_len} "
-            f"(vocab_size={tokenizer.vocab_size}) does not match model "
-            f"vocab_size={expected_vocab_size}. "
-            "Pick a tokenizer whose full vocabulary size matches the model config."
-        )
+    validate_tokenizer_vocab_size(tokenizer, tokenizer_name, expected_vocab_size)
     raw, text_col = load_hf_text_dataset_rows(
         dataset_name, fraction, is_main_process=is_main
     )

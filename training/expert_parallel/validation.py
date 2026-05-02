@@ -30,6 +30,12 @@ def _native_sparse_moe_block_types() -> tuple[type, ...]:
         types.append(Qwen3MoeSparseMoeBlock)
     except ImportError:
         pass
+    try:
+        from transformers.models.llama4.modeling_llama4 import Llama4TextMoe
+
+        types.append(Llama4TextMoe)
+    except ImportError:
+        pass
     return tuple(types)
 
 
@@ -236,6 +242,14 @@ def _run_git_command(cwd: str, *args: str) -> str:
         return "unknown"
 
 
+def _git_root_for_import_file(import_file: str) -> str:
+    """Return the git root containing an imported module file, or 'unknown'."""
+    if not import_file or import_file == "unknown":
+        return "unknown"
+    cwd = import_file if os.path.isdir(import_file) else os.path.dirname(import_file)
+    return _run_git_command(cwd, "rev-parse", "--show-toplevel")
+
+
 def collect_run_metadata(
     mode: str,
     args: Any,
@@ -248,6 +262,12 @@ def collect_run_metadata(
     import torch
     import transformers
     import deepspeed
+
+    deepspeed_file = getattr(deepspeed, "__file__", "unknown")
+    transformers_file = getattr(transformers, "__file__", "unknown")
+
+    deepspeed_import_root = _git_root_for_import_file(deepspeed_file)
+    transformers_import_root = _git_root_for_import_file(transformers_file)
 
     # Git SHAs
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -307,8 +327,30 @@ def collect_run_metadata(
         "torch_version": torch.__version__,
         "transformers_version": importlib.metadata.version("transformers"),
         "deepspeed_version": ds_version,
-        "deepspeed_file": getattr(deepspeed, "__file__", "unknown"),
-        "transformers_file": getattr(transformers, "__file__", "unknown"),
+        "deepspeed_file": deepspeed_file,
+        "deepspeed_import_root": deepspeed_import_root,
+        "deepspeed_import_git_sha": (
+            _run_git_command(deepspeed_import_root, "rev-parse", "HEAD")
+            if deepspeed_import_root != "unknown"
+            else "unknown"
+        ),
+        "deepspeed_import_branch": (
+            _run_git_command(deepspeed_import_root, "branch", "--show-current")
+            if deepspeed_import_root != "unknown"
+            else "unknown"
+        ),
+        "transformers_file": transformers_file,
+        "transformers_import_root": transformers_import_root,
+        "transformers_import_git_sha": (
+            _run_git_command(transformers_import_root, "rev-parse", "HEAD")
+            if transformers_import_root != "unknown"
+            else "unknown"
+        ),
+        "transformers_import_branch": (
+            _run_git_command(transformers_import_root, "branch", "--show-current")
+            if transformers_import_root != "unknown"
+            else "unknown"
+        ),
         "cuda_version": torch.version.cuda or "unknown",
         "nccl_version": nccl_version,
         "driver_version": driver_version,

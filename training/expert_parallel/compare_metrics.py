@@ -66,6 +66,13 @@ def load_metadata(path: str) -> dict:
         return json.load(f)
 
 
+def parse_optional_float(value: Any) -> float | None:
+    """Parse a metric value, treating missing/blank values as unavailable."""
+    if value is None or value == "":
+        return None
+    return float(value)
+
+
 def pearson_correlation(x: list[float], y: list[float]) -> float | None:
     """Compute Pearson correlation coefficient."""
     n = len(x)
@@ -81,6 +88,56 @@ def pearson_correlation(x: list[float], y: list[float]) -> float | None:
     if den_x == 0 or den_y == 0:
         return None
     return num / (den_x * den_y)
+
+
+def metric_parity(
+    autoep_steps: dict[int, dict],
+    zero3_steps: dict[int, dict],
+    aligned_steps: list[int],
+    metric_name: str,
+    min_corr_steps: int,
+    optional: bool = False,
+) -> dict[str, Any]:
+    """Compute aligned parity stats for one numeric metric column."""
+    metric_steps = []
+    a_values = []
+    z_values = []
+    for step in aligned_steps:
+        if optional:
+            a_value = parse_optional_float(autoep_steps[step].get(metric_name))
+            z_value = parse_optional_float(zero3_steps[step].get(metric_name))
+            if a_value is None or z_value is None:
+                continue
+        else:
+            a_value = float(autoep_steps[step][metric_name])
+            z_value = float(zero3_steps[step][metric_name])
+        metric_steps.append(step)
+        a_values.append(a_value)
+        z_values.append(z_value)
+
+    if not metric_steps:
+        return {
+            "recorded": False,
+            "note": f"{metric_name} was not recorded in both CSVs for aligned steps.",
+            "mean_abs_diff": float("nan"),
+            "max_abs_diff": float("nan"),
+            "pearson_correlation": None,
+            "num_aligned_steps": 0,
+        }
+
+    abs_diffs = [abs(a - z) for a, z in zip(a_values, z_values)]
+    return {
+        "recorded": True,
+        "note": None,
+        "mean_abs_diff": sum(abs_diffs) / len(abs_diffs),
+        "max_abs_diff": max(abs_diffs),
+        "pearson_correlation": (
+            pearson_correlation(a_values, z_values)
+            if len(metric_steps) >= min_corr_steps
+            else None
+        ),
+        "num_aligned_steps": len(metric_steps),
+    }
 
 
 def validate_compatibility(
@@ -166,7 +223,14 @@ def try_plot(
     zero3_leaf_label: str,
 ) -> dict[str, str | None]:
     """Generate comparison plots. Returns dict of plot paths or None."""
-    plots = {"loss_curve": None, "peak_memory_bar": None, "throughput_bar": None}
+    plots = {
+        "loss_curve": None,
+        "ce_loss_curve": None,
+        "total_loss_curve": None,
+        "aux_loss_curve": None,
+        "peak_memory_bar": None,
+        "throughput_bar": None,
+    }
 
     try:
         import matplotlib
@@ -179,27 +243,94 @@ def try_plot(
 
     os.makedirs(out_dir, exist_ok=True)
 
-    # Loss curve
-    try:
-        a_steps = [int(r["step"]) for r in autoep_rows]
-        a_loss = [float(r["loss_ce"]) for r in autoep_rows]
-        z_steps = [int(r["step"]) for r in zero3_rows]
-        z_loss = [float(r["loss_ce"]) for r in zero3_rows]
+    def plot_metric_curve(
+        metric_name: str,
+        ylabel: str,
+        title: str,
+        filename: str,
+        optional: bool = False,
+    ) -> str | None:
+        a_points = []
+        z_points = []
+        for row in autoep_rows:
+            value = (
+                parse_optional_float(row.get(metric_name))
+                if optional
+                else float(row[metric_name])
+            )
+            if value is not None:
+                a_points.append((int(row["step"]), value))
+        for row in zero3_rows:
+            value = (
+                parse_optional_float(row.get(metric_name))
+                if optional
+                else float(row[metric_name])
+            )
+            if value is not None:
+                z_points.append((int(row["step"]), value))
+        if not a_points or not z_points:
+            return None
 
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(a_steps, a_loss, label=autoep_label, marker="o", markersize=3)
-        ax.plot(z_steps, z_loss, label=zero3_leaf_label, marker="s", markersize=3)
+        ax.plot(
+            [p[0] for p in a_points],
+            [p[1] for p in a_points],
+            label=autoep_label,
+            marker="o",
+            markersize=3,
+        )
+        ax.plot(
+            [p[0] for p in z_points],
+            [p[1] for p in z_points],
+            label=zero3_leaf_label,
+            marker="s",
+            markersize=3,
+        )
         ax.set_xlabel("Optimizer Step")
-        ax.set_ylabel("CE Loss")
-        ax.set_title("Loss Curve Comparison")
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
         ax.legend()
         ax.grid(True, alpha=0.3)
-        path = os.path.join(out_dir, "loss_curve.png")
+        path = os.path.join(out_dir, filename)
         fig.savefig(path, dpi=150, bbox_inches="tight")
         plt.close(fig)
+        return path
+
+    # CE loss curve. Keep the legacy loss_curve key/path for existing docs.
+    try:
+        path = plot_metric_curve(
+            "loss_ce",
+            "CE Loss",
+            "CE Loss Curve Comparison",
+            "loss_curve.png",
+        )
         plots["loss_curve"] = path
+        plots["ce_loss_curve"] = path
     except Exception as e:
-        print(f"WARNING: Loss curve plot failed: {e}")
+        print(f"WARNING: CE loss curve plot failed: {e}")
+
+    # Total loss curve
+    try:
+        plots["total_loss_curve"] = plot_metric_curve(
+            "loss_total",
+            "Total Loss",
+            "Total Loss Curve Comparison",
+            "total_loss_curve.png",
+        )
+    except Exception as e:
+        print(f"WARNING: Total loss curve plot failed: {e}")
+
+    # Aux-loss curve when both CSVs recorded it
+    try:
+        plots["aux_loss_curve"] = plot_metric_curve(
+            "loss_aux",
+            "Aux Loss",
+            "Router Aux-Loss Curve Comparison",
+            "aux_loss_curve.png",
+            optional=True,
+        )
+    except Exception as e:
+        print(f"WARNING: Aux-loss curve plot failed: {e}")
 
     # Peak memory bar
     try:
@@ -300,18 +431,28 @@ def main():
     num_aligned = len(aligned_steps)
     sufficient_evidence = num_aligned >= args.min_post_warmup_steps
 
-    # Compute loss parity metrics
-    if aligned_steps:
-        a_losses = [float(autoep_steps[s]["loss_ce"]) for s in aligned_steps]
-        z_losses = [float(zero3_steps[s]["loss_ce"]) for s in aligned_steps]
-        abs_diffs = [abs(a - z) for a, z in zip(a_losses, z_losses)]
-        mean_abs_diff = sum(abs_diffs) / len(abs_diffs)
-        max_abs_diff = max(abs_diffs)
-        corr = pearson_correlation(a_losses, z_losses) if sufficient_evidence else None
-    else:
-        mean_abs_diff = float("nan")
-        max_abs_diff = float("nan")
-        corr = None
+    total_loss_parity = metric_parity(
+        autoep_steps,
+        zero3_steps,
+        aligned_steps,
+        "loss_total",
+        args.min_post_warmup_steps,
+    )
+    ce_loss_parity = metric_parity(
+        autoep_steps,
+        zero3_steps,
+        aligned_steps,
+        "loss_ce",
+        args.min_post_warmup_steps,
+    )
+    aux_loss_parity = metric_parity(
+        autoep_steps,
+        zero3_steps,
+        aligned_steps,
+        "loss_aux",
+        3,
+        optional=True,
+    )
 
     # Check loss objective tag compatibility
     objective_mismatch = False
@@ -339,7 +480,9 @@ def main():
                 f"Insufficient aligned post-warmup steps ({num_aligned} < {args.min_post_warmup_steps})"
             )
         else:
-            threshold_passed = mean_abs_diff <= args.max_mean_abs_diff
+            threshold_passed = (
+                ce_loss_parity["mean_abs_diff"] <= args.max_mean_abs_diff
+            )
 
     # Peak memory
     a_peak_mem = (
@@ -380,12 +523,26 @@ def main():
         "init_hash_zero3_leaf": init_hash_zero3_leaf,
         "init_hash_required": args.require_same_init_hash,
         "loss_parity": {
-            "mean_abs_diff": mean_abs_diff,
-            "max_abs_diff": max_abs_diff,
-            "pearson_correlation": corr,
-            "num_aligned_steps": num_aligned,
+            **ce_loss_parity,
+            "metric": "loss_ce",
             "num_post_warmup_steps": num_aligned,
             "sufficient_evidence": sufficient_evidence,
+        },
+        "total_loss_parity": {
+            **total_loss_parity,
+            "metric": "loss_total",
+            "num_post_warmup_steps": num_aligned,
+            "sufficient_evidence": sufficient_evidence,
+        },
+        "ce_loss_parity": {
+            **ce_loss_parity,
+            "metric": "loss_ce",
+            "num_post_warmup_steps": num_aligned,
+            "sufficient_evidence": sufficient_evidence,
+        },
+        "aux_loss_parity": {
+            **aux_loss_parity,
+            "metric": "loss_aux",
         },
         "threshold_checks": {
             "max_mean_abs_diff": args.max_mean_abs_diff,
@@ -446,10 +603,29 @@ def main():
     print(f"Init hash required: {args.require_same_init_hash}")
     print(f"Same init hash: {same_init_hash}")
     print(f"Aligned steps: {num_aligned}")
-    print(f"Mean abs diff (loss): {mean_abs_diff}")
-    print(f"Max abs diff (loss): {max_abs_diff}")
-    if corr is not None:
-        print(f"Pearson correlation: {corr:.4f}")
+    print(f"Mean abs diff (total loss): {total_loss_parity['mean_abs_diff']}")
+    print(f"Max abs diff (total loss): {total_loss_parity['max_abs_diff']}")
+    if total_loss_parity["pearson_correlation"] is not None:
+        print(
+            "Pearson correlation (total loss): "
+            f"{total_loss_parity['pearson_correlation']:.4f}"
+        )
+    print(f"Mean abs diff (CE loss): {ce_loss_parity['mean_abs_diff']}")
+    print(f"Max abs diff (CE loss): {ce_loss_parity['max_abs_diff']}")
+    if ce_loss_parity["pearson_correlation"] is not None:
+        print(
+            "Pearson correlation (CE loss): "
+            f"{ce_loss_parity['pearson_correlation']:.4f}"
+        )
+    print(f"Aux loss recorded on aligned steps: {aux_loss_parity['num_aligned_steps']}")
+    if aux_loss_parity["recorded"]:
+        print(f"Mean abs diff (aux loss): {aux_loss_parity['mean_abs_diff']}")
+        print(f"Max abs diff (aux loss): {aux_loss_parity['max_abs_diff']}")
+        if aux_loss_parity["pearson_correlation"] is not None:
+            print(
+                "Pearson correlation (aux loss): "
+                f"{aux_loss_parity['pearson_correlation']:.4f}"
+            )
     print(f"Peak memory ratio (autoep/zero3): {mem_ratio}")
     print(f"Throughput ratio (autoep/zero3): {tps_ratio}")
     if threshold_passed is not None:
@@ -457,7 +633,11 @@ def main():
     print(f"\nSummary written to: {args.out_json}")
 
     if plots["loss_curve"]:
-        print(f"Loss curve plot: {plots['loss_curve']}")
+        print(f"CE loss curve plot: {plots['loss_curve']}")
+    if plots["total_loss_curve"]:
+        print(f"Total loss curve plot: {plots['total_loss_curve']}")
+    if plots["aux_loss_curve"]:
+        print(f"Aux loss curve plot: {plots['aux_loss_curve']}")
     if plots["peak_memory_bar"]:
         print(f"Memory plot: {plots['peak_memory_bar']}")
     if plots["throughput_bar"]:

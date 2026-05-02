@@ -47,7 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="default",
+        default="qwen3_5",
         choices=sorted(MODEL_PRESETS.keys()),
         help="Same as train.py --model (affects built-in AutoEP preset / leaf class)",
     )
