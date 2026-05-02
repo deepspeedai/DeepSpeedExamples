@@ -51,12 +51,12 @@ Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults t
 
 ## Observed Results
 
-Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, 8 layers, sequence length 1024, micro batch size 1, gradient accumulation 4, `--output_router_logits true`, 100 optimizer steps, and steps 50-99 measured. Matrix artifacts are under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models`; the fixed Mixtral AutoEP rerun is under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_f_mixtral_autoep_gate_logits_fix`. Reproducible Qwen3.5 environment details and 10k aux-loss charts are in [VERIFICATION.md](VERIFICATION.md).
+Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, sequence length 1024, micro batch size 1, gradient accumulation 4, `--output_router_logits true`, 100 optimizer steps, and steps 50-99 measured. Qwen3.5 and Mixtral values use 8 layers. Llama4 values use the reduced 7-layer count where both ZeRO-3 leaf and AutoEP completed; the prior 8-layer Llama4 ZeRO-3 run OOMed during backward. Matrix artifacts are under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models`; the fixed Mixtral AutoEP rerun is under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_f_mixtral_autoep_gate_logits_fix`; the 7-layer Llama4 rerun is under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_g_llama4_layer_fit_observed_results`. Reproducible Qwen3.5 environment details and 10k aux-loss charts are in [VERIFICATION.md](VERIFICATION.md).
 
 | Model | ZeRO-3 leaf | AutoEP (+ZeRO-1) |
 | --- | --- | --- |
 | Qwen3.5 MoE | Complete: 42,128.05 tok/s, 34.99 GB | Complete: 87,540.15 tok/s, 25.58 GB (`2.08x` throughput, `0.73x` memory vs ZeRO-3) |
-| Llama4 | Failed before metrics: CUDA OOM during backward on rank 4 while 78.12 GiB was in use and a 2.50 GiB allocation was requested. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/llama4/zero3_leaf/train.log`. | Complete: 53,927.17 tok/s, 66.68 GB. ZeRO-3 failed, so no ratio is reported. |
+| Llama4 (7 layers) | Complete: 19,144.07 tok/s, 56.95 GB. Prior 8-layer ZeRO-3 context: CUDA OOM during backward on rank 4 while 78.12 GiB was in use and a 2.50 GiB allocation was requested. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/llama4/zero3_leaf/train.log`. | Complete: 60,178.91 tok/s, 60.08 GB (`3.14x` throughput, `1.06x` memory vs 7-layer ZeRO-3) |
 | Mixtral 8x7B | Complete: 32,622.11 tok/s, 50.47 GB | Complete: 69,052.31 tok/s, 35.03 GB (`2.12x` throughput, `0.69x` memory vs ZeRO-3) |
 
 
