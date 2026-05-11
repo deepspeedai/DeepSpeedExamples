@@ -2,7 +2,7 @@
 # End-to-end AutoEP vs ZeRO-3 leaf comparison workflow.
 #
 # Usage:
-#   bash run_compare.sh [--num_gpus 8] [--steps 50] [--out_dir /mnt/local_storage/autoep_results]
+#   bash run_compare.sh [--num_gpus 8] [--autoep_size 8] [--steps 50] [--out_dir runs/autoep_results]
 #
 # This script:
 #   1. Runs find_max_layers.py to determine largest feasible shared layer count
@@ -14,6 +14,7 @@ set -euo pipefail
 
 # Defaults
 NUM_GPUS=8
+AUTOEP_SIZE=8
 MIN_LAYERS=2
 MAX_LAYERS=64
 STEPS=50
@@ -22,11 +23,9 @@ TRIAL_STEPS=20
 SEQ_LEN=128
 MICRO_BATCH_SIZE=2
 GRAD_ACCUM=1
-TARGET_GLOBAL_TOKENS=""
 SEED=42
 MASTER_PORT=29600
-OUT_DIR="/mnt/local_storage/autoep_results/$(date +%Y%m%d_%H%M%S)"
-ALLOW_UNTESTED=""
+OUT_DIR="runs/autoep_results/$(date +%Y%m%d_%H%M%S)"
 DRY_RUN=false
 TRIAL_TIMEOUT=300
 INIT_WEIGHTS_PATH=""
@@ -35,6 +34,7 @@ INIT_WEIGHTS_PATH=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --num_gpus) NUM_GPUS="$2"; shift 2 ;;
+        --autoep_size) AUTOEP_SIZE="$2"; shift 2 ;;
         --min_layers) MIN_LAYERS="$2"; shift 2 ;;
         --max_layers) MAX_LAYERS="$2"; shift 2 ;;
         --steps) STEPS="$2"; shift 2 ;;
@@ -43,11 +43,9 @@ while [[ $# -gt 0 ]]; do
         --seq_len) SEQ_LEN="$2"; shift 2 ;;
         --micro_batch_size) MICRO_BATCH_SIZE="$2"; shift 2 ;;
         --grad_accum) GRAD_ACCUM="$2"; shift 2 ;;
-        --target_global_tokens_per_update) TARGET_GLOBAL_TOKENS="$2"; shift 2 ;;
         --seed) SEED="$2"; shift 2 ;;
         --master_port) MASTER_PORT="$2"; shift 2 ;;
         --out_dir) OUT_DIR="$2"; shift 2 ;;
-        --allow_untested_versions) ALLOW_UNTESTED="--allow_untested_versions"; shift ;;
         --dry_run) DRY_RUN=true; shift ;;
         --trial_timeout) TRIAL_TIMEOUT="$2"; shift 2 ;;
         --init_weights_path) INIT_WEIGHTS_PATH="$2"; shift 2 ;;
@@ -82,14 +80,12 @@ INIT_WEIGHTS="$INIT_WEIGHTS_PATH"
 MANIFEST="$OUT_DIR/manifest.json"
 LAYER_SEARCH_JSON="$OUT_DIR/layer_search.json"
 AUTOEP_CSV="$OUT_DIR/metrics_autoep.csv"
-AUTOEP_META="$OUT_DIR/run_metadata_autoep.json"
 ZERO3_CSV="$OUT_DIR/metrics_zero3_leaf.csv"
-ZERO3_META="$OUT_DIR/run_metadata_zero3_leaf.json"
 SUMMARY_JSON="$OUT_DIR/summary.json"
 
 # Helper: atomic manifest write via Python
 update_manifest() {
-    conda run -n ds python -c "
+    python -c "
 import json, os, sys
 path = sys.argv[1]
 if os.path.exists(path):
@@ -118,7 +114,7 @@ update_manifest "$MANIFEST" "
 from datetime import datetime, timezone
 m['started_at'] = datetime.now(timezone.utc).isoformat()
 m['args'] = {
-    'num_gpus': $NUM_GPUS, 'min_layers': $MIN_LAYERS, 'max_layers': $MAX_LAYERS,
+    'num_gpus': $NUM_GPUS, 'autoep_size': $AUTOEP_SIZE, 'min_layers': $MIN_LAYERS, 'max_layers': $MAX_LAYERS,
     'steps': $STEPS, 'warmup_steps': $WARMUP_STEPS, 'trial_steps': $TRIAL_STEPS,
     'seq_len': $SEQ_LEN, 'micro_batch_size': $MICRO_BATCH_SIZE,
     'grad_accum': $GRAD_ACCUM, 'seed': $SEED, 'init_weights_path': '$INIT_WEIGHTS',
@@ -152,12 +148,6 @@ m['finished_at'] = datetime.now(timezone.utc).isoformat()
     exit 0
 fi
 
-# Build target tokens arg if provided
-TARGET_TOKENS_ARG=""
-if [[ -n "$TARGET_GLOBAL_TOKENS" ]]; then
-    TARGET_TOKENS_ARG="--target_global_tokens_per_update $TARGET_GLOBAL_TOKENS"
-fi
-
 echo "=== Step 1: Find max feasible layers ==="
 update_manifest "$MANIFEST" "
 from datetime import datetime, timezone
@@ -168,7 +158,7 @@ m['stages'].append({
 })
 "
 
-conda run -n ds python find_max_layers.py \
+python find_max_layers.py \
     --min_layers "$MIN_LAYERS" \
     --max_layers "$MAX_LAYERS" \
     --seq_len "$SEQ_LEN" \
@@ -176,16 +166,15 @@ conda run -n ds python find_max_layers.py \
     --grad_accum "$GRAD_ACCUM" \
     --trial_steps "$TRIAL_STEPS" \
     --num_gpus "$NUM_GPUS" \
+    --autoep_size "$AUTOEP_SIZE" \
     --seed "$SEED" \
     --master_port "$MASTER_PORT" \
     --trial_timeout "$TRIAL_TIMEOUT" \
-    $TARGET_TOKENS_ARG \
-    $ALLOW_UNTESTED \
     --output_json "$LAYER_SEARCH_JSON" \
     --log_dir "$OUT_DIR/layer_search_logs/"
 
 # Extract L_final
-L_FINAL=$(conda run -n ds python -c "
+L_FINAL=$(python -c "
 import json, sys
 with open('$LAYER_SEARCH_JSON') as f:
     d = json.load(f)
@@ -218,18 +207,13 @@ m['stages'].append({
 })
 "
 
-conda run -n ds python train.py \
-    --mode autoep \
+python prepare_init_weights.py \
+    --model qwen3_5 \
     --num_layers "$L_FINAL" \
-    --seq_len "$SEQ_LEN" \
-    --micro_batch_size "$MICRO_BATCH_SIZE" \
-    --grad_accum "$GRAD_ACCUM" \
     --seed "$SEED" \
-    $ALLOW_UNTESTED \
-    --init_weights_only \
-    --save_init_weights "$INIT_WEIGHTS"
+    --output "$INIT_WEIGHTS"
 
-INIT_WEIGHTS_SHA256=$(conda run -n ds python -c "
+INIT_WEIGHTS_SHA256=$(python -c "
 import hashlib
 path = '$INIT_WEIGHTS'
 h = hashlib.sha256()
@@ -261,9 +245,10 @@ m['stages'].append({
 "
 
 AUTOEP_PORT=$((MASTER_PORT + 100))
-conda run -n ds deepspeed --num_gpus "$NUM_GPUS" --master_port "$AUTOEP_PORT" \
+deepspeed --num_gpus "$NUM_GPUS" --master_port "$AUTOEP_PORT" \
     train.py \
     --mode autoep \
+    --autoep_size "$AUTOEP_SIZE" \
     --steps "$STEPS" \
     --warmup_steps "$WARMUP_STEPS" \
     --num_layers "$L_FINAL" \
@@ -271,11 +256,8 @@ conda run -n ds deepspeed --num_gpus "$NUM_GPUS" --master_port "$AUTOEP_PORT" \
     --micro_batch_size "$MICRO_BATCH_SIZE" \
     --grad_accum "$GRAD_ACCUM" \
     --seed "$SEED" \
-    $TARGET_TOKENS_ARG \
-    $ALLOW_UNTESTED \
     --load_init_weights "$INIT_WEIGHTS" \
-    --metrics_out "$AUTOEP_CSV" \
-    --run_metadata_out "$AUTOEP_META"
+    --metrics_out "$AUTOEP_CSV"
 
 update_manifest "$MANIFEST" "
 from datetime import datetime, timezone
@@ -283,7 +265,6 @@ m['stages'][-1]['status'] = 'success'
 m['stages'][-1]['finished_at'] = datetime.now(timezone.utc).isoformat()
 m['stages'][-1]['exit_code'] = 0
 m['artifacts']['autoep_csv'] = '$AUTOEP_CSV'
-m['artifacts']['autoep_meta'] = '$AUTOEP_META'
 "
 
 echo "=== Step 3b: Final comparison - ZeRO-3 leaf ==="
@@ -297,7 +278,7 @@ m['stages'].append({
 "
 
 ZERO3_PORT=$((MASTER_PORT + 200))
-conda run -n ds deepspeed --num_gpus "$NUM_GPUS" --master_port "$ZERO3_PORT" \
+deepspeed --num_gpus "$NUM_GPUS" --master_port "$ZERO3_PORT" \
     train.py \
     --mode zero3_leaf \
     --steps "$STEPS" \
@@ -307,11 +288,8 @@ conda run -n ds deepspeed --num_gpus "$NUM_GPUS" --master_port "$ZERO3_PORT" \
     --micro_batch_size "$MICRO_BATCH_SIZE" \
     --grad_accum "$GRAD_ACCUM" \
     --seed "$SEED" \
-    $TARGET_TOKENS_ARG \
-    $ALLOW_UNTESTED \
     --load_init_weights "$INIT_WEIGHTS" \
-    --metrics_out "$ZERO3_CSV" \
-    --run_metadata_out "$ZERO3_META"
+    --metrics_out "$ZERO3_CSV"
 
 update_manifest "$MANIFEST" "
 from datetime import datetime, timezone
@@ -319,7 +297,6 @@ m['stages'][-1]['status'] = 'success'
 m['stages'][-1]['finished_at'] = datetime.now(timezone.utc).isoformat()
 m['stages'][-1]['exit_code'] = 0
 m['artifacts']['zero3_leaf_csv'] = '$ZERO3_CSV'
-m['artifacts']['zero3_leaf_meta'] = '$ZERO3_META'
 "
 
 echo "=== Step 4: Generate comparison ==="
@@ -332,17 +309,14 @@ m['stages'].append({
 })
 "
 
-conda run -n ds python compare_metrics.py \
+python compare_metrics.py \
     --autoep_csv "$AUTOEP_CSV" \
     --zero3_leaf_csv "$ZERO3_CSV" \
-    --autoep_metadata "$AUTOEP_META" \
-    --zero3_leaf_metadata "$ZERO3_META" \
     --out_dir "$OUT_DIR" \
     --out_json "$SUMMARY_JSON" \
     --autoep_label "AutoEP + ZeRO-1" \
     --zero3_leaf_label "HF + ZeRO-3 leaf" \
-    --warmup_steps "$WARMUP_STEPS" \
-    --require_same_init_hash
+    --warmup_steps "$WARMUP_STEPS"
 
 update_manifest "$MANIFEST" "
 from datetime import datetime, timezone

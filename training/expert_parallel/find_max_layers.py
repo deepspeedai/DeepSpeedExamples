@@ -4,7 +4,7 @@ Launches train.py as subprocesses with increasing layer counts to find
 the maximum stable configuration for both AutoEP and ZeRO-3 leaf modes.
 
 Run as a regular Python script (NOT via deepspeed launcher):
-    python find_max_layers.py --output_json /mnt/local_storage/autoep_example_test/layer_search.json
+    python find_max_layers.py --autoep_size 8 --output_json runs/layer_search.json
 """
 
 import argparse
@@ -16,7 +16,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from train import MODEL_PRESETS, default_autoep_parallel_size_for_model
+from train import MODEL_PRESETS
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,20 +30,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num_gpus", type=int, default=8)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--master_port", type=int, default=29600)
-    parser.add_argument("--allow_untested_versions", action="store_true")
-    parser.add_argument("--target_global_tokens_per_update", type=int, default=None)
-    parser.add_argument(
-        "--autoep_config",
-        type=str,
-        default="",
-        help="Optional DeepSpeed JSON for AutoEP trials (default: built-in train.py config)",
-    )
-    parser.add_argument(
-        "--zero3_leaf_config",
-        type=str,
-        default="",
-        help="Optional DeepSpeed JSON for ZeRO-3 leaf trials (default: built-in)",
-    )
     parser.add_argument(
         "--model",
         type=str,
@@ -51,11 +37,17 @@ def parse_args() -> argparse.Namespace:
         choices=sorted(MODEL_PRESETS.keys()),
         help="Same as train.py --model (affects built-in AutoEP preset / leaf class)",
     )
+    parser.add_argument(
+        "--autoep_size",
+        type=int,
+        required=True,
+        help="AutoEP size passed to train.py --autoep_size",
+    )
     parser.add_argument("--output_json", type=str, required=True)
     parser.add_argument(
         "--log_dir",
         type=str,
-        default="/mnt/local_storage/autoep_example_test/layer_search/",
+        default="runs/layer_search/",
     )
     parser.add_argument("--trial_timeout", type=int, default=300)
     parser.add_argument("--resume_from_json", type=str, default=None)
@@ -107,9 +99,6 @@ def run_trial(
     attempt: int = 1,
 ) -> dict:
     """Run a single trial and return the result dict."""
-    config_path = (
-        args.autoep_config if mode == "autoep" else args.zero3_leaf_config
-    )
     master_port = args.master_port + trial_idx
 
     trial_id = f"{mode}_L{num_layers}_attempt{attempt}"
@@ -117,7 +106,6 @@ def run_trial(
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, "output.log")
     metrics_path = os.path.join(log_dir, f"metrics_{mode}.csv")
-    metadata_path = os.path.join(log_dir, f"run_metadata_{mode}.json")
 
     cmd = [
         "deepspeed",
@@ -134,12 +122,9 @@ def run_trial(
         "--grad_accum", str(grad_accum),
         "--seed", str(args.seed),
         "--metrics_out", metrics_path,
-        "--run_metadata_out", metadata_path,
     ]
-    if config_path:
-        cmd.extend(["--deepspeed_config", config_path])
-    if args.allow_untested_versions:
-        cmd.append("--allow_untested_versions")
+    if mode == "autoep":
+        cmd.extend(["--autoep_size", str(args.autoep_size)])
 
     started_at = datetime.now(timezone.utc).isoformat()
     print(f"[{trial_id}] Starting: {num_layers} layers, port {master_port}")
@@ -192,7 +177,6 @@ def run_trial(
         "command": cmd,
         "log_path": log_path,
         "metrics_path": metrics_path if exit_code == 0 else None,
-        "metadata_path": metadata_path if exit_code == 0 else None,
         "duration_sec": duration,
         "started_at": started_at,
         "finished_at": finished_at,
@@ -316,44 +300,8 @@ def main():
         prior_history = prior.get("search_history", [])
         print(f"Resuming from {len(prior_history)} prior trials")
 
-    # Derive per-mode grad_accum
-    if args.target_global_tokens_per_update is not None:
-        if args.autoep_config:
-            with open(args.autoep_config) as f:
-                autoep_cfg = json.load(f)
-            ep = autoep_cfg.get("expert_parallel") or {}
-            autoep_size = ep.get("autoep_size")
-            if autoep_size is None:
-                autoep_size = default_autoep_parallel_size_for_model(args.model)
-        else:
-            autoep_size = default_autoep_parallel_size_for_model(args.model)
-        dp_ws_autoep = args.num_gpus // autoep_size
-        dp_ws_zero3 = args.num_gpus
-
-        tokens_per_micro_autoep = args.seq_len * args.micro_batch_size * dp_ws_autoep
-        tokens_per_micro_zero3 = args.seq_len * args.micro_batch_size * dp_ws_zero3
-
-        ga_autoep = args.target_global_tokens_per_update / tokens_per_micro_autoep
-        ga_zero3 = args.target_global_tokens_per_update / tokens_per_micro_zero3
-
-        if ga_autoep != int(ga_autoep) or ga_autoep < 1:
-            print(
-                f"ERROR: target_global_tokens_per_update={args.target_global_tokens_per_update} "
-                f"not divisible for autoep (tokens_per_micro={tokens_per_micro_autoep})"
-            )
-            sys.exit(1)
-        if ga_zero3 != int(ga_zero3) or ga_zero3 < 1:
-            print(
-                f"ERROR: target_global_tokens_per_update={args.target_global_tokens_per_update} "
-                f"not divisible for zero3 (tokens_per_micro={tokens_per_micro_zero3})"
-            )
-            sys.exit(1)
-
-        grad_accum_autoep = int(ga_autoep)
-        grad_accum_zero3 = int(ga_zero3)
-    else:
-        grad_accum_autoep = args.grad_accum
-        grad_accum_zero3 = args.grad_accum
+    grad_accum_autoep = args.grad_accum
+    grad_accum_zero3 = args.grad_accum
 
     search_history = list(prior_history)
     trial_counter = [len(prior_history)]
@@ -371,6 +319,7 @@ def main():
             "model": args.model,
             "seq_len": args.seq_len,
             "micro_batch_size": args.micro_batch_size,
+            "autoep_size": args.autoep_size,
             "grad_accum_autoep": grad_accum_autoep,
             "grad_accum_zero3_leaf": grad_accum_zero3,
             "trial_steps": args.trial_steps,

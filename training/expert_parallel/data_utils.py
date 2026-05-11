@@ -28,10 +28,9 @@ def qwen3_5_moe_layer_types(
 def build_qwen3_5_moe_text_config(
     *,
     num_hidden_layers: int | None = None,
-    output_router_logits: bool = False,
 ) -> Qwen3_5MoeTextConfig:
     """Build the original Qwen3.5-MoE text config with an optional layer-count override."""
-    kwargs: dict[str, Any] = {"output_router_logits": output_router_logits}
+    kwargs: dict[str, Any] = {}
     if num_hidden_layers is not None:
         kwargs["num_hidden_layers"] = num_hidden_layers
     return Qwen3_5MoeTextConfig(**kwargs)
@@ -40,10 +39,9 @@ def build_qwen3_5_moe_text_config(
 def build_llama4_text_config(
     *,
     num_hidden_layers: int | None = None,
-    output_router_logits: bool = False,
 ) -> Llama4TextConfig:
     """Build the original Llama4 text config with an optional layer-count override."""
-    kwargs: dict[str, Any] = {"output_router_logits": output_router_logits}
+    kwargs: dict[str, Any] = {}
     if num_hidden_layers is not None:
         kwargs["num_hidden_layers"] = num_hidden_layers
     return Llama4TextConfig(**kwargs)
@@ -60,10 +58,9 @@ class CausalLmBatch:
 
 def build_mixtral_config(
     num_layers: int | None = None,
-    output_router_logits: bool = False,
 ) -> MixtralConfig:
     """Build the original Mixtral config with an optional layer-count override."""
-    kwargs: dict[str, Any] = {"output_router_logits": output_router_logits}
+    kwargs: dict[str, Any] = {}
     if num_layers is not None:
         kwargs["num_hidden_layers"] = num_layers
     return MixtralConfig(**kwargs)
@@ -303,6 +300,11 @@ def build_hf_batch_generator(
     is_main = rank == 0
     if dataset_percentage <= 0:
         raise ValueError("dataset_percentage must be positive")
+    if dataset_percentage < 1.0:
+        raise ValueError(
+            "dataset_percentage must be at least 1.0 because Hugging Face "
+            "split slicing uses whole percentages."
+        )
     fraction = min(dataset_percentage / 100.0, 1.0)
 
     tokenizer = get_tokenizer(tokenizer_name, trust_remote_code=True)

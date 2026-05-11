@@ -19,6 +19,7 @@ MODELS: list[tuple[str, str]] = [
     ("llama4", "Llama4"),
     ("mixtral_8x7b", "Mixtral"),
 ]
+AUTOEP_SIZE_BY_MODEL = {"qwen3_5": 8, "llama4": 4, "mixtral_8x7b": 4}
 MODES = ["zero3_leaf", "autoep"]
 
 
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--root",
-        default="/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models",
+        default="runs/observed_results_models",
     )
     parser.add_argument("--num_gpus", type=int, default=8)
     parser.add_argument("--base_port", type=int, default=29180)
@@ -90,7 +91,6 @@ def summarize_success(
     mode: str,
     run_dir: Path,
     metrics_csv: Path,
-    metadata_json: Path,
     warmup_steps: int,
     returncode: int,
     duration_sec: float,
@@ -100,8 +100,7 @@ def summarize_success(
     rows = load_rows(metrics_csv, warmup_steps)
     if not rows:
         raise ValueError(f"No post-warmup rows in {metrics_csv}")
-    with metadata_json.open() as f:
-        metadata = json.load(f)
+    losses = [float(row["loss"]) for row in rows]
     global_tps = [float(row["global_tokens_per_sec"]) for row in rows]
     peak_memory = [
         float(row["cuda_peak_memory_allocated_bytes"]) / (1024**3) for row in rows
@@ -116,19 +115,13 @@ def summarize_success(
         "run_dir": str(run_dir),
         "log_path": str(log_path),
         "metrics_csv": str(metrics_csv),
-        "metadata_json": str(metadata_json),
         "command": command,
         "first_metric_step": int(rows[0]["step"]),
         "last_metric_step": int(rows[-1]["step"]),
         "metric_rows": len(rows),
+        "mean_loss": mean(losses),
         "mean_global_tokens_per_sec": mean(global_tps),
         "peak_cuda_memory_allocated_gb": max(peak_memory),
-        "world_size": metadata.get("world_size"),
-        "dp_world_size": metadata.get("dp_world_size"),
-        "autoep_size": metadata.get("autoep_size"),
-        "effective_tokens_per_update": metadata.get("effective_tokens_per_update"),
-        "loss_objective_tag": rows[-1].get("loss_objective_tag"),
-        "loss_aux_recorded": any(row.get("loss_aux") not in (None, "") for row in rows),
     }
 
 
@@ -192,12 +185,9 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "model_label",
         "mode",
         "status",
+        "mean_loss",
         "mean_global_tokens_per_sec",
         "peak_cuda_memory_allocated_gb",
-        "world_size",
-        "dp_world_size",
-        "autoep_size",
-        "effective_tokens_per_update",
         "metric_rows",
         "returncode",
         "run_dir",
@@ -229,10 +219,8 @@ def main() -> None:
             "micro_batch_size": args.micro_batch_size,
             "seq_len": args.seq_len,
             "grad_accum": args.grad_accum,
-            "output_router_logits": True,
             "steps": args.steps,
             "warmup_steps": args.warmup_steps,
-            "gradient_checkpointing": "off",
             "shared_init": None,
         },
     }
@@ -245,7 +233,6 @@ def main() -> None:
             run_dir = root / "runs" / model / mode
             run_dir.mkdir(parents=True, exist_ok=True)
             metrics_csv = run_dir / "metrics.csv"
-            metadata_json = run_dir / "metadata.json"
             log_path = run_dir / "train.log"
             cmd = [
                 "deepspeed",
@@ -278,15 +265,11 @@ def main() -> None:
                 args.dataset_name,
                 "--dataset_percentage",
                 str(args.dataset_percentage),
-                "--gradient_checkpointing",
-                "off",
-                "--output_router_logits",
-                "true",
                 "--metrics_out",
                 str(metrics_csv),
-                "--run_metadata_out",
-                str(metadata_json),
             ]
+            if mode == "autoep":
+                cmd.extend(["--autoep_size", str(AUTOEP_SIZE_BY_MODEL[model])])
             if args.dry_run:
                 result = {
                     "status": "dry_run",
@@ -301,7 +284,7 @@ def main() -> None:
                 returncode, duration_sec, status = run_command(
                     cmd, log_path, args.timeout_sec
                 )
-                if returncode == 0 and metrics_csv.exists() and metadata_json.exists():
+                if returncode == 0 and metrics_csv.exists():
                     try:
                         result = summarize_success(
                             model=model,
@@ -309,7 +292,6 @@ def main() -> None:
                             mode=mode,
                             run_dir=run_dir,
                             metrics_csv=metrics_csv,
-                            metadata_json=metadata_json,
                             warmup_steps=args.warmup_steps,
                             returncode=returncode,
                             duration_sec=duration_sec,

@@ -7,57 +7,59 @@ This example offers a quick start for AutoEP in DeepSpeed.
 
 ### Prerequisites
 
-- 2+ GPUs (the fast grouped GEMM path works only on Hopper and Blackwell GPUs; the Qwen3.5 fast-path verification target is H100 with Triton `>= 3.4`)
+- 2+ GPUs (the fast grouped GEMM path works only on Hopper and Blackwell GPUs)
 - Dependencies:
   - PyTorch `>= 2.9.1`
-  - **DeepSpeed** with AutoEP: `requirements.txt` installs the **tip of [PR #7938](https://github.com/deepspeedai/DeepSpeed/pull/7938)**.
- Manual install: `pip install "git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head#egg=deepspeed"`.
+  - **DeepSpeed** with AutoEP: AutoEP has not been merged into `main` yet. `requirements.txt` installs the **tip of [PR #7938](https://github.com/deepspeedai/DeepSpeed/pull/7938)**. Manual install: `pip install "git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head#egg=deepspeed"`.
   - **`transformers` `>= 5.6.2`** (5.x line; see `requirements.txt`) — stable patch floor that includes Mixtral, Llama 4, Qwen3 MoE, and Qwen3.5 / Qwen3.6 (`qwen3_5_moe`) in current Hub checkpoints. Newer 5.7+ releases will be fine.
-  - **Qwen3.5 requires specific kernel dependencies**:
-    `flash-linear-attention` (`import fla`) and `causal-conv1d` (`import causal_conv1d`) must be installed so linear-attention layers use the specialized `fla.ops.gated_delta_rule` and `causal_conv1d` kernels, not the Transformers torch fallbacks. `flash-attn` (`import flash_attn`) must also be importable for Qwen3.5 full-attention layers when the FlashAttention2 attention implementation is requested. On H100 with Triton `>= 3.4`, `tilelang` (`import tilelang`) is also required for the Qwen3.5 fast path.
+  - Qwen3.5 requires specific kernel dependencies. See [VERIFICATION.md](VERIFICATION.md#qwen35-kernel-requirements) for more details.
   - See `requirements.txt` for other dependencies.
 
 ### Run
 
-The following launches causal LM training with **AutoEP + ZeRO-1** on a randomly initialized model built from the original **Qwen3.5-MoE** Hugging Face text config and **Hugging Face text** data (default corpus: **WikiText-103**).
+The following launches causal LM training with **AutoEP + ZeRO-1** on a randomly initialized model built from the original **Qwen3.5-MoE** Hugging Face text config.
+`--num_layers` overrides only the layer count in the original model config, which is useful when testing with limited GPU resources. `--dataset_name` and `--dataset_percentage` choose the Hugging Face training dataset and the percentage of the train split to use.
 
 ```bash
 deepspeed --num_gpus 8 train.py \
+    --mode autoep \
     --model qwen3_5 \
+    --autoep_size 8 \
+    --num_layers 8 \
     --dataset_name wikitext \
     --dataset_percentage 10.0 \
     --steps 1000
 ```
 
-`train.py` builds the DeepSpeed config from **`--mode`** (default `autoep`) and **`--model`**, so **`expert_parallel.preset_model`** and ZeRO-3 **`leaf_module.classes`** always match the Hugging Face MoE layout for that preset. For **Qwen3.5-MoE** (`--model qwen3_5`), the effective AutoEP section is equivalent to:
+For this `--mode autoep` / `--model qwen3_5` run, `train.py` derives the following `expert_parallel` section:
 
 ```json
     "expert_parallel": {
         "enabled": true,
         "autoep_size": 8,
-        "preset_model": "qwen3_5_moe",
-        "load_balance_coeff": null
+        "preset_model": "qwen3_5_moe"
     }
 ```
 
-Here **`preset_model` is `qwen3_5_moe`**: the **AutoEP structural preset id** in DeepSpeed (how layers are found and experts are wired), not a model-size preset. Public model presets are original Hugging Face model families: `qwen3_5`, `llama4`, and `mixtral_8x7b`. They use the original config dimensions by default; **only `--num_layers` overrides depth**, leaving hidden size, expert count, vocabulary size, and other dimensions unchanged. Llama4 uses **`preset_model`: `llama4`** and Mixtral uses **`preset_model`: `mixtral`**; both default to **`autoep_size`: `4`.
+Here are the key options in the DeepSpeed config for AutoEP:
 
-Optional **`--deepspeed_config path.json`** loads a JSON file and then overwrites only the architecture-specific fields above (and the ZeRO-3 leaf MoE block class) so a stray preset in the file cannot disagree with **`--model`**.
+- **`enabled`** — Turns on AutoEP.
+- **`autoep_size`** — Expert-parallel size. It must be specified with `--autoep_size` in AutoEP mode and must divide both the GPU count and the model's expert count. The benchmark commands use `8` for Qwen3.5 and `4` for Llama4 and Mixtral.
+- **`preset_model`** — DeepSpeed's structural AutoEP preset id. It is **not** the same as this example's `--model` option.
 
-Files under `configs/` remain as **reference overrides** (optimizer, scheduler, batch defaults).
+This example exposes three public `--model` choices: `qwen3_5`, `llama4`, and `mixtral_8x7b`. They map to DeepSpeed `preset_model` values `qwen3_5_moe`, `llama4`, and `mixtral`, respectively. The underlying AutoEP PR also defines additional structural preset ids: `qwen2_moe`, `qwen3_moe`, `deepseek_v2`, and `deepseek_v3`; those are not exposed as `--model` choices in this example.
 
+## Performance Benchmark
 
-Batches come from a Hugging Face **text** dataset. **`--dataset_name` defaults to `wikitext`** (WikiText-103 raw) and **`--dataset_percentage` defaults to `10.0`** (ten percent of the train split), matching the presets in [`ds_verify_loss`](https://github.com/tohtana/ds_verify_loss). Override **`--dataset_name`**, **`--dataset_percentage`**, or **`--tokenizer_name`** as needed (the tokenizer length must fit within the model config vocabulary; the `qwen3_5` preset defaults to the **Qwen3-0.6B** tokenizer, `len(tokenizer)=151669`).
-
-## Observed Results
-
-Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, sequence length 1024, micro batch size 1, gradient accumulation 4, `--output_router_logits true`, 100 optimizer steps, and steps 50-99 measured. Qwen3.5 and Mixtral values use 8 layers. Llama4 values use the reduced 7-layer count where both ZeRO-3 leaf and AutoEP completed; the prior 8-layer Llama4 ZeRO-3 run OOMed during backward. Matrix artifacts are under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models`; the fixed Mixtral AutoEP rerun is under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_f_mixtral_autoep_gate_logits_fix`; the 7-layer Llama4 rerun is under `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_g_llama4_layer_fit_observed_results`. Reproducible Qwen3.5 environment details and 10k aux-loss charts are in [VERIFICATION.md](VERIFICATION.md).
+We benchmarked Qwen3.5 and Mixtral with 8 layers, and Llama4 with 7 layers. Each model was run under matching conditions for AutoEP and the ZeRO-3 leaf baseline: 8 H100 GPUs, sequence length 1024, micro batch size 1, gradient accumulation 4, 100 optimizer steps, and steps 50-99 measured. The table below reports the side-by-side comparison. Llama4 uses 7 layers because the 8-layer ZeRO-3 leaf baseline OOMed during backward.
 
 | Model | ZeRO-3 leaf | AutoEP (+ZeRO-1) |
 | --- | --- | --- |
 | Qwen3.5 MoE | Complete: 42,128.05 tok/s, 34.99 GB | Complete: 87,540.15 tok/s, 25.58 GB (`2.08x` throughput, `0.73x` memory vs ZeRO-3) |
-| Llama4 (7 layers) | Complete: 19,144.07 tok/s, 56.95 GB. Prior 8-layer ZeRO-3 context: CUDA OOM during backward on rank 4 while 78.12 GiB was in use and a 2.50 GiB allocation was requested. Log: `/mnt/local_storage/qwen35_kernel_speed_aux_20260502/task_e_observed_results_models/runs/llama4/zero3_leaf/train.log`. | Complete: 60,178.91 tok/s, 60.08 GB (`3.14x` throughput, `1.06x` memory vs 7-layer ZeRO-3) |
+| Llama4 (7 layers) | Complete: 19,144.07 tok/s, 56.95 GB | Complete: 60,178.91 tok/s, 60.08 GB (`3.14x` throughput, `1.06x` memory vs 7-layer ZeRO-3) |
 | Mixtral 8x7B | Complete: 32,622.11 tok/s, 50.47 GB | Complete: 69,052.31 tok/s, 35.03 GB (`2.12x` throughput, `0.69x` memory vs ZeRO-3) |
+
+Qwen3.5 reproduction steps and reference loss curves for the AutoEP and ZeRO-3 leaf comparison are in [VERIFICATION.md](VERIFICATION.md).
 
 
 ## Important Constraints
@@ -75,10 +77,7 @@ Observed-results benchmarks were run on May 2, 2026 with 8 GPUs, sequence length
 
 ### Qwen3.5 linear-attention kernels
 
-For `--model qwen3_5`, `flash-linear-attention`, `causal-conv1d`, `flash-attn`, and `tilelang` on H100/Triton `>= 3.4` are verification requirements, not optional accelerators. The verification should fail if `transformers.utils.import_utils.is_flash_linear_attention_available()` or `is_causal_conv1d_available()` is false, or if a runtime inspection shows `Qwen3_5MoeGatedDeltaNet` using `torch_causal_conv1d_update` or `torch_chunk_gated_delta_rule`.
-
-`flash-attn` is also required when full-attention layers are configured to use `attn_implementation="flash_attention_2"`; record the active attention implementation in verification metadata.
-
+For `--model qwen3_5`, the required linear-attention kernel dependencies and verification checks are documented in [VERIFICATION.md](VERIFICATION.md#qwen35-kernel-requirements).
 
 ### bf16 requirement
 
@@ -90,4 +89,4 @@ AutoEP runs must let DeepSpeed build the optimizer from the JSON config (no clie
 
 ### Load balancing status
 
-`load_balance_coeff` is accepted in config but the bias update pre-hook is **not yet implemented**. Setting it has no runtime effect (`expert_bias` stays at zero). The `AutoEPConfig` default is `1e-3`, so explicitly set `null` to avoid registering an unused buffer.
+DeepSeek-style auxiliary-loss-free (expert-bias) load balancing is **not yet implemented** in AutoEP.
