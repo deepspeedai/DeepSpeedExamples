@@ -13,18 +13,6 @@ from torch.utils.data.distributed import DistributedSampler
 from transformers import AutoTokenizer, Llama4TextConfig, MixtralConfig, Qwen3_5MoeTextConfig
 
 
-def qwen3_5_moe_layer_types(
-    num_hidden_layers: int, *, full_attention_interval: int = 4
-) -> list[str]:
-    """HF Qwen3.5-MoE text stack requires at least one ``linear_attention`` layer (cache logic)."""
-    return [
-        "linear_attention"
-        if bool((i + 1) % full_attention_interval)
-        else "full_attention"
-        for i in range(num_hidden_layers)
-    ]
-
-
 def build_qwen3_5_moe_text_config(
     *,
     num_hidden_layers: int | None = None,
