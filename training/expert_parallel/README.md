@@ -23,7 +23,7 @@ The following launches causal LM training with **AutoEP + ZeRO-1** on a randomly
 ```bash
 deepspeed --num_gpus 8 train.py \
     --mode autoep \
-    --model qwen3_5 \
+    --model qwen3_5_moe \
     --autoep_size 8 \
     --num_layers 8 \
     --dataset_name wikitext \
@@ -31,7 +31,7 @@ deepspeed --num_gpus 8 train.py \
     --steps 1000
 ```
 
-For this `--mode autoep` / `--model qwen3_5` run, `train.py` derives the following `expert_parallel` section:
+For this `--mode autoep` / `--model qwen3_5_moe` run, `train.py` derives the following `expert_parallel` section:
 
 ```json
     "expert_parallel": {
@@ -45,9 +45,9 @@ Here are the key options in the DeepSpeed config for AutoEP:
 
 - **`enabled`** — Turns on AutoEP.
 - **`autoep_size`** — Expert-parallel size. It must be specified with `--autoep_size` in AutoEP mode and must divide both the GPU count and the model's expert count. The benchmark commands use `8` for Qwen3.5 and `4` for Llama4 and Mixtral.
-- **`preset_model`** — DeepSpeed's structural AutoEP preset id. It is **not** the same as this example's `--model` option.
+- **`preset_model`** — DeepSpeed's structural AutoEP preset id. The example's public `--model` choices intentionally use the same ids when an AutoEP preset exists.
 
-This example exposes three public `--model` choices: `qwen3_5`, `llama4`, and `mixtral_8x7b`. They map to DeepSpeed `preset_model` values `qwen3_5_moe`, `llama4`, and `mixtral`, respectively. The underlying AutoEP PR also defines additional structural preset ids: `qwen2_moe`, `qwen3_moe`, `deepseek_v2`, and `deepseek_v3`; those are not exposed as `--model` choices in this example.
+This example exposes three public `--model` choices: `qwen3_5_moe`, `llama4`, and `mixtral`. These match the DeepSpeed `preset_model` ids used by AutoEP for the same structures. The underlying AutoEP PR also defines additional structural preset ids: `qwen2_moe`, `qwen3_moe`, `deepseek_v2`, and `deepseek_v3`; those are not exposed as `--model` choices in this example.
 
 ## Performance Benchmark
 
@@ -55,9 +55,9 @@ We benchmarked Qwen3.5 and Mixtral with 8 layers, and Llama4 with 7 layers. Each
 
 | Model | ZeRO-3 leaf | AutoEP (+ZeRO-1) |
 | --- | --- | --- |
-| Qwen3.5 MoE | Complete: 42,128.05 tok/s, 34.99 GB | Complete: 87,540.15 tok/s, 25.58 GB (`2.08x` throughput, `0.73x` memory vs ZeRO-3) |
-| Llama4 (7 layers) | Complete: 19,144.07 tok/s, 56.95 GB | Complete: 60,178.91 tok/s, 60.08 GB (`3.14x` throughput, `1.06x` memory vs 7-layer ZeRO-3) |
-| Mixtral 8x7B | Complete: 32,622.11 tok/s, 50.47 GB | Complete: 69,052.31 tok/s, 35.03 GB (`2.12x` throughput, `0.69x` memory vs ZeRO-3) |
+| Qwen3.5 MoE | 42,128.05 tok/s, 34.99 GB | 87,540.15 tok/s, 25.58 GB (`2.08x` throughput, `0.73x` memory vs ZeRO-3) |
+| Llama4 (7 layers) | 19,144.07 tok/s, 56.95 GB | 60,178.91 tok/s, 60.08 GB (`3.14x` throughput, `1.06x` memory vs 7-layer ZeRO-3) |
+| Mixtral 8x7B | 32,622.11 tok/s, 50.47 GB | 69,052.31 tok/s, 35.03 GB (`2.12x` throughput, `0.69x` memory vs ZeRO-3) |
 
 Qwen3.5 reproduction steps and reference loss curves for the AutoEP and ZeRO-3 leaf comparison are in [VERIFICATION.md](VERIFICATION.md).
 
@@ -77,7 +77,7 @@ Qwen3.5 reproduction steps and reference loss curves for the AutoEP and ZeRO-3 l
 
 ### Qwen3.5 linear-attention kernels
 
-For `--model qwen3_5`, the required linear-attention kernel dependencies and verification checks are documented in [VERIFICATION.md](VERIFICATION.md#qwen35-kernel-requirements).
+For `--model qwen3_5_moe`, the required linear-attention kernel dependencies and verification checks are documented in [VERIFICATION.md](VERIFICATION.md#qwen35-kernel-requirements).
 
 ### bf16 requirement
 

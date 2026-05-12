@@ -10,29 +10,18 @@ from datasets import DownloadConfig, load_dataset
 from datasets.utils.logging import disable_progress_bar
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from transformers import AutoTokenizer, Llama4TextConfig, MixtralConfig, Qwen3_5MoeTextConfig
+from transformers import AutoTokenizer
 
 
-def build_qwen3_5_moe_text_config(
-    *,
+def build_model_config(
+    config_cls: type[Any],
     num_hidden_layers: int | None = None,
-) -> Qwen3_5MoeTextConfig:
-    """Build the original Qwen3.5-MoE text config with an optional layer-count override."""
+) -> Any:
+    """Build a Hugging Face config with an optional layer-count override."""
     kwargs: dict[str, Any] = {}
     if num_hidden_layers is not None:
         kwargs["num_hidden_layers"] = num_hidden_layers
-    return Qwen3_5MoeTextConfig(**kwargs)
-
-
-def build_llama4_text_config(
-    *,
-    num_hidden_layers: int | None = None,
-) -> Llama4TextConfig:
-    """Build the original Llama4 text config with an optional layer-count override."""
-    kwargs: dict[str, Any] = {}
-    if num_hidden_layers is not None:
-        kwargs["num_hidden_layers"] = num_hidden_layers
-    return Llama4TextConfig(**kwargs)
+    return config_cls(**kwargs)
 
 
 @dataclass
@@ -42,16 +31,6 @@ class CausalLmBatch:
     input_ids: torch.Tensor  # [micro_batch_size, seq_len], dtype=torch.long
     attention_mask: torch.Tensor  # [micro_batch_size, seq_len], dtype=torch.long
     labels: torch.Tensor  # [micro_batch_size, seq_len], dtype=torch.long
-
-
-def build_mixtral_config(
-    num_layers: int | None = None,
-) -> MixtralConfig:
-    """Build the original Mixtral config with an optional layer-count override."""
-    kwargs: dict[str, Any] = {}
-    if num_layers is not None:
-        kwargs["num_hidden_layers"] = num_layers
-    return MixtralConfig(**kwargs)
 
 
 def get_tokenizer(model_name: str, *, trust_remote_code: bool = True) -> Any:

@@ -4,7 +4,7 @@ This document describes how to reproduce the Qwen3.5 AutoEP sample and compare i
 
 The commands below use:
 
-- model preset: `qwen3_5`
+- model preset: `qwen3_5_moe`
 - DeepSpeed AutoEP preset: `qwen3_5_moe`
 - layers: `8`
 - dataset: `wikitext`, `dataset_percentage=10.0`
@@ -33,7 +33,7 @@ You may set `HF_HOME` and `HF_DATASETS_CACHE` if your environment requires expli
 
 ## Qwen3.5 Kernel Requirements
 
-For `--model qwen3_5`, `flash-linear-attention`, `causal-conv1d`, `flash-attn`, and `tilelang` on H100/Triton `>= 3.4` are verification requirements, not optional accelerators. The verification should fail if `transformers.utils.import_utils.is_flash_linear_attention_available()` or `is_causal_conv1d_available()` is false, or if a runtime inspection shows `Qwen3_5MoeGatedDeltaNet` using `torch_causal_conv1d_update` or `torch_chunk_gated_delta_rule`.
+For `--model qwen3_5_moe`, `flash-linear-attention`, `causal-conv1d`, `flash-attn`, and `tilelang` on H100/Triton `>= 3.4` are verification requirements, not optional accelerators. The verification should fail if `transformers.utils.import_utils.is_flash_linear_attention_available()` or `is_causal_conv1d_available()` is false, or if a runtime inspection shows `Qwen3_5MoeGatedDeltaNet` using `torch_causal_conv1d_update` or `torch_chunk_gated_delta_rule`.
 
 `flash-attn` is also required when full-attention layers are configured to use `attn_implementation="flash_attention_2"`.
 
@@ -42,8 +42,8 @@ For `--model qwen3_5`, `flash-linear-attention`, `causal-conv1d`, `flash-attn`, 
 Use the same randomly initialized weights for AutoEP and ZeRO-3 leaf when comparing loss curves. This makes the metric comparison easier to interpret.
 
 ```bash
-python prepare_init_weights.py \
-  --model qwen3_5 \
+python utils/prepare_init_weights.py \
+  --model qwen3_5_moe \
   --num_layers 8 \
   --seed 42 \
   --output runs/qwen35/init/qwen35_l8_seed42.safetensors
@@ -54,7 +54,7 @@ python prepare_init_weights.py \
 ```bash
 deepspeed --num_gpus 8 --master_port 29104 train.py \
   --mode autoep \
-  --model qwen3_5 \
+  --model qwen3_5_moe \
   --autoep_size 8 \
   --num_layers 8 \
   --steps 100 \
@@ -76,7 +76,7 @@ deepspeed --num_gpus 8 --master_port 29104 train.py \
 ```bash
 deepspeed --num_gpus 8 --master_port 29105 train.py \
   --mode zero3_leaf \
-  --model qwen3_5 \
+  --model qwen3_5_moe \
   --num_layers 8 \
   --steps 100 \
   --warmup_steps 50 \
@@ -97,7 +97,7 @@ deepspeed --num_gpus 8 --master_port 29105 train.py \
 `compare_metrics.py` compares the loss, throughput, and peak memory reported by the two metrics CSV files, then generates summary JSON plus plots.
 
 ```bash
-python compare_metrics.py \
+python utils/compare_metrics.py \
   --autoep_csv runs/qwen35/autoep/metrics.csv \
   --zero3_leaf_csv runs/qwen35/zero3_leaf/metrics.csv \
   --warmup_steps 50 \
@@ -118,8 +118,8 @@ Small numeric differences are expected because AutoEP and ZeRO-3 leaf use differ
 
 The repository includes reference Qwen3.5 loss-curve images from a longer AutoEP and ZeRO-3 leaf comparison. They are useful for checking the expected curve shape after reproducing the workflow above, but the commands above are the source of truth for a fresh run in your own environment.
 
-![Qwen3.5 CE loss curve](qwen35_aux_10k_ce_loss_curve.png)
+![Qwen3.5 CE loss curve](images/qwen35_aux_10k_ce_loss_curve.png)
 
-![Qwen3.5 total loss curve](qwen35_aux_10k_total_loss_curve.png)
+![Qwen3.5 total loss curve](images/qwen35_aux_10k_total_loss_curve.png)
 
-![Qwen3.5 aux loss curve](qwen35_aux_10k_aux_loss_curve.png)
+![Qwen3.5 aux loss curve](images/qwen35_aux_10k_aux_loss_curve.png)

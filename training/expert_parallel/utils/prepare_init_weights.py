@@ -2,7 +2,7 @@
 
 Run this as a normal Python script, not through the DeepSpeed launcher:
 
-    python prepare_init_weights.py --model qwen3_5 --num_layers 8 \
+    python utils/prepare_init_weights.py --model qwen3_5_moe --num_layers 8 \
         --output runs/qwen35/init/qwen35_l8_seed42.safetensors
 """
 
@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import random
+import sys
 
 import numpy as np
 import torch
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from init_weights import save_init_weights_artifact
 from train import MODEL_PRESETS, build_model, build_model_config
@@ -23,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create shared init weights artifact")
-    parser.add_argument("--model", choices=sorted(MODEL_PRESETS), default="qwen3_5")
+    parser.add_argument("--model", choices=sorted(MODEL_PRESETS), default="qwen3_5_moe")
     parser.add_argument("--num_layers", type=int, default=None)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
@@ -49,7 +53,10 @@ def main() -> None:
     seed_everything(args.seed)
 
     architecture = MODEL_PRESETS[args.model]["architecture"]
-    model_config = build_model_config(architecture, args.num_layers)
+    model_config = build_model_config(
+        MODEL_PRESETS[args.model]["config_cls"],
+        args.num_layers,
+    )
     if args.num_layers is None:
         args.num_layers = int(model_config.num_hidden_layers)
 

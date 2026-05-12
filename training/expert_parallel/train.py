@@ -19,15 +19,20 @@ from typing import Any, NamedTuple
 
 import numpy as np
 import torch
-from transformers import AutoModelForCausalLM, Llama4ForCausalLM, Qwen3_5MoeForCausalLM
+from transformers import (
+    AutoModelForCausalLM,
+    Llama4ForCausalLM,
+    Llama4TextConfig,
+    MixtralConfig,
+    Qwen3_5MoeForCausalLM,
+    Qwen3_5MoeTextConfig,
+)
 
 import deepspeed
 
 from data_utils import (
     build_hf_batch_generator,
-    build_llama4_text_config,
-    build_mixtral_config,
-    build_qwen3_5_moe_text_config,
+    build_model_config,
     get_tokenizer,
     validate_tokenizer_vocab_size,
 )
@@ -38,27 +43,24 @@ logger = logging.getLogger(__name__)
 
 
 MODEL_PRESETS: dict[str, dict[str, Any]] = {
-    "mixtral_8x7b": {
+    "mixtral": {
         "architecture": "mixtral",
+        "config_cls": MixtralConfig,
         "display_name": "Mixtral 8x7B",
         "default_tokenizer_name": "mistralai/Mixtral-8x7B-v0.1",
     },
-    "qwen3_5": {
+    "qwen3_5_moe": {
         "architecture": "qwen3_5_moe",
+        "config_cls": Qwen3_5MoeTextConfig,
         "display_name": "Qwen3.5 MoE",
         "default_tokenizer_name": "Qwen/Qwen3-0.6B",
     },
     "llama4": {
         "architecture": "llama4",
+        "config_cls": Llama4TextConfig,
         "display_name": "Llama4 Scout",
         "default_tokenizer_name": "meta-llama/Llama-4-Scout-17B-16E",
     },
-}
-
-DEEPSPEED_AUTOEP_PRESET_ID = {
-    "llama4": "llama4",
-    "mixtral": "mixtral",
-    "qwen3_5_moe": "qwen3_5_moe",
 }
 
 DEEPSPEED_LEAF_MOE_BLOCK_CLASS = {
@@ -73,6 +75,7 @@ DEEPSPEED_LEAF_MOE_BLOCK_CLASS = {
 
 class ModelPreset(NamedTuple):
     architecture: str
+    config_cls: type[Any]
     display_name: str
     num_layers_overridden: bool
 
@@ -87,7 +90,7 @@ class TrainingState(NamedTuple):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AutoEP / ZeRO-3 leaf MoE training")
     parser.add_argument("--mode", choices=["autoep", "zero3_leaf"], default="autoep")
-    parser.add_argument("--model", choices=sorted(MODEL_PRESETS), default="qwen3_5")
+    parser.add_argument("--model", choices=sorted(MODEL_PRESETS), default="qwen3_5_moe")
     parser.add_argument("--num_layers", type=int, default=None)
     parser.add_argument("--autoep_size", type=int, default=None)
     parser.add_argument("--steps", type=int, default=50)
@@ -105,7 +108,7 @@ def parse_args() -> argparse.Namespace:
         "--load_init_weights",
         type=str,
         default=None,
-        help="Load a shared initialization artifact created by prepare_init_weights.py.",
+        help="Load a shared initialization artifact created by utils/prepare_init_weights.py.",
     )
     parser.add_argument("--metrics_out", default=None)
     parser.add_argument("--local_rank", type=int, default=-1)
@@ -125,23 +128,19 @@ def parse_args() -> argparse.Namespace:
 def resolve_model_preset(args: argparse.Namespace) -> ModelPreset:
     preset = MODEL_PRESETS[args.model]
     architecture = preset["architecture"]
+    config_cls = preset["config_cls"]
     num_layers_overridden = args.num_layers is not None
     if args.num_layers is None:
-        original_config = build_model_config(architecture, None)
+        original_config = build_model_config(config_cls, None)
         args.num_layers = int(original_config.num_hidden_layers)
     if args.tokenizer_name is None:
         args.tokenizer_name = preset["default_tokenizer_name"]
-    return ModelPreset(architecture, preset["display_name"], num_layers_overridden)
-
-
-def build_model_config(architecture: str, num_layers: int | None) -> Any:
-    if architecture == "mixtral":
-        return build_mixtral_config(num_layers)
-    if architecture == "qwen3_5_moe":
-        return build_qwen3_5_moe_text_config(num_hidden_layers=num_layers)
-    if architecture == "llama4":
-        return build_llama4_text_config(num_hidden_layers=num_layers)
-    raise ValueError(f"Unsupported architecture: {architecture!r}")
+    return ModelPreset(
+        architecture,
+        config_cls,
+        preset["display_name"],
+        num_layers_overridden,
+    )
 
 
 def build_model(architecture: str, model_config: Any) -> torch.nn.Module:
@@ -191,7 +190,7 @@ def build_deepspeed_config(
         config["expert_parallel"] = {
             "enabled": True,
             "autoep_size": autoep_size,
-            "preset_model": DEEPSPEED_AUTOEP_PRESET_ID[architecture],
+            "preset_model": architecture,
         }
     else:
         config["zero_optimization"] = {
@@ -222,7 +221,7 @@ def validate_autoep_args(
 
     from deepspeed.module_inject.auto_ep_config import PRESET_MODELS
 
-    preset_id = DEEPSPEED_AUTOEP_PRESET_ID[architecture]
+    preset_id = architecture
     if preset_id not in PRESET_MODELS:
         raise ValueError(
             f"DeepSpeed does not provide AutoEP preset_model={preset_id!r}; "
@@ -290,7 +289,7 @@ def prepare_training(args: argparse.Namespace) -> TrainingState:
     seed_everything(args.seed)
 
     preset = resolve_model_preset(args)
-    model_config = build_model_config(preset.architecture, args.num_layers)
+    model_config = build_model_config(preset.config_cls, args.num_layers)
     num_experts = num_experts_for_config(preset.architecture, model_config)
     autoep_size = args.autoep_size if args.mode == "autoep" else None
 
