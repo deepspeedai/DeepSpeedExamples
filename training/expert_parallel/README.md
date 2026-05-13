@@ -11,7 +11,7 @@ This example offers a quick start for AutoEP in DeepSpeed.
 - Dependencies:
   - PyTorch `>= 2.9.1`
   - **DeepSpeed** with AutoEP: AutoEP has not been merged into `main` yet. `requirements.txt` installs the **tip of [PR #7938](https://github.com/deepspeedai/DeepSpeed/pull/7938)**. Manual install: `pip install "git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head#egg=deepspeed"`.
-  - **`transformers` `>= 5.6.2`** (5.x line; see `requirements.txt`) — stable patch floor that includes Mixtral, Llama 4, Qwen3 MoE, and Qwen3.5 / Qwen3.6 (`qwen3_5_moe`) in current Hub checkpoints. Newer 5.7+ releases will be fine.
+  - **`transformers` `>= 5.2`** (see `requirements.txt`)
   - Qwen3.5 requires specific kernel dependencies. See [VERIFICATION.md](VERIFICATION.md#qwen35-kernel-requirements) for more details.
   - See `requirements.txt` for other dependencies.
 
@@ -47,7 +47,7 @@ Here are the key options in the DeepSpeed config for AutoEP:
 - **`autoep_size`** — Expert-parallel size. It must be specified with `--autoep_size` in AutoEP mode and must divide both the GPU count and the model's expert count. The benchmark commands use `8` for Qwen3.5 and `4` for Llama4 and Mixtral.
 - **`preset_model`** — DeepSpeed's structural AutoEP preset id. The example's public `--model` choices intentionally use the same ids when an AutoEP preset exists.
 
-This example exposes three public `--model` choices: `qwen3_5_moe`, `llama4`, and `mixtral`. These match the DeepSpeed `preset_model` ids used by AutoEP for the same structures. The underlying AutoEP PR also defines additional structural preset ids: `qwen2_moe`, `qwen3_moe`, `deepseek_v2`, and `deepseek_v3`; those are not exposed as `--model` choices in this example.
+This example exposes three public `--model` choices: `qwen3_5_moe`, `llama4`, and `mixtral`. These match the DeepSpeed `preset_model` ids used by AutoEP for the same structures. The underlying AutoEP PR also defines additional structural preset ids: `qwen3_moe`, `deepseek_v2`, and `deepseek_v3`; those are not exposed as `--model` choices in this example.
 
 ## Performance Benchmark
 
@@ -73,7 +73,7 @@ Qwen3.5 reproduction steps and reference loss curves for the AutoEP and ZeRO-3 l
 
 ### Grouped GEMM backend
 
-`torch._grouped_mm` is required for production performance. Without it, the code falls back to a sequential for-loop over experts. On A100 (SM80), verify availability and actual throughput since the Hopper fast path may not activate.
+`torch._grouped_mm` is required for the default production path. With the default `expert_parallel.use_grouped_mm=true`, DeepSpeed fails fast if `torch._grouped_mm` is unavailable. Set `use_grouped_mm=false` in the DeepSpeed config only for functional/debug runs that intentionally use the sequential for-loop path. On A100 (SM80), verify availability and actual throughput since the Hopper fast path may not activate.
 
 ### Qwen3.5 linear-attention kernels
 
