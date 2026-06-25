@@ -1,0 +1,27 @@
+{
+    "train_batch_size": 8,
+    "bf16": { "enabled": true },
+    "zero_optimization": {
+      "stage": 3,
+      "sub_group_size": 100000000,
+      "offload_optimizer": {
+        "super_offload": true,
+        "convert_grad_on_cpu": true,
+        "device": "cpu",
+        "pin_memory": true
+      }
+    },
+    "optimizer": {
+      "type": "AdamW",
+      "params": {
+        "lr": 2e-5,
+        "betas": [0.9, 0.999],
+        "eps": 1e-8,
+        "weight_decay": 0.01
+      }
+    },
+    "gradient_accumulation_steps": 1,
+    "gradient_clipping": 1.0,
+    "zero_allow_untested_optimizer": true
+}
+

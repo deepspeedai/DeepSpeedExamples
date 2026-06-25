@@ -1,0 +1,6 @@
+*.log
+*.pyc
+logs
+*.
+*.pt
+output

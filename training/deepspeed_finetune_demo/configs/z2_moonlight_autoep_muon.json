@@ -1,0 +1,36 @@
+{
+    "train_batch_size": 16,
+    "bf16": {
+        "enabled": true
+    },
+    "zero_optimization": {
+        "stage": 2
+    },
+    "optimizer": {
+        "type": "Muon",
+        "params": {
+            "muon_lr": 0.002,
+            "adam_lr": 2e-06,
+            "momentum": 0.95,
+            "ns_method": "gram",
+            "betas": [
+                0.9,
+                0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01
+        }
+    },
+    "expert_parallel": {
+        "enabled": true,
+        "autoep_size": 8,
+        "expert_w1": "gate_proj",
+        "expert_w2": "down_proj",
+        "expert_w3": "up_proj",
+        "route_scale": 2.446,
+        "load_balance_coeff": null
+    },
+    "gradient_accumulation_steps": 2,
+    "gradient_clipping": 1.0,
+    "zero_allow_untested_optimizer": true
+}

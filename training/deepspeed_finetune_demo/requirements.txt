@@ -1,0 +1,9 @@
+torch>=2.9.1
+deepspeed>=0.16.0
+datasets>=4.5.0
+transformers>=4.57.3
+numpy>=1.21.0
+evalplus>=0.3.1
+flash-attn>=2.8.3
+tiktoken
+sentencepiece

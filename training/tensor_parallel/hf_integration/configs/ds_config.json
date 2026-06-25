@@ -21,7 +21,7 @@
       }
     },
     "zero_optimization": {
-      "stage": 1,
+      "stage": 2,
       "gather_16bit_weights_on_model_save": true
     },
     "tensor_parallel":{
