@@ -86,9 +86,11 @@ NUM_TRAIN_GPUS=6 INCLUDE_GPUS=0,1,2,3,4,5 \
     bash scripts/train_opsd_vllm.sh configs/opsd_vllm_disjoint.json
 ```
 
-vLLM gets dedicated GPUs (`rollout.gpus` in the config). Training rank 0
-constructs the `LLM` handle; other training ranks receive generated token
-ids via NCCL broadcast.
+vLLM gets dedicated GPUs via the `ROLLOUT_VISIBLE_DEVICE` environment
+variable (comma-separated CUDA device indices, e.g.
+`ROLLOUT_VISIBLE_DEVICE=6,7`). Training rank 0 spawns the vLLM server as
+a subprocess with `CUDA_VISIBLE_DEVICES` set to those devices; other
+training ranks receive generated token ids via NCCL broadcast.
 
 ### Smoke tests (5 steps, small models)
 
@@ -100,7 +102,8 @@ end-to-end before scaling up.
 cd examples/opsd
 deepspeed --num_gpus 2 main.py --config configs/smoke_hybrid.json
 # For vLLM (uses GPUs 0,1 for training and 2,3 for vLLM):
-NUM_TRAIN_GPUS=2 INCLUDE_GPUS=0,1 deepspeed --num_gpus 2 --include localhost:0,1 \
+NUM_TRAIN_GPUS=2 INCLUDE_GPUS=0,1 ROLLOUT_VISIBLE_DEVICE=2,3 \
+    deepspeed --num_gpus 2 --include localhost:0,1 \
     main.py --config configs/smoke_vllm.json
 ```
 
@@ -132,6 +135,13 @@ python -m pytest tests/ -v
 
 See `configs/opsd_hybrid_engine.json` and `configs/opsd_vllm_disjoint.json`
 for fully-populated examples.
+
+**GPU placement for vLLM rollout:** The GPUs available to the vLLM server
+are controlled by the `ROLLOUT_VISIBLE_DEVICE` environment variable
+(comma-separated CUDA device indices, e.g. `ROLLOUT_VISIBLE_DEVICE=6,7`),
+not by a field in the JSON config. This keeps the vLLM device assignment
+decoupled from the DeepSpeed launcher's own `CUDA_VISIBLE_DEVICES` /
+`--include` flags, which control only the training ranks.
 
 ## Adding a new model architecture
 
