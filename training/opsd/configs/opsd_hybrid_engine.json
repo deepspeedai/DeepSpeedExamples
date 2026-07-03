@@ -21,7 +21,7 @@
     },
     "distillation": {
         "loss_type": "reverse_kl",
-        "temperature": 0,
+        "temperature": 1.0,
         "chunk_size": 512
     },
     "training": {
