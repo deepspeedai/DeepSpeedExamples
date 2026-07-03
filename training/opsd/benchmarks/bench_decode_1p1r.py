@@ -140,6 +140,7 @@ def main():
     parser.add_argument("--max-new-tokens", type=int, default=64)
     parser.add_argument("--num-warmup", type=int, default=3)
     parser.add_argument("--num-iters", type=int, default=10)
+    parser.add_argument("--graph-capture", action="store_true", help="Enable CUDA graph capture")
     args = parser.parse_args()
 
     device = get_accelerator().current_device()  #ignore-cuda
@@ -161,8 +162,11 @@ def main():
     print(f"  Overhead/step:        {raw['overhead_ms_per_step']:.3f} ms  (total: {raw['overhead_total_ms']:.1f} ms)")
     print(f"  Total:                {raw['total_ms']:.1f} ms")
 
-    print(f"\n=== HybridEngineRollout benchmark ===")
-    rollout = HybridEngineRollout(model, tokenizer)
+    print(f"\n=== HybridEngineRollout benchmark (graph_capture={args.graph_capture}) ===")
+    engine = type('Engine', (), {'module': model})()  # lightweight wrapper
+    from deepspeed.runtime.rollout.hybrid_engine_rollout import HybridEngineRolloutConfig
+    cfg = HybridEngineRolloutConfig(use_graph_capture=args.graph_capture)
+    rollout = HybridEngineRollout(engine, tokenizer, cfg=cfg)
     rr = bench_hybrid_rollout(rollout, tokenizer, device, args.prompt_len, args.max_new_tokens, args.num_warmup,
                               args.num_iters)
     print(f"  Rollout generate:     {rr['rollout_total_ms']:.1f} ms")
