@@ -18,7 +18,6 @@
         "top_p": 1.0,
         "top_k": -1,
         "n_samples_per_prompt": 1,
-        "weight_sync_interval": 1
     },
     "distillation": {
         "loss_type": "reverse_kl",

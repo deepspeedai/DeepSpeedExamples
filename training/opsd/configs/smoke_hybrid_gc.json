@@ -19,7 +19,6 @@
         "top_k": -1,
         "n_samples_per_prompt": 1,
         "use_graph_capture": true,
-        "weight_sync_interval": 1
     },
     "distillation": {
         "loss_type": "reverse_kl",

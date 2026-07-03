@@ -13,7 +13,18 @@ import json
 from dataclasses import dataclass, field
 from typing import Optional
 
-from deepspeed.runtime.rollout import RolloutConfig
+from deepspeed.runtime.rollout import RolloutConfig as _BaseRolloutConfig
+
+
+@dataclass
+class RolloutConfig(_BaseRolloutConfig):
+    """Extends DeepSpeed's RolloutConfig with OPSD generation knobs."""
+    max_prompt_length: int = 1024
+    max_response_length: int = 1024
+    temperature: float = 0.0
+    top_p: float = 1.0
+    top_k: int = -1
+    n_samples_per_prompt: int = 1
 
 
 @dataclass
