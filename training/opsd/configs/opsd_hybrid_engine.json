@@ -2,7 +2,7 @@
     "student": {
         "model_name_or_path": "Qwen/Qwen2.5-0.5B-Instruct",
         "dtype": "bfloat16",
-        "trust_remote_code": false,
+        "trust_remote_code": false
     },
     "teacher": {
         "model_name_or_path": "Qwen/Qwen2.5-Math-7B-Instruct",
@@ -17,7 +17,7 @@
         "temperature": 0,
         "top_p": 1.0,
         "top_k": -1,
-        "n_samples_per_prompt": 1,
+        "n_samples_per_prompt": 1
     },
     "distillation": {
         "loss_type": "reverse_kl",
@@ -28,7 +28,7 @@
         "train_batch_size": 1,
         "micro_batch_size_per_gpu": 1,
         "gradient_accumulation_steps": 1,
-        "learning_rate": 1e-6,
+        "learning_rate": 1e-06,
         "weight_decay": 0.0,
         "num_train_epochs": 1,
         "max_steps": -1,
