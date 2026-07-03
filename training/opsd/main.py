@@ -25,9 +25,9 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from config import OPSDConfig
-from deepspeed.runtime.rlhf.data import LeftPaddedPromptCollator, PromptDataset
+from data import LeftPaddedPromptCollator, PromptDataset
 from deepspeed.runtime.rollout import build_rollout
-from deepspeed.runtime.rlhf.teacher import TeacherWrapper
+from teacher import TeacherWrapper
 from trainer import OPSDTrainer
 
 

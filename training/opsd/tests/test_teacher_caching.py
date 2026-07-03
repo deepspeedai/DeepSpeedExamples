@@ -13,7 +13,7 @@ be tested in isolation.
 import pytest
 import torch
 
-from deepspeed.runtime.rlhf.teacher import TeacherLogitCache
+from teacher import TeacherLogitCache
 
 
 def test_round_trip_preserves_values_within_dtype():
