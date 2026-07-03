@@ -24,11 +24,11 @@ from deepspeed.accelerator import get_accelerator
 from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from deepspeed.runtime.rlhf.config import OPSDConfig
+from config import OPSDConfig
 from deepspeed.runtime.rlhf.data import LeftPaddedPromptCollator, PromptDataset
 from deepspeed.runtime.rollout import build_rollout
 from deepspeed.runtime.rlhf.teacher import TeacherWrapper
-from deepspeed.runtime.rlhf.trainer.opsd import OPSDTrainer
+from trainer import OPSDTrainer
 
 
 def _seed_everything(seed: int) -> None:
