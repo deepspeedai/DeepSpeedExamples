@@ -33,15 +33,24 @@ co-resides with the student logits on the training device.
 training/opsd/
 ├── main.py                            # entry point (deepspeed launcher)
 ├── trainer.py                         # three-phase OPSD training loop
+├── config.py                          # OPSDConfig dataclass (JSON-loaded)
+├── teacher.py                         # frozen teacher + TeacherLogitCache
+├── losses.py                          # streamed distillation loss (fwd/rev KL, JSD)
+├── data.py                            # PromptDataset + left-padded collator
+├── utils.py                           # response-mask helpers
 ├── configs/
 │   ├── ds_zero3.json                  # base DeepSpeed ZeRO-3 + hybrid engine
 │   ├── opsd_hybrid_engine.json        # production-ish hybrid-engine OPSD config
 │   ├── smoke_hybrid.json              # 5-step smoke test with Qwen2.5-0.5B / 1.5B
-│   └── smoke_ds_zero3.json            # ZeRO-3 config tuned for smoke runs
+│   ├── smoke_hybrid_gc.json           # smoke test with CUDA graph capture
+│   └── smoke_ds_zero0.json            # ZeRO-0 DeepSpeed config for smoke runs
+├── data/
+│   └── prompts.jsonl                  # sample math prompts
 ├── benchmarks/                        # rollout / decode micro-benchmarks
 ├── scripts/
 │   └── train_opsd_hybrid.sh           # launch hybrid-engine training
-└── tests/                             # CPU-only unit tests (run with pytest)
+├── tests/                             # CPU-only unit tests (run with pytest)
+└── requirements.txt
 ```
 
 ## Quick start
