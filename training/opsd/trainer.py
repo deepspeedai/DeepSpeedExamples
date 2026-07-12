@@ -104,7 +104,6 @@ class OPSDTrainer(RLHFTrainer):
         prompt_attn = batch["prompt_attention_mask"].to(self.device, non_blocking=True)
 
         # Sync student weights into the rollout backend.
-        # No-op for hybrid engine; meaningful for vLLM.
         self.rollout.sync_weights(self.step)
 
         # --- Phase 0: rollout (student generates responses) ---------------

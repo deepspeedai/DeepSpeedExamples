@@ -4,7 +4,6 @@
 
 # DeepSpeed Team
 #
-# Launch OPSD training with the DeepSpeed hybrid-engine rollout (no vLLM).
 # Assumes you're cd'd into examples/opsd/.
 set -euo pipefail
 
