@@ -50,7 +50,6 @@ class DistillationConfig:
 
 @dataclass
 class TrainingConfig:
-    train_batch_size: int = 8
     micro_batch_size_per_gpu: int = 1
     gradient_accumulation_steps: int = 1
     learning_rate: float = 1e-6

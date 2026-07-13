@@ -78,7 +78,10 @@ def main() -> None:
 
     ds_config = _load_ds_config(cfg.deepspeed_config)
     ds_config["train_micro_batch_size_per_gpu"] = cfg.training.micro_batch_size_per_gpu
-    ds_config["train_batch_size"] = cfg.training.train_batch_size
+    # train_batch_size is derived, not a free knob: micro * world * grad-accum.
+    ds_config["train_batch_size"] = (
+        cfg.training.micro_batch_size_per_gpu * dist_world_size() * cfg.training.gradient_accumulation_steps
+    )
     ds_config["gradient_accumulation_steps"] = cfg.training.gradient_accumulation_steps
 
     student_engine, *_ = deepspeed.initialize(
