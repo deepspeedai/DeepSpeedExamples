@@ -114,13 +114,13 @@ def _resolve_dtype(name: str) -> torch.dtype:
 class TeacherWrapper:
     """Frozen teacher, always routed through DeepSpeed.
 
-    The teacher is wrapped with ``deepspeed.initialize`` under ZeRO-3 so the
-    frozen params are sharded across data-parallel ranks (rather than keeping
-    a full replica on every GPU). ``cfg.offload_to_cpu`` additionally pins
-    those shards to host memory between forwards — use it when the teacher
-    would not fit alongside the student even when sharded. The optimizer slot
-    is unused (no trainable params); ZeRO-3 here only buys per-forward
-    parameter gather/release.
+    The ZeRO stage is chosen to match the run: **stage 3** when there is more
+    than one rank (so the frozen params shard across GPUs instead of being
+    replicated on every one) or when ``cfg.offload_to_cpu`` is set (so those
+    shards can live on the host between forwards); otherwise **stage 0** — on
+    a single GPU with no offload, ZeRO-3's per-forward gather is pure
+    overhead. The optimizer slot is unused (no trainable params); ZeRO-3 here
+    only buys per-forward parameter gather/release.
 
     The full checkpoint is loaded on each rank before DeepSpeed partitions it;
     we intentionally do **not** wrap ``from_pretrained`` in
@@ -145,10 +145,12 @@ class TeacherWrapper:
         for p in model.parameters():
             p.requires_grad_(False)
 
-        # Always go through DeepSpeed: ZeRO-3 shards the frozen teacher across
-        # ranks instead of replicating it. CPU offload is opt-in for when the
-        # sharded teacher still wouldn't fit alongside the student.
-        zero_opt = {"stage": 3}
+        # Always route through DeepSpeed. ZeRO-3 only pays off when there is
+        # another rank to shard across (world_size > 1) or host memory to
+        # offload to; on a single GPU with no offload it is pure per-forward
+        # gather overhead, so we drop to stage 0 there.
+        use_zero3 = cfg.offload_to_cpu or world_size > 1
+        zero_opt = {"stage": 3 if use_zero3 else 0}
         if cfg.offload_to_cpu:
             zero_opt["offload_param"] = {"device": "cpu"}
         ds_config = {
