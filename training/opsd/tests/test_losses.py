@@ -12,7 +12,7 @@ import pytest
 import torch
 
 from losses import chunked_distillation_loss
-from utils import build_response_mask, shift_for_next_token_prediction
+from utils import build_response_mask
 
 
 @pytest.mark.parametrize("loss_type", ["forward_kl", "reverse_kl", "jsd"])
@@ -145,10 +145,3 @@ def test_build_response_mask_validates_shapes():
     with pytest.raises(ValueError, match="batch"):
         build_response_mask(torch.zeros(3), torch.ones(2, 4))
 
-
-def test_shift_for_next_token_prediction_shapes():
-    logits = torch.randn(2, 5, 8)
-    labels = torch.randint(0, 8, (2, 5))
-    sl, sla = shift_for_next_token_prediction(logits, labels)
-    assert sl.shape == (2, 4, 8)
-    assert sla.shape == (2, 4)

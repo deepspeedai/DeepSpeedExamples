@@ -39,12 +39,3 @@ def build_response_mask(response_start_idx: torch.Tensor, attention_mask: torch.
     is_response = pos >= response_start_idx.to(pos.dtype).unsqueeze(1)
     return is_response.to(attention_mask.dtype) * attention_mask
 
-
-def shift_for_next_token_prediction(logits: torch.Tensor, labels: torch.Tensor):
-    """Align logits at position t with the label at position t+1.
-
-    Returns:
-        Tuple ``(shifted_logits[:, :-1, :], shifted_labels[:, 1:])`` — both
-        contiguous, so they can be safely indexed for the divergence loss.
-    """
-    return logits[:, :-1, :].contiguous(), labels[:, 1:].contiguous()
