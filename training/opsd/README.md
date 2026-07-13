@@ -57,9 +57,18 @@ training/opsd/
 
 ### Install
 
+This example uses DeepSpeed's `deepspeed.runtime.rollout` module (hybrid
+engine + rollout API), which landed on `master` after the 0.19.2 release and
+is not yet on PyPI. Until DeepSpeed 0.19.3 is released, install it from
+source:
+
 ```
-pip install deepspeed transformers datasets accelerate
+pip install git+https://github.com/deepspeedai/DeepSpeed.git@master
+pip install transformers>=5.0.0 datasets accelerate
 ```
+
+Once DeepSpeed 0.19.3 ships, a plain `pip install deepspeed` works and the
+source line above can be dropped.
 
 ### Hybrid-engine training
 
