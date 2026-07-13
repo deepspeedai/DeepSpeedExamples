@@ -33,7 +33,6 @@ from deepspeed.accelerator import get_accelerator
 
 from config import OPSDConfig
 from losses import streamed_distillation_loss
-from parallel import gather_vocab_if_sharded
 from utils import build_response_mask
 from deepspeed.runtime.rollout import RolloutEngine, RolloutRequest, SamplingConfig
 
@@ -74,7 +73,6 @@ class OPSDTrainer(RLHFTrainer):
 
         self.device = get_accelerator().current_device_name()
         self.step = 0
-        self._vocab_size = student_engine.module.config.vocab_size
 
     # ------------------------------------------------------------------
     # Driver
@@ -135,10 +133,7 @@ class OPSDTrainer(RLHFTrainer):
         t2 = time.time()
         self.student_engine.train()
         outputs = self.student_engine(input_ids=input_ids, attention_mask=attention_mask)
-        # Under TP > 1 the LM head returns [B, T, V/N]; gather back to [B, T, V]
-        # so the distillation loss sees the full distribution. No-op for TP == 1
-        # and for ZeRO-3 (detected via the vocab dim).
-        student_logits = gather_vocab_if_sharded(outputs.logits, self._vocab_size)  # [B, T, V]
+        student_logits = outputs.logits  # [B, T, V]
 
         # Shift for next-token prediction: logits at position t predict token
         # at t+1, so the loss aligns student_logits[:, :-1] with the position
