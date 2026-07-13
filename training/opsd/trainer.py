@@ -81,6 +81,9 @@ class OPSDTrainer(RLHFTrainer):
     def train(self) -> None:
         max_steps = self.cfg.training.max_steps
         for epoch in range(self.cfg.training.num_train_epochs):
+            # Reseed the (Distributed)Sampler each epoch so each rank sees a
+            # different, reshuffled shard. No-op when no sampler is attached.
+            getattr(self.dataloader.sampler, "set_epoch", lambda _e: None)(epoch)
             for batch in self.dataloader:
                 if max_steps > 0 and self.step >= max_steps:
                     return

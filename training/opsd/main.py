@@ -20,6 +20,7 @@ import numpy as np
 import torch
 from deepspeed.accelerator import get_accelerator
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from config import OPSDConfig
@@ -106,10 +107,14 @@ def main() -> None:
         chat_template=cfg.data.chat_template,
     )
     collator = LeftPaddedPromptCollator(tokenizer=tokenizer, max_prompt_length=cfg.rollout.max_prompt_length)
+    # Shard the dataset across data-parallel ranks. Without this, every rank
+    # iterates the full set and the run is pure redundant compute on >1 GPU.
+    sampler = DistributedSampler(dataset, shuffle=cfg.data.shuffle) if dist_world_size() > 1 else None
     loader = DataLoader(
         dataset,
         batch_size=cfg.training.micro_batch_size_per_gpu,
-        shuffle=cfg.data.shuffle,
+        shuffle=cfg.data.shuffle if sampler is None else False,
+        sampler=sampler,
         collate_fn=collator,
         drop_last=True,
     )
