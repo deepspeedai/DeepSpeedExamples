@@ -112,37 +112,29 @@ def _resolve_dtype(name: str) -> torch.dtype:
 
 
 class TeacherWrapper:
-    """Frozen teacher.
+    """Frozen teacher, always routed through DeepSpeed.
 
-    Two modes depending on ``cfg.offload_to_cpu``:
+    The teacher is wrapped with ``deepspeed.initialize`` under ZeRO-3 so the
+    frozen params are sharded across data-parallel ranks (rather than keeping
+    a full replica on every GPU). ``cfg.offload_to_cpu`` additionally pins
+    those shards to host memory between forwards — use it when the teacher
+    would not fit alongside the student even when sharded. The optimizer slot
+    is unused (no trainable params); ZeRO-3 here only buys per-forward
+    parameter gather/release.
 
-      * ``offload_to_cpu=False`` — load the teacher with HF's standard
-        ``from_pretrained`` and pin it on the local accelerator device. The
-        whole teacher lives in GPU memory; simplest path and what to use when
-        the teacher fits.
-
-      * ``offload_to_cpu=True`` — wrap the loaded model with
-        ``deepspeed.initialize`` using a ZeRO-3 config with
-        ``offload_param.device='cpu'``. The optimizer slot is unused (no
-        trainable params) but ZeRO-3 gives us per-forward parameter gather
-        / release and keeps weights on the host between forwards. This is the
-        path to use when the teacher would otherwise not fit alongside the
-        student.
-
-    Both paths load the full checkpoint on each rank before DeepSpeed (if
-    used) partitions; we intentionally do **not** wrap ``from_pretrained``
-    in ``deepspeed.zero.Init()`` because HF's loader partitions
+    The full checkpoint is loaded on each rank before DeepSpeed partitions it;
+    we intentionally do **not** wrap ``from_pretrained`` in
+    ``deepspeed.zero.Init()`` because HF's loader partitions
     ``low_cpu_mem_usage`` params to zero-width shards before the checkpoint
     can fill them, which surfaces as a "size mismatch" load error.
     """
 
     def __init__(self, cfg: TeacherConfig, world_size: int):
-        from deepspeed.accelerator import get_accelerator
+        import deepspeed
         from transformers import AutoModelForCausalLM
 
         self.cfg = cfg
         dtype = _resolve_dtype(cfg.dtype)
-        device = get_accelerator().current_device_name()
 
         model = AutoModelForCausalLM.from_pretrained(
             cfg.model_name_or_path,
@@ -153,31 +145,19 @@ class TeacherWrapper:
         for p in model.parameters():
             p.requires_grad_(False)
 
+        # Always go through DeepSpeed: ZeRO-3 shards the frozen teacher across
+        # ranks instead of replicating it. CPU offload is opt-in for when the
+        # sharded teacher still wouldn't fit alongside the student.
+        zero_opt = {"stage": 3}
         if cfg.offload_to_cpu:
-            import deepspeed
-
-            ds_config = {
-                "train_micro_batch_size_per_gpu": 1,
-                "bf16": {
-                    "enabled": dtype is torch.bfloat16
-                },
-                "fp16": {
-                    "enabled": dtype is torch.float16
-                },
-                "zero_optimization": {
-                    "stage": 3,
-                    "offload_param": {
-                        "device": "cpu"
-                    },
-                },
-            }
-            engine, *_ = deepspeed.initialize(model=model, config=ds_config)
-            self._callable = engine
-            self._uses_ds = True
-        else:
-            model.to(device)
-            self._callable = model
-            self._uses_ds = False
+            zero_opt["offload_param"] = {"device": "cpu"}
+        ds_config = {
+            "train_micro_batch_size_per_gpu": 1,
+            "bf16": {"enabled": dtype is torch.bfloat16},
+            "fp16": {"enabled": dtype is torch.float16},
+            "zero_optimization": zero_opt,
+        }
+        self._callable, *_ = deepspeed.initialize(model=model, config=ds_config)
 
     @torch.no_grad()
     def forward_to_cache(self,
