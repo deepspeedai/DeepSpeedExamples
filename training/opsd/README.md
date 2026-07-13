@@ -38,6 +38,7 @@ training/opsd/
 ├── losses.py                          # streamed distillation loss (fwd/rev KL, JSD)
 ├── data.py                            # PromptDataset + left-padded collator
 ├── utils.py                           # response-mask helpers
+├── parallel.py                        # TP vocab-shard gather for logits
 ├── configs/
 │   ├── ds_zero3.json                  # base DeepSpeed ZeRO-3 + hybrid engine
 │   ├── opsd_hybrid_engine.json        # production-ish hybrid-engine OPSD config

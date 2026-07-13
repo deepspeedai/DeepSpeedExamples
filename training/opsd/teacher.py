@@ -28,6 +28,7 @@ import torch
 # ``opsd.config`` is pure-Python (no distributed imports), so we can import it
 # at module load time without pulling in DeepSpeed.
 from config import TeacherConfig
+from parallel import gather_vocab_if_sharded
 
 
 @dataclass
@@ -154,6 +155,7 @@ class TeacherWrapper:
         model.eval()
         for p in model.parameters():
             p.requires_grad_(False)
+        self._vocab_size = model.config.vocab_size
 
         if cfg.offload_to_cpu:
             import deepspeed
@@ -188,4 +190,7 @@ class TeacherWrapper:
                          store_dtype: torch.dtype = torch.bfloat16) -> TeacherLogitCache:
         """Run teacher forward and stage logits onto the host."""
         outputs = self._callable(input_ids=input_ids, attention_mask=attention_mask)
-        return TeacherLogitCache.from_gpu_logits(outputs.logits, store_dtype=store_dtype)
+        # Under TP > 1 the LM head returns [B, T, V/N]; gather back to [B, T, V].
+        # No-op for TP == 1 and for ZeRO-3 (detected via the vocab dim).
+        logits = gather_vocab_if_sharded(outputs.logits, self._vocab_size)
+        return TeacherLogitCache.from_gpu_logits(logits, store_dtype=store_dtype)
