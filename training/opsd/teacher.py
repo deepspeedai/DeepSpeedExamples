@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 """Frozen teacher: two-phase forward with CPU-cached logits.
 

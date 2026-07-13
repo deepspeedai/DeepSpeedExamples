@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 #
 # Assumes you're cd'd into examples/opsd/.

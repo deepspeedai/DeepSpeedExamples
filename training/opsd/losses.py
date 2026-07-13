@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 """Per-token distillation divergences with sequence-axis chunking.
 
