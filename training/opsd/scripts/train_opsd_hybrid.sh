@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Copyright (c) Microsoft Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
 # DeepSpeed Team
 #
 # Assumes you're cd'd into examples/opsd/.
