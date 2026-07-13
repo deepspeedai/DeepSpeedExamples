@@ -171,20 +171,3 @@ def streamed_distillation_loss(
         total_loss = total_loss + (per_tok * chunk_mask).sum()
 
     return total_loss / total_tokens
-
-
-def per_token_logprobs(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-    """Gather log p(label_t | context_<t) for each position.
-
-    Convenience helper used by the trainer for diagnostic logging (e.g. mean
-    student log-prob of the rollout, mean teacher log-prob of the rollout).
-
-    Args:
-        logits: ``[B, T, V]``.
-        labels: ``[B, T]`` token ids.
-
-    Returns:
-        ``[B, T]`` of log-probabilities.
-    """
-    log_probs = F.log_softmax(logits.float(), dim=-1)
-    return log_probs.gather(-1, labels.unsqueeze(-1)).squeeze(-1)

@@ -11,7 +11,7 @@ launcher. Run from the example root with::
 import pytest
 import torch
 
-from losses import chunked_distillation_loss, per_token_logprobs
+from losses import chunked_distillation_loss
 from utils import build_response_mask, shift_for_next_token_prediction
 
 
@@ -127,16 +127,6 @@ def test_all_zero_mask_returns_zero():
     mask = torch.zeros(2, 8)
     loss = chunked_distillation_loss(s, t, mask, loss_type="reverse_kl")
     assert loss.item() == pytest.approx(0.0, abs=1e-6)
-
-
-def test_per_token_logprobs_matches_manual():
-    torch.manual_seed(0)
-    logits = torch.randn(2, 4, 16)
-    labels = torch.randint(0, 16, (2, 4))
-    got = per_token_logprobs(logits, labels)
-    expected = torch.log_softmax(logits.float(), dim=-1)
-    expected = expected.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
-    assert torch.allclose(got, expected, atol=1e-6)
 
 
 def test_build_response_mask_basic():
