@@ -147,7 +147,7 @@ class TeacherWrapper:
 
         model = AutoModelForCausalLM.from_pretrained(
             cfg.model_name_or_path,
-            torch_dtype=dtype,
+            dtype=dtype,
             trust_remote_code=cfg.trust_remote_code,
         )
         model.eval()

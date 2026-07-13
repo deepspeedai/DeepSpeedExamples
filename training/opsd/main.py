@@ -71,7 +71,7 @@ def main() -> None:
     student_dtype = _resolve_dtype(cfg.student.dtype)
     student_model = AutoModelForCausalLM.from_pretrained(
         cfg.student.model_name_or_path,
-        torch_dtype=student_dtype,
+        dtype=student_dtype,
         trust_remote_code=cfg.student.trust_remote_code,
     )
 
