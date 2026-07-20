@@ -145,11 +145,13 @@ class TeacherWrapper:
         for p in model.parameters():
             p.requires_grad_(False)
 
-        # Always route through DeepSpeed. ZeRO-3 only pays off when there is
+        # Route through DeepSpeed. ZeRO-3 only pays off when there is
         # another rank to shard across (world_size > 1) or host memory to
         # offload to; on a single GPU with no offload it is pure per-forward
-        # gather overhead, so we drop to stage 0 there.
-        use_zero3 = cfg.offload_to_cpu or world_size > 1
+        # gather overhead, so we drop to stage 0 there. When using AutoTP,
+        # force ZeRO-0 because AutoTP + ZeRO-3 is not yet supported.
+        use_autotp = getattr(cfg, 'autotp_size', 1) > 1
+        use_zero3 = (cfg.offload_to_cpu or world_size > 1) and not use_autotp
         zero_opt = {"stage": 3 if use_zero3 else 0}
         if cfg.offload_to_cpu:
             zero_opt["offload_param"] = {"device": "cpu"}
@@ -159,6 +161,8 @@ class TeacherWrapper:
             "fp16": {"enabled": dtype is torch.float16},
             "zero_optimization": zero_opt,
         }
+        if use_autotp:
+            ds_config["tensor_parallel"] = {"autotp_size": cfg.autotp_size}
         self._callable, *_ = deepspeed.initialize(model=model, config=ds_config)
 
     @torch.no_grad()

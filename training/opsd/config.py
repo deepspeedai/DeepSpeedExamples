@@ -38,6 +38,7 @@ class TeacherConfig:
     dtype: str = "bfloat16"
     trust_remote_code: bool = False
     offload_to_cpu: bool = True
+    autotp_size: int = 1
 
 
 @dataclass

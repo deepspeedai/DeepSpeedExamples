@@ -106,9 +106,12 @@ def main() -> None:
         chat_template=cfg.data.chat_template,
     )
     collator = LeftPaddedPromptCollator(tokenizer=tokenizer, max_prompt_length=cfg.rollout.max_prompt_length)
-    # Shard the dataset across data-parallel ranks. Without this, every rank
-    # iterates the full set and the run is pure redundant compute on >1 GPU.
-    sampler = DistributedSampler(dataset, shuffle=cfg.data.shuffle) if dist_world_size() > 1 else None
+    # In pure-TP mode (autotp_size == world_size), every rank must see the
+    # same data — a DistributedSampler would split prompts across TP ranks
+    # and deadlock the TP all-reduce.  Only shard when there is real DP.
+    tp_size = student_engine.autotp_size() if hasattr(student_engine, 'autotp_size') else 1
+    dp_size = dist_world_size() // tp_size
+    sampler = DistributedSampler(dataset, shuffle=cfg.data.shuffle) if dp_size > 1 else None
     loader = DataLoader(
         dataset,
         batch_size=cfg.training.micro_batch_size_per_gpu,
