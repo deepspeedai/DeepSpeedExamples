@@ -115,11 +115,11 @@ class TeacherWrapper:
     """Frozen teacher, always routed through DeepSpeed.
 
     The ZeRO stage is chosen to match the run: **stage 3** when there is more
-    than one rank (so the frozen params shard across GPUs instead of being
-    replicated on every one) or when ``cfg.offload_to_cpu`` is set (so those
-    shards can live on the host between forwards); otherwise **stage 0** — on
-    a single GPU with no offload, ZeRO-3's per-forward gather is pure
-    overhead. The optimizer slot is unused (no trainable params); ZeRO-3 here
+    than one data-parallel rank (i.e. ``world_size > autotp_size``, so the
+    frozen params shard across the DP group instead of being replicated) or
+    when ``cfg.offload_to_cpu`` is set (so those shards can live on the host
+    between forwards); otherwise **stage 0** — in pure-TP mode with no offload,
+    ZeRO-3's per-forward gather is pure overhead. The optimizer slot is unused (no trainable params); ZeRO-3 here
     only buys per-forward parameter gather/release.
 
     The full checkpoint is loaded on each rank before DeepSpeed partitions it;
@@ -145,13 +145,16 @@ class TeacherWrapper:
         for p in model.parameters():
             p.requires_grad_(False)
 
-        # Route through DeepSpeed. ZeRO-3 only pays off when there is
-        # another rank to shard across (world_size > 1) or host memory to
-        # offload to; on a single GPU with no offload it is pure per-forward
-        # gather overhead, so we drop to stage 0 there. When using AutoTP,
-        # force ZeRO-0 because AutoTP + ZeRO-3 is not yet supported.
-        use_autotp = getattr(cfg, 'autotp_size', 1) > 1
-        use_zero3 = (cfg.offload_to_cpu or world_size > 1) and not use_autotp
+        # Route through DeepSpeed. ZeRO-3 shards params across the
+        # data-parallel group, so it only pays off when there is a real DP
+        # dimension (world_size > autotp_size) or host memory to offload to.
+        # In pure-TP mode (autotp_size == world_size) with no offload there is
+        # nothing to shard and ZeRO-3's per-forward gather is pure overhead,
+        # so we drop to stage 0 there. AutoTP + ZeRO-3 is supported by recent
+        # DeepSpeed, so the two may be combined when a DP dimension exists.
+        autotp_size = getattr(cfg, 'autotp_size', 1)
+        use_autotp = autotp_size > 1
+        use_zero3 = cfg.offload_to_cpu or world_size > autotp_size
         zero_opt = {"stage": 3 if use_zero3 else 0}
         if cfg.offload_to_cpu:
             zero_opt["offload_param"] = {"device": "cpu"}
