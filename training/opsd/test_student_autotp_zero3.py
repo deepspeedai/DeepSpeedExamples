@@ -14,7 +14,7 @@ import deepspeed
 from deepspeed.accelerator import get_accelerator
 from transformers import AutoModelForCausalLM
 
-MODEL = os.environ.get("STUDENT_MODEL", "/root/autodl-tmp/models/Qwen2.5-0.5B-Instruct")
+MODEL = os.environ.get("STUDENT_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 
 
 def build_ds_config():

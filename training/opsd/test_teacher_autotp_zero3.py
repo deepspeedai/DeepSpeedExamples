@@ -16,7 +16,7 @@ from deepspeed.accelerator import get_accelerator
 from teacher import TeacherWrapper
 from config import TeacherConfig
 
-MODEL = os.environ.get("TEACHER_MODEL", "/root/autodl-tmp/models/Qwen2.5-1.5B-Instruct")
+MODEL = os.environ.get("TEACHER_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
 
 
 def main():

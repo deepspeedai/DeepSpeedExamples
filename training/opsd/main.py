@@ -111,7 +111,19 @@ def main() -> None:
     # and deadlock the TP all-reduce.  Only shard when there is real DP.
     tp_size = student_engine.autotp_size() if hasattr(student_engine, 'autotp_size') else 1
     dp_size = dist_world_size() // tp_size
-    sampler = DistributedSampler(dataset, shuffle=cfg.data.shuffle) if dp_size > 1 else None
+    if dp_size > 1:
+        # TP groups are contiguous, so DP rank = global_rank // tp_size.
+        # Pass num_replicas/rank explicitly so the sampler shards only along
+        # the real DP dimension (not the full world, which would split data
+        # across TP ranks and deadlock the all-reduce).
+        sampler = DistributedSampler(
+            dataset,
+            shuffle=cfg.data.shuffle,
+            num_replicas=dp_size,
+            rank=deepspeed.comm.get_rank() // tp_size,
+        )
+    else:
+        sampler = None
     loader = DataLoader(
         dataset,
         batch_size=cfg.training.micro_batch_size_per_gpu,
