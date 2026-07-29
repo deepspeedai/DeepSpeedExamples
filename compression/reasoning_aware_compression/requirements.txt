@@ -1,0 +1,15 @@
+# Core: trace collection (HF backend) + pruning
+torch>=2.1
+transformers>=4.45
+datasets>=2.19
+accelerate>=0.30
+
+# Optional, pick the trace-collection backend you want:
+#   vllm>=0.6.0        # --backend vllm, fastest on a single node
+#   deepspeed>=0.14.0  # --backend deepspeed, ZeRO-Inference for 32B/70B models
+
+# Optional, evaluation of the pruned checkpoint (bash_script/eval_math500.sh):
+#   lighteval[math,vllm]>=0.8.0
+
+# Optional, CPU-only unit tests:
+#   pytest>=7.0
