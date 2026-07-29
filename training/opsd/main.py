@@ -110,6 +110,7 @@ def main() -> None:
     # same data — a DistributedSampler would split prompts across TP ranks
     # and deadlock the TP all-reduce.  Only shard when there is real DP.
     tp_size = student_engine.autotp_size() if hasattr(student_engine, 'autotp_size') else 1
+    tp_size = tp_size or 1  # autotp_size() returns 0 when AutoTP is unconfigured
     dp_size = dist_world_size() // tp_size
     if dp_size > 1:
         # TP groups are contiguous, so DP rank = global_rank // tp_size.
