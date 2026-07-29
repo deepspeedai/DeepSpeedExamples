@@ -35,6 +35,7 @@ from rac import (
     layerwise_sparsity,
     magnitude_prune,
     model_sparsity,
+    prunable_layers,
     select_blocks_by_thirds,
     sequential_prune,
 )
@@ -129,8 +130,19 @@ def main() -> None:
     num_blocks = model.config.num_hidden_layers
     block_indices = select_blocks_by_thirds(num_blocks, thirds)
     target = (f"{args.prune_n}:{args.prune_m}" if args.prune_n else f"{args.sparsity:.0%}")
-    print(f"[rac] pruning {len(block_indices)}/{num_blocks} blocks to {target} "
-          f"with {args.pruning_method}, scope={args.scope}")
+
+    # Fail here rather than after an hour of calibration: an architecture whose
+    # projections are not nn.Linear (GPT-2/BLOOM use Conv1D) would otherwise run
+    # the whole pass and save a checkpoint that is still dense.
+    targets = prunable_layers(model, scope=args.scope, block_indices=block_indices)
+    if not targets:
+        raise RuntimeError(
+            f"No prunable layers found in {args.model} with --scope {args.scope}. RAC prunes "
+            "nn.Linear projections inside decoder blocks; architectures that use "
+            "transformers Conv1D (GPT-2, BLOOM) are not supported.")
+
+    print(f"[rac] pruning {len(targets)} layers in {len(block_indices)}/{num_blocks} blocks "
+          f"to {target} with {args.pruning_method}, scope={args.scope}")
 
     started = time.time()
     stats = []

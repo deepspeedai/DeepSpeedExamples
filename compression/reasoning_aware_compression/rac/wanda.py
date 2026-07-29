@@ -4,7 +4,9 @@
 
 Adapted from `A Simple and Effective Pruning Approach for Large Language
 Models <https://arxiv.org/abs/2306.11695>`_ (Sun et al., ICLR 2024),
-https://github.com/locuslab/wanda (MIT).
+https://github.com/locuslab/wanda, MIT licensed, Copyright (c) 2023 CMU Locus
+Lab. The upstream license text is reproduced in
+``third_party_licenses/LICENSE.wanda``.
 
 Wanda drops the weights with the smallest :math:`|W_{ij}| \\cdot \\|X_j\\|_2`,
 comparing weights *within each output row*. It needs only the per-input-channel

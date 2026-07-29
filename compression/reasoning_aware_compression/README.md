@@ -54,9 +54,12 @@ recovers most of the loss: the same 7B model at 50% sparsity reaches 0.900 accur
                                              └──────────────────────────────────────┘
 ```
 
-Teacher-forcing a sampled trace reproduces exactly the hidden states the model computed
+Teacher-forcing a sampled trace closely approximates the hidden states the model computed
 while generating it, so phase II recovers the decode-time activations of Algorithm 1 in
-the paper without re-running generation during pruning.
+the paper without re-running generation during pruning. It is an approximation rather than
+an identity because traces are stored as decoded text and re-tokenized when the
+calibration windows are packed, so a few tokens near window boundaries can differ from
+those originally sampled — negligible over a 1M-token calibration set.
 
 ## Layout
 
@@ -77,6 +80,7 @@ compression/reasoning_aware_compression/
 │   ├── collect_traces_zero_inference.sh # traces for 32B/70B via ZeRO-Inference
 │   └── eval_math500.sh                  # lighteval MATH-500 (accuracy + runtime)
 ├── tests/                               # CPU-only unit tests (pytest)
+├── third_party_licenses/                # upstream licenses for the adapted pruners
 └── requirements.txt
 ```
 
@@ -197,13 +201,18 @@ pytest tests
 ```
 
 They cover calibration-window packing, the RAC-vs-prompt distinction, target sparsity for
-SparseGPT/Wanda/magnitude, 2:4 patterns, block and scope selection, and batched-equals-
-unbatched calibration on a tiny randomly-initialised Qwen2.
+SparseGPT/Wanda/magnitude, 2:4 patterns, block and scope selection, batched-equals-
+unbatched calibration on a tiny randomly-initialised Qwen2, and the failure paths
+(unsupported architectures, config restored after a failed run).
 
 ## Attribution
 
-- `rac/sparsegpt.py` adapts [IST-DASLab/sparsegpt](https://github.com/IST-DASLab/sparsegpt) (Apache-2.0).
-- `rac/wanda.py` adapts [locuslab/wanda](https://github.com/locuslab/wanda) (MIT).
+- `rac/sparsegpt.py` adapts [IST-DASLab/sparsegpt](https://github.com/IST-DASLab/sparsegpt)
+  (Apache-2.0); upstream license text in
+  [`third_party_licenses/LICENSE.sparsegpt`](third_party_licenses/LICENSE.sparsegpt).
+- `rac/wanda.py` adapts [locuslab/wanda](https://github.com/locuslab/wanda)
+  (MIT, © 2023 CMU Locus Lab); upstream license text in
+  [`third_party_licenses/LICENSE.wanda`](third_party_licenses/LICENSE.wanda).
 - The RAC method and its reference implementation are by the paper's authors
   ([repo](https://github.com/RyanLucas3/Reasoning-Aware-Compression)); this example is a
   standalone reimplementation for DeepSpeedExamples.

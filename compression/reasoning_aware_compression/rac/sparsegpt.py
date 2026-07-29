@@ -5,7 +5,8 @@
 Adapted from the reference implementation released with
 `SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot
 <https://arxiv.org/abs/2301.00774>`_ (Frantar & Alistarh, ICML 2023),
-https://github.com/IST-DASLab/sparsegpt (Apache-2.0), and from the RAC
+https://github.com/IST-DASLab/sparsegpt, Apache-2.0 licensed (upstream license
+text reproduced in ``third_party_licenses/LICENSE.sparsegpt``), and from the RAC
 reference code at https://github.com/RyanLucas3/Reasoning-Aware-Compression.
 
 The algorithm itself is untouched by RAC: given the layer input activations

@@ -239,6 +239,69 @@ def build_deepspeed_model(args):
     return engine.module
 
 
+def _distributed_world() -> int:
+    """Number of ranks participating, or 1 when running unsharded."""
+    try:
+        import torch.distributed as dist
+    except ImportError:
+        return 1
+    if not (dist.is_available() and dist.is_initialized()):
+        return 1
+    return dist.get_world_size()
+
+
+def assert_ranks_agree(generated, device) -> None:
+    """Check that every rank decoded the same tokens.
+
+    ZeRO-Inference shards parameters, not data: each rank runs the same batch
+    and must produce identical sequences, which is what makes it safe for rank 0
+    alone to write the traces. Under a different sharding scheme (or a
+    rank-dependent seed) the ranks would diverge, and rank 0's file would
+    describe rollouts the other ranks never made -- so compare a cheap checksum
+    against rank 0 and fail loudly instead of writing inconsistent traces.
+    """
+    import torch
+    import torch.distributed as dist
+
+    if _distributed_world() < 2:
+        return
+
+    checksum = torch.tensor(
+        [generated.shape[0], generated.shape[1],
+         int(generated.sum().item())],
+        dtype=torch.int64,
+        device=device,
+    )
+    reference = checksum.clone()
+    dist.broadcast(reference, src=0)
+    if not torch.equal(checksum, reference):
+        raise RuntimeError(
+            f"Rank {dist.get_rank()} generated different tokens from rank 0 "
+            f"(shape/checksum {checksum.tolist()} vs {reference.tolist()}). Trace collection "
+            "assumes ZeRO-3 parameter sharding with replicated data, so every rank decodes the "
+            "same sequences; only rank 0 writes them.")
+
+
+def _max_total_across_ranks(total: int, device) -> int:
+    """Largest running token count over all ranks.
+
+    Every rank has to leave the generation loop on the same iteration: with
+    ``synced_gpus=True`` a rank that keeps going waits forever for peers that
+    stopped. The per-rank counts are expected to be equal -- see
+    :func:`assert_ranks_agree` -- but reducing them makes the exit collective
+    rather than a per-rank assumption.
+    """
+    import torch
+    import torch.distributed as dist
+
+    if _distributed_world() < 2:
+        return total
+
+    counter = torch.tensor([total], dtype=torch.int64, device=device)
+    dist.all_reduce(counter, op=dist.ReduceOp.MAX)
+    return int(counter.item())
+
+
 def generate_transformers(args, prompts: List[str], writer, use_deepspeed: bool) -> int:
     """Roll out with ``model.generate`` (HF or ZeRO-Inference backend)."""
     import torch
@@ -281,18 +344,26 @@ def generate_transformers(args, prompts: List[str], writer, use_deepspeed: bool)
                 synced_gpus=use_deepspeed,
             )
 
+        if use_deepspeed:
+            assert_ranks_agree(generated, device)
+
         prompt_len = batch["input_ids"].shape[1]
         completions = generated[:, prompt_len:]
         for i, sequence in enumerate(completions):
             prompt = chunk[i // args.num_generations]
             text = tokenizer.decode(sequence, skip_special_tokens=True)
+            # Number of *kept* tokens, not the generated length: generate() right-pads
+            # every sequence in the batch out to the longest one, and pad_token was
+            # aliased to eos_token above, so the terminal eos is not counted either.
+            # That matches the text actually written to the trace file, which is what
+            # the token budget is meant to track.
             n_completion = int((sequence != tokenizer.pad_token_id).sum())
             n_prompt = int(batch["attention_mask"][i // args.num_generations].sum())
             total += n_prompt + n_completion
             if is_writer_rank:
                 writer(prompt, text, n_prompt, n_completion)
 
-        if total >= args.trace_tokens:
+        if _max_total_across_ranks(total, device) >= args.trace_tokens:
             break
     return total
 

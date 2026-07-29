@@ -167,7 +167,20 @@ def sequential_prune(
 
     use_cache = getattr(model.config, "use_cache", False)
     model.config.use_cache = False
+    try:
+        stats = _prune_blocks(model, layers, selected, samples, pruner_cls, method, sparsity,
+                              prune_n, prune_m, scope, device, blocksize, percdamp, batch_size)
+    finally:
+        # Restore even if pruning raises, so the caller is left with a usable
+        # model (and a usable config) to inspect.
+        model.config.use_cache = use_cache
+    return stats
 
+
+@torch.no_grad()
+def _prune_blocks(model, layers, selected, samples, pruner_cls, method, sparsity, prune_n,
+                  prune_m, scope, device, blocksize, percdamp, batch_size) -> List[dict]:
+    """The body of :func:`sequential_prune`; see it for the argument meanings."""
     inps, block_kwargs = capture_block_inputs(model, samples, device)
     outs = torch.empty_like(inps)
     stats: List[dict] = []
@@ -220,7 +233,6 @@ def sequential_prune(
         _empty_cache(device)
         inps, outs = outs, inps
 
-    model.config.use_cache = use_cache
     return stats
 
 

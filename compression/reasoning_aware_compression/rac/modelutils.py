@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import torch
@@ -75,6 +76,21 @@ def find_linear_layers(module: nn.Module, scope: str = "all") -> Dict[str, nn.Mo
         if scope == "mlp" and not any(k in name.lower() for k in MLP_KEYWORDS):
             continue
         found[name] = sub
+
+    if not found:
+        # Silently returning nothing here would run the whole pruning pass and
+        # save a checkpoint that is still dense. The usual cause is an
+        # architecture whose projections are not ``nn.Linear`` -- GPT-2 and
+        # BLOOM use ``transformers.pytorch_utils.Conv1D`` -- or an MLP naming
+        # convention that ``--scope mlp`` does not recognise.
+        warnings.warn(
+            f"No prunable layers found in {type(module).__name__} with scope='{scope}'. "
+            f"RAC prunes {'/'.join(t.__name__ for t in PRUNABLE_TYPES)} sub-modules"
+            + (f" whose name contains one of {MLP_KEYWORDS}" if scope == "mlp" else "")
+            + "; this block will be left dense.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     return found
 
 

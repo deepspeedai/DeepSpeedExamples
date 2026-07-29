@@ -17,6 +17,7 @@ from transformers import Qwen2Config, Qwen2ForCausalLM
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rac import (  # noqa: E402
+    get_decoder_layers,
     magnitude_prune,
     model_sparsity,
     prunable_layers,
@@ -122,6 +123,50 @@ def test_sequential_prune_rejects_ragged_samples(model):
 def test_sequential_prune_rejects_unknown_method(model, samples):
     with pytest.raises(ValueError, match="Unknown calibrated pruning method"):
         sequential_prune(model, samples, method="alps", device="cpu")
+
+
+@pytest.mark.parametrize("failing_kwargs, match", [
+    ({"scope": "bogus"}, "Unknown scope"),
+    ({"method": "alps"}, "Unknown calibrated pruning method"),
+])
+def test_sequential_prune_restores_use_cache_on_failure(model, samples, failing_kwargs, match):
+    """A failed pruning run must leave the config as it found it."""
+    model.config.use_cache = True
+
+    with pytest.raises(ValueError, match=match):
+        sequential_prune(model, samples, sparsity=0.5, device="cpu", **failing_kwargs)
+
+    assert model.config.use_cache is True
+
+
+def test_sequential_prune_restores_use_cache_on_success(model, samples):
+    model.config.use_cache = True
+    sequential_prune(model, samples, sparsity=0.5, device="cpu")
+    assert model.config.use_cache is True
+
+
+def test_find_linear_layers_warns_when_nothing_is_prunable(model):
+    """Silently returning {} would save a checkpoint that is still dense."""
+    import warnings
+
+    from transformers.pytorch_utils import Conv1D
+
+    from rac import find_linear_layers
+
+    class Conv1DBlock(torch.nn.Module):
+        """Stand-in for a GPT-2/BLOOM block, whose projections are not nn.Linear."""
+
+        def __init__(self):
+            super().__init__()
+            self.attn = Conv1D(8, 8)
+
+    with pytest.warns(RuntimeWarning, match="No prunable layers found"):
+        assert find_linear_layers(Conv1DBlock()) == {}
+
+    # A supported block finds its layers and warns about nothing.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert len(find_linear_layers(get_decoder_layers(model)[0])) == 7
 
 
 def test_magnitude_prune(model):
