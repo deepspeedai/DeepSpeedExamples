@@ -1,0 +1,6 @@
+datasets>=2.0.0
+numpy
+transformers>=5.0.0
+# DeepSpeed must be installed from master until 0.19.3 is released — the
+# example uses deepspeed.runtime.rollout, which is merged but unreleased.
+# See README "Install".

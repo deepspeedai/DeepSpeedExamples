@@ -1,0 +1,36 @@
+{
+    "bf16": {
+        "enabled": true
+    },
+    "zero_optimization": {
+        "stage": 3,
+        "offload_optimizer": {
+            "device": "cpu"
+        },
+        "offload_param": {
+            "device": "cpu"
+        },
+        "overlap_comm": true,
+        "contiguous_gradients": true,
+        "reduce_bucket_size": 5e7,
+        "stage3_prefetch_bucket_size": 5e7,
+        "stage3_param_persistence_threshold": 1e6,
+        "stage3_max_live_parameters": 1e9,
+        "stage3_max_reuse_distance": 1e9
+    },
+    "tensor_parallel": {
+        "autotp_size": 2
+    },
+    "optimizer": {
+        "type": "AdamW",
+        "params": {
+            "lr": 1e-6,
+            "betas": [0.9, 0.95],
+            "eps": 1e-8,
+            "weight_decay": 0.0,
+            "torch_adam": true
+        }
+    },
+    "gradient_clipping": 1.0,
+    "wall_clock_breakdown": false
+}
