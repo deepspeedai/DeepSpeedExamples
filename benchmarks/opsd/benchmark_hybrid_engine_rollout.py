@@ -17,7 +17,8 @@ import statistics
 from pathlib import Path
 
 
-_TIMING_FIELDS = ("prompt_expansion_ms", "generation_ms", "post_processing_ms", "total_ms", "tokens_per_second")
+_LATENCY_FIELDS = ("prompt_expansion_ms", "generation_ms", "post_processing_ms", "total_ms")
+_THROUGHPUT_FIELDS = ("tokens_per_second", )
 
 
 def _percentile(values, percentile):
@@ -28,12 +29,18 @@ def _percentile(values, percentile):
 
 def _summarize(profiles):
     summary = {}
-    for field in _TIMING_FIELDS:
+    for field in _LATENCY_FIELDS:
         values = [profile[field] for profile in profiles]
         summary[field] = {
             "mean": statistics.mean(values),
             "p50": statistics.median(values),
             "p95": _percentile(values, 0.95),
+        }
+    for field in _THROUGHPUT_FIELDS:
+        values = [profile[field] for profile in profiles]
+        summary[field] = {
+            "mean": statistics.mean(values),
+            "p50": statistics.median(values),
         }
     return summary
 

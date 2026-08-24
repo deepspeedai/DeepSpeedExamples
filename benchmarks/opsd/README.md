@@ -4,7 +4,8 @@
 OPSD workload backed by DeepSpeed HybridEngine. It runs a matrix of synthetic,
 exact-length prompts and reports prompt expansion, generation, post-processing,
 total latency, generated-token throughput, and peak accelerator memory. Each
-case includes raw iteration profiles plus mean, p50, and p95 summaries.
+case includes raw iteration profiles, mean and p50 summaries, and p95 summaries
+for latency metrics.
 
 This benchmark depends on the rollout profiling API introduced by
 DeepSpeed PR #8295:
