@@ -1,0 +1,14 @@
+# Qwen3.5 AutoEP requires Transformers with Qwen3_5 MoE text-backbone support.
+transformers>=5.2
+datasets>=2.14.0
+# Mandatory for Qwen3.5 verification: the model's linear-attention layers must not use torch fallbacks.
+flash-linear-attention>=0.2.2
+causal-conv1d
+# Mandatory when Qwen3.5 full-attention layers use the FlashAttention2 implementation.
+flash-attn
+# Mandatory on H100 with Triton >= 3.4 for Qwen3.5 fast-path verification.
+tilelang
+# AutoEP: PR #7938 head on upstream (not on PyPI yet). Same commits as tohtana/add_autoep on tohtana/DeepSpeed.
+deepspeed @ git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/7938/head
+matplotlib>=3.5.0
+torch>=2.9.1

@@ -1,0 +1,23 @@
+{
+    "zero_optimization": {
+        "stage": 0
+    },
+    "tensor_parallel": {
+        "autotp_size": 4
+    },
+    "optimizer": {
+        "type": "AdamW",
+        "params": {
+            "lr": 1e-05,
+            "betas": [
+                0.9,
+                0.95
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.0,
+            "torch_adam": true
+        }
+    },
+    "gradient_clipping": 1.0,
+    "wall_clock_breakdown": false
+}
