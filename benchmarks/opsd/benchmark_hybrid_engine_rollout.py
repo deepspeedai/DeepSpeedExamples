@@ -96,8 +96,6 @@ def _validate_args(args):
         raise ValueError("top-p must be in the interval (0, 1]")
     if getattr(args, "use_shared_prefill", False) and args.release_inference_cache:
         raise ValueError("--use-shared-prefill cannot be combined with --release-inference-cache")
-    if args.use_graph_capture and args.use_shared_prefill:
-        raise ValueError("--use-graph-capture cannot be combined with --use-shared-prefill")
     if args.use_graph_capture and args.temperature != 0.0:
         raise ValueError("--use-graph-capture requires --temperature 0.0 for greedy generation")
 
