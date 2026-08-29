@@ -34,6 +34,10 @@ currently supports only ZeRO-0, `inference_tp_size=1`, and the internal KV
 cache; it cannot be combined with CUDA Graph capture or
 `--release-inference-cache`. The selected mode is recorded as
 `use_shared_prefill` in the top-level JSON result.
+Pass `--use-graph-capture` to benchmark CUDA Graph decode. CUDA Graph capture
+supports only greedy generation (`--temperature 0`) and cannot currently be
+combined with `--use-shared-prefill`. The first generation performs graph
+capture, so use at least one warmup call before recording measurements.
 
 The largest effective batch (`batch_size * samples_per_prompt`) executes first
 so HybridEngine initializes a sufficiently large inference workspace. Results

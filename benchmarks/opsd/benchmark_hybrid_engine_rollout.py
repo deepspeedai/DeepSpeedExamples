@@ -79,6 +79,7 @@ def _build_parser():
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--release-inference-cache", action="store_true")
     parser.add_argument("--use-shared-prefill", action="store_true")
+    parser.add_argument("--use-graph-capture", action="store_true")
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--output", default="opsd_rollout_profile.json")
     return parser
@@ -95,6 +96,10 @@ def _validate_args(args):
         raise ValueError("top-p must be in the interval (0, 1]")
     if getattr(args, "use_shared_prefill", False) and args.release_inference_cache:
         raise ValueError("--use-shared-prefill cannot be combined with --release-inference-cache")
+    if args.use_graph_capture and args.use_shared_prefill:
+        raise ValueError("--use-graph-capture cannot be combined with --use-shared-prefill")
+    if args.use_graph_capture and args.temperature != 0.0:
+        raise ValueError("--use-graph-capture requires --temperature 0.0 for greedy generation")
 
 
 def _load_model_and_tokenizer(model_name, dtype, device):
@@ -129,6 +134,7 @@ def _build_engine(model, args):
         },
         "hybrid_engine": {
             "enabled": True,
+            "enable_cuda_graph": args.use_graph_capture,
             "max_out_tokens": max(args.prompt_lengths) + max(args.response_lengths),
             "release_inference_cache": args.release_inference_cache,
         },
@@ -206,6 +212,7 @@ def _build_result(args, device, cases):
         "top_p": args.top_p,
         "release_inference_cache": args.release_inference_cache,
         "use_shared_prefill": getattr(args, "use_shared_prefill", False),
+        "use_graph_capture": args.use_graph_capture,
         "cases": cases,
     }
 
@@ -234,7 +241,8 @@ def _run(args):
         rollout = HybridEngineRollout(
             engine,
             tokenizer,
-            HybridEngineRolloutConfig(enable_profiling=True, use_shared_prefill=args.use_shared_prefill),
+            HybridEngineRolloutConfig(enable_profiling=True,
+                                      use_shared_prefill=args.use_shared_prefill),
         )
 
         case_specs, execution_order = _ordered_case_specs(args)
