@@ -17,8 +17,16 @@ import statistics
 from pathlib import Path
 
 
-_LATENCY_FIELDS = ("prompt_expansion_ms", "generation_ms", "post_processing_ms", "total_ms")
-_THROUGHPUT_FIELDS = ("tokens_per_second", )
+_LATENCY_FIELDS = (
+    "prompt_expansion_ms",
+    "generation_ms",
+    "prefill_forward_ms",
+    "decode_forward_ms",
+    "generation_overhead_ms",
+    "post_processing_ms",
+    "total_ms",
+)
+_THROUGHPUT_FIELDS = ("tokens_per_second",)
 
 
 def _percentile(values, percentile):
@@ -31,6 +39,11 @@ def _summarize(profiles):
     summary = {}
     for field in _LATENCY_FIELDS:
         values = [profile[field] for profile in profiles]
+        if all(value is None for value in values):
+            summary[field] = None
+            continue
+        if any(value is None for value in values):
+            raise ValueError(f"Profile field {field} is None for only some iterations")
         summary[field] = {
             "mean": statistics.mean(values),
             "p50": statistics.median(values),
@@ -43,6 +56,13 @@ def _summarize(profiles):
             "p50": statistics.median(values),
         }
     return summary
+
+
+def _validate_decode_forward_counts(profiles):
+    counts = [profile["num_decode_forwards"] for profile in profiles]
+    if len(set(counts)) != 1:
+        raise ValueError(f"num_decode_forwards differs across iterations: {counts}")
+    return counts[0]
 
 
 def _build_parser():
@@ -58,6 +78,7 @@ def _build_parser():
     parser.add_argument("--warmup", type=int, default=5)
     parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--release-inference-cache", action="store_true")
+    parser.add_argument("--use-shared-prefill", action="store_true")
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--output", default="opsd_rollout_profile.json")
     return parser
@@ -72,6 +93,8 @@ def _validate_args(args):
         raise ValueError("temperature must be non-negative")
     if not 0.0 < args.top_p <= 1.0:
         raise ValueError("top-p must be in the interval (0, 1]")
+    if getattr(args, "use_shared_prefill", False) and args.release_inference_cache:
+        raise ValueError("--use-shared-prefill cannot be combined with --release-inference-cache")
 
 
 def _load_model_and_tokenizer(model_name, dtype, device):
@@ -157,6 +180,7 @@ def _run_case(rollout, model, args, batch_size, samples_per_prompt, prompt_lengt
         "requested_response_length": response_length,
         "returned_response_length": profiles[-1]["response_length"],
         "peak_memory_mb": accelerator.max_memory_allocated() / (1024**2),
+        "num_decode_forwards": _validate_decode_forward_counts(profiles),
         "summary": _summarize(profiles),
         "profiles": profiles,
     }
@@ -181,6 +205,7 @@ def _build_result(args, device, cases):
         "temperature": args.temperature,
         "top_p": args.top_p,
         "release_inference_cache": args.release_inference_cache,
+        "use_shared_prefill": getattr(args, "use_shared_prefill", False),
         "cases": cases,
     }
 
@@ -206,7 +231,11 @@ def _run(args):
     try:
         model, tokenizer = _load_model_and_tokenizer(args.model, dtype, device)
         engine = _build_engine(model, args)
-        rollout = HybridEngineRollout(engine, tokenizer, HybridEngineRolloutConfig(enable_profiling=True))
+        rollout = HybridEngineRollout(
+            engine,
+            tokenizer,
+            HybridEngineRolloutConfig(enable_profiling=True, use_shared_prefill=args.use_shared_prefill),
+        )
 
         case_specs, execution_order = _ordered_case_specs(args)
         cases = [None] * len(case_specs)
