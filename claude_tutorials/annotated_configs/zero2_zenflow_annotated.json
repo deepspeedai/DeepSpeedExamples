@@ -1,0 +1,319 @@
+{
+  // =========================================================================
+  // ZERO-2 with ZenFlow - Sparse Optimizer Updates
+  // Original: training/DeepSpeed-ZenFlow/finetuning/zf_config.json
+  //
+  // PURPOSE: Reduce CPU↔GPU transfer overhead in CPU-offloaded training
+  // INNOVATION: Only update most important parameters each step
+  // USE CASE: ZeRO-2 + CPU offload where bandwidth is bottleneck
+  //
+  // ZENFLOW KEY INSIGHT:
+  // Traditional: Update ALL optimizer states every step (slow!)
+  // ZenFlow: Update only TOP-K most important states (10x faster!)
+  // =========================================================================
+
+  "train_batch_size": 8,
+  // [EXPLANATION] Total training batch size across all GPUs
+  // Formula: train_batch_size = micro_batch × num_gpus × grad_accum_steps
+
+  "bf16": { "enabled": true },
+  // [EXPLANATION] Use BF16 mixed precision training
+  // BF16 advantages over FP16:
+  // - Same range as FP32 (no loss scaling needed)
+  // - Better numerical stability
+  // - Supported on modern GPUs (A100, H100, etc.)
+
+  "zero_optimization": {
+    // -----------------------------------------------------------------------
+    // ZERO STAGE 2: Gradient + Optimizer Partitioning
+    // -----------------------------------------------------------------------
+    "stage": 2,
+    // [EXPLANATION] **ZERO-2 OVERVIEW**
+    //
+    // What gets partitioned:
+    // ✓ Gradients: Each GPU stores 1/N of gradients
+    // ✓ Optimizer states: Each GPU stores 1/N of states
+    // ✗ Parameters: NOT partitioned (full model on each GPU)
+    //
+    // Memory savings:
+    // - Model parameters: No savings (full model on each GPU)
+    // - Gradients: N× savings
+    // - Optimizer states: N× savings
+    // - Total: ~8× savings for Adam optimizer
+    //
+    // Communication pattern:
+    // - Forward: No communication (full model on GPU)
+    // - Backward: Reduce-Scatter gradients
+    // - Optimizer: Each GPU updates its 1/N parameters
+    // - After optimizer: All-Gather updated parameters
+    //
+    // vs ZeRO-3:
+    // - Simpler (no parameter gathering in forward/backward)
+    // - Faster (less communication)
+    // - But requires model to fit in GPU memory
+
+    // -----------------------------------------------------------------------
+    // CPU OPTIMIZER OFFLOADING
+    // -----------------------------------------------------------------------
+    "offload_optimizer": {
+      "device": "cpu",
+      // [EXPLANATION] Move optimizer states to CPU RAM
+      //
+      // What gets offloaded:
+      // - Optimizer states (momentum, variance for Adam)
+      // - For Adam: 8 bytes per parameter (2 × fp32 states)
+      // - For 7B model: ~56 GB optimizer states → CPU
+      //
+      // Workflow:
+      // 1. Gradients computed on GPU
+      // 2. Gradients transferred to CPU
+      // 3. Optimizer step executed on CPU
+      // 4. Updated parameters transferred back to GPU
+      //
+      // Performance:
+      // - Pro: Save GPU memory for larger models/batch sizes
+      // - Con: CPU↔GPU transfer overhead (~30% slowdown)
+
+      "pin_memory": true
+      // [EXPLANATION] Use pinned memory for faster transfers
+      // - Enables DMA (Direct Memory Access)
+      // - 2-3x faster CPU↔GPU transfers
+      // - Essential for performance with CPU offload
+    },
+
+    // -----------------------------------------------------------------------
+    // ZENFLOW: THE INNOVATION!
+    // -----------------------------------------------------------------------
+    "zenflow": {
+      // [ANNOTATION] **ZENFLOW SPARSE OPTIMIZER UPDATES**
+      //
+      // Problem: CPU offload is slow due to CPU↔GPU bandwidth
+      // - Each step: Transfer ALL gradients to CPU, update ALL states, transfer ALL params back
+      // - For 7B model with 8 GPUs: Each GPU transfers ~1.75GB down + 1.75GB up = 3.5GB per step
+      // - At 32 GB/s PCIe bandwidth: ~110ms per step just for transfers!
+      //
+      // ZenFlow Solution: Only update most important parameters
+      // - Compute importance score for each parameter
+      // - Select top-k% most important parameters
+      // - Only transfer and update those selected parameters
+      // - Result: 10x less transfer, minimal accuracy loss
+
+      "topk_ratio": 0.1,
+      // [EXPLANATION] **TOP-K SELECTION RATIO**
+      //
+      // What it means:
+      // - Update only top 10% of parameters each step
+      // - 90% of parameters skip optimizer update
+      //
+      // How selection works:
+      // 1. Compute importance metric (e.g., gradient magnitude)
+      // 2. Rank all parameters by importance
+      // 3. Select top 10%
+      // 4. Only these get optimizer update
+      //
+      // Impact:
+      // - Transfer volume: 10% of original
+      // - Computation: 10% of original
+      // - Convergence: ~98-99% of full training quality
+      //
+      // Tuning:
+      // - Lower (0.05): More savings, might affect convergence
+      // - Higher (0.3): Better convergence, less savings
+      // - Sweet spot: 0.1 to 0.2
+
+      "update_interval": 4,
+      // [EXPLANATION] **IMPORTANCE RECOMPUTATION INTERVAL**
+      //
+      // What it controls:
+      // - How often to recompute importance scores
+      //
+      // Behavior:
+      // - Every 4 steps: Recompute which parameters are "important"
+      // - Between recomputations: Use same selection
+      //
+      // Why not every step?
+      // - Computing importance scores has overhead
+      // - Parameter importance doesn't change drastically step-to-step
+      // - Amortize selection cost over multiple steps
+      //
+      // Tuning:
+      // - Lower (1-2): More accurate selection, more overhead
+      // - Higher (10-20): Less overhead, might miss important params
+      // - Typical: 4-8 steps
+
+      "full_warm_up_rounds": 0,
+      // [EXPLANATION] **WARM-UP PERIOD**
+      //
+      // Number of initial steps to do FULL updates (no selection)
+      //
+      // Why warm-up?
+      // - Early training: All parameters important
+      // - Model needs to escape random initialization
+      // - Sparse updates might hurt initial convergence
+      //
+      // Setting to 0:
+      // - ZenFlow enabled from step 1
+      // - Works well for fine-tuning (model already trained)
+      //
+      // Recommended for pre-training:
+      // - Set to 100-1000 steps
+      // - Let model stabilize before sparse updates
+
+      "overlap_step": true
+      // [EXPLANATION] **OVERLAP OPTIMIZER WITH FORWARD PASS**
+      //
+      // Critical optimization: Hide CPU work behind GPU work!
+      //
+      // Without overlap (overlap_step=false):
+      //   [GPU Forward] → [GPU Backward] → [CPU Optimizer] → [Next GPU Forward]
+      //                                    ↑ GPU idle! ↑
+      //
+      // With overlap (overlap_step=true):
+      //   [GPU Forward] → [GPU Backward] → [Next GPU Forward]
+      //                   ↑ Start CPU optimizer asynchronously
+      //                   [CPU Optimizer runs in parallel]
+      //
+      // Implementation:
+      // - CPU optimizer runs in background thread
+      // - GPU proceeds to next forward pass
+      // - Parameter updates applied when optimizer finishes
+      // - Must ensure optimizer completes before params needed again
+      //
+      // Performance impact:
+      // - Hides ~80% of CPU optimizer latency
+      // - Critical for ZenFlow performance
+      // - Always set to true unless debugging
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // OPTIMIZER CONFIGURATION
+  // -------------------------------------------------------------------------
+  "optimizer": {
+    "type": "AdamW",
+    // [EXPLANATION] AdamW optimizer (Adam with weight decay fix)
+    // ZenFlow is optimizer-agnostic (works with any optimizer)
+
+    "params": {
+      "lr": 2e-5,        // Learning rate
+      "betas": [0.9, 0.999],  // Adam momentum parameters
+      "eps": 1e-8,       // Numerical stability epsilon
+      "weight_decay": 0.01  // L2 regularization (applied correctly in AdamW)
+    }
+  },
+
+  "gradient_accumulation_steps": 1,
+  // [EXPLANATION] Number of micro-batches to accumulate before optimizer step
+  // Increase to simulate larger batch size without more GPU memory
+
+  "gradient_clipping": 1.0,
+  // [EXPLANATION] Clip gradient norm to prevent exploding gradients
+
+  "zero_allow_untested_optimizer": true
+  // [EXPLANATION] Allow using custom/untested optimizers with ZeRO
+  // Required for some optimizer implementations
+
+  // =========================================================================
+  // ZENFLOW ALGORITHM DETAILS
+  // =========================================================================
+  //
+  // IMPORTANCE METRIC:
+  // For each parameter p:
+  //   importance(p) = ||gradient(p)||₂  (L2 norm of gradient)
+  //
+  // Alternative metrics:
+  //   - Gradient magnitude: |grad|
+  //   - Update magnitude: |grad / (sqrt(variance) + eps)|
+  //   - Historical importance: EMA of past gradients
+  //
+  // SELECTION ALGORITHM:
+  // 1. Compute importance for all N parameters
+  // 2. Sort by importance (descending)
+  // 3. Select top (topk_ratio × N) parameters
+  // 4. Mark others as "skip update"
+  //
+  // SPARSE UPDATE:
+  // For each parameter p:
+  //   if p in top-k:
+  //     # Standard Adam update
+  //     m = beta1 * m + (1-beta1) * grad
+  //     v = beta2 * v + (1-beta2) * grad²
+  //     p = p - lr * m / (sqrt(v) + eps)
+  //   else:
+  //     # Skip update (m, v, p unchanged)
+  //     pass
+  //
+  // STALENESS HANDLING:
+  // Parameters not in top-k are "stale" (not updated)
+  // - Eventually become important again
+  // - Selected in future steps
+  // - In practice: Most params updated within 10-50 steps
+  //
+  // =========================================================================
+  // PERFORMANCE COMPARISON
+  // =========================================================================
+  //
+  // Example: LLaMA-13B, 8× A100-40GB, sequence length 2048
+  //
+  // ZERO-2 (No Offload):
+  //   - GPU Memory: ~45 GB per GPU → Doesn't fit in 40GB!
+  //   - Throughput: N/A (OOM)
+  //
+  // ZERO-2 + CPU Offload (No ZenFlow):
+  //   - GPU Memory: ~30 GB per GPU → Fits!
+  //   - Throughput: 100 samples/sec (baseline)
+  //   - CPU↔GPU Transfer: ~3.5 GB per step per GPU
+  //   - Bottleneck: PCIe bandwidth
+  //
+  // ZERO-2 + CPU Offload + ZenFlow (topk_ratio=0.1):
+  //   - GPU Memory: ~30 GB per GPU → Fits!
+  //   - Throughput: 180 samples/sec (1.8× speedup!)
+  //   - CPU↔GPU Transfer: ~0.35 GB per step per GPU (10× reduction)
+  //   - Convergence: 98.5% of full training
+  //
+  // =========================================================================
+  // WHEN TO USE ZENFLOW
+  // =========================================================================
+  //
+  // ✓ Use ZenFlow when:
+  // - Using ZeRO-2 with CPU offload
+  // - CPU↔GPU bandwidth is bottleneck (check GPU utilization)
+  // - Can tolerate slight convergence degradation (1-2%)
+  // - Fine-tuning (not pre-training from scratch)
+  //
+  // ✗ Don't use ZenFlow when:
+  // - Not using CPU offload (no benefit)
+  // - Using ZeRO-3 (different communication pattern)
+  // - Need exact convergence matching
+  // - Pre-training large models from random init (use warm-up)
+  //
+  // =========================================================================
+  // DEBUGGING TIPS
+  // =========================================================================
+  //
+  // Monitor ZenFlow behavior:
+  // 1. Check selection statistics:
+  //    - How many params selected each step
+  //    - Distribution of importance scores
+  //
+  // 2. Track staleness:
+  //    - How long since each param was last updated
+  //    - Histogram of update frequencies
+  //
+  // 3. Compare convergence:
+  //    - Train same model with/without ZenFlow
+  //    - Monitor validation loss
+  //    - Expect 1-2% degradation
+  //
+  // 4. Profile performance:
+  //    - Measure transfer volume: nvidia-smi dmon
+  //    - Measure GPU utilization: should be >80%
+  //    - Measure step time: should match overlapped forward time
+  //
+  // Troubleshooting:
+  // - If convergence poor: Increase topk_ratio (0.1 → 0.2)
+  // - If still slow: Check if overlap_step is working
+  // - If OOM on CPU: Reduce buffer sizes
+  //
+  // =========================================================================
+}

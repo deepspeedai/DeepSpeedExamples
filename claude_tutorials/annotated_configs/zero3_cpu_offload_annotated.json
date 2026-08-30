@@ -1,0 +1,269 @@
+{
+  // =========================================================================
+  // ZERO-3 with CPU Offloading Configuration
+  // Original: inference/sglang/ds_offload_cpu.json
+  //
+  // PURPOSE: Offload parameters to CPU RAM for large models
+  // USE CASE: Models that don't fit in GPU memory but fit in CPU RAM
+  // EXAMPLE: Training 13B-70B models on consumer GPUs (24GB-48GB)
+  //
+  // MEMORY TRADEOFF:
+  // - Save GPU memory (expensive, limited)
+  // - Use CPU RAM (cheaper, abundant)
+  // - Accept slower training (CPU ↔ GPU transfer overhead)
+  // =========================================================================
+
+  "zero_optimization": {
+    // -----------------------------------------------------------------------
+    // ZERO STAGE 3: Full ZeRO - Partition everything
+    // -----------------------------------------------------------------------
+    "stage": 3,
+    // [EXPLANATION] ZeRO-3 partitions all model states across GPUs:
+    // - Parameters: Each GPU stores 1/N of model weights
+    // - Gradients: Each GPU stores 1/N of gradients
+    // - Optimizer states: Each GPU stores 1/N of optimizer states
+    //
+    // During computation:
+    // - Forward: All-Gather parameters → Compute → Release parameters
+    // - Backward: All-Gather parameters → Compute gradients → Reduce-Scatter gradients → Release
+    //
+    // Memory savings: Up to N× reduction (N = number of GPUs)
+
+    // -----------------------------------------------------------------------
+    // AUTO-TUNING FOR OPTIMAL PERFORMANCE
+    // -----------------------------------------------------------------------
+
+    "stage3_prefetch_bucket_size": "auto",
+    // [EXPLANATION] **PREFETCHING OPTIMIZATION**
+    //
+    // What it does:
+    // - Groups multiple parameters into buckets
+    // - Prefetches next bucket while computing current one
+    // - Hides All-Gather latency behind computation
+    //
+    // "auto" behavior:
+    // - DeepSpeed analyzes model structure
+    // - Estimates optimal bucket size based on:
+    //   * Parameter sizes
+    //   * Network bandwidth
+    //   * Computation time per layer
+    //
+    // Manual tuning:
+    // - Small bucket (e.g., 5e6 = 5MB): Lower memory, more communication overhead
+    // - Large bucket (e.g., 5e8 = 500MB): Higher memory, better overlap
+    // - Set to 0 to disable prefetching
+
+    "stage3_param_persistence_threshold": "auto",
+    // [EXPLANATION] **PARAMETER PERSISTENCE THRESHOLD**
+    //
+    // Problem: Small parameters accessed frequently
+    // - Repeatedly gathering small parameters is inefficient
+    // - Better to keep them persistent in GPU memory
+    //
+    // This threshold determines:
+    // - Parameters LARGER than threshold: Gathered on-demand, released after use
+    // - Parameters SMALLER than threshold: Kept persistent in GPU memory
+    //
+    // "auto" behavior:
+    // - DeepSpeed profiles parameter access patterns
+    // - Chooses threshold to minimize communication overhead
+    //
+    // Manual tuning:
+    // - Small threshold (e.g., 1e4 = 10KB): More offloading, more memory savings
+    // - Large threshold (e.g., 1e6 = 1MB): Less offloading, better performance
+    //
+    // Example:
+    // - Embedding matrices (large, infrequent): Gathered on-demand
+    // - Layer norm weights (small, frequent): Kept persistent
+
+    "stage3_max_live_parameters": "auto",
+    // [EXPLANATION] **MAXIMUM CONCURRENT PARAMETERS**
+    //
+    // Controls how many parameters can be in GPU memory simultaneously
+    //
+    // Behavior:
+    // - DeepSpeed tracks which parameters are currently gathered
+    // - When limit is reached, releases oldest parameters first (LRU policy)
+    //
+    // "auto" behavior:
+    // - Estimates based on available GPU memory
+    // - Leaves headroom for activations and gradients
+    //
+    // Manual tuning:
+    // - Lower value (e.g., 1e9 = 1B params): More aggressive offloading
+    // - Higher value (e.g., 1e12 = 1T params): Keep more in GPU
+    //
+    // Memory impact:
+    // - 1B parameters in BF16 = 2GB GPU memory
+
+    // -----------------------------------------------------------------------
+    // PARAMETER OFFLOADING TO CPU
+    // -----------------------------------------------------------------------
+    "offload_param": {
+      "device": "cpu",
+      // [EXPLANATION] **OFFLOAD DESTINATION**
+      //
+      // Options:
+      // - "cpu": Offload to CPU RAM (this config)
+      // - "nvme": Offload to NVMe SSD (for extreme cases)
+      // - "none": No offloading (all on GPU)
+      //
+      // CPU offloading behavior:
+      // - When parameter not needed: GPU → CPU
+      // - When parameter needed: CPU → GPU (All-Gather operation)
+      //
+      // Transfer overhead:
+      // - PCIe 4.0: ~32 GB/s GPU ↔ CPU
+      // - For 1B parameters (2GB BF16): ~60ms transfer time
+
+      "pin_memory": true,
+      // [EXPLANATION] **PINNED MEMORY OPTIMIZATION**
+      //
+      // Pinned vs Pageable memory:
+      // - Pinned: Page-locked, cannot be swapped to disk
+      // - Pageable: Can be swapped to disk by OS
+      //
+      // Why pin_memory matters:
+      // - GPU can only DMA transfer from/to pinned memory
+      // - Pageable memory requires: Pageable → Pinned → GPU (extra copy!)
+      // - Pinned memory enables: CPU → GPU (direct transfer)
+      //
+      // Performance impact:
+      // - pin_memory=true: ~32 GB/s transfer
+      // - pin_memory=false: ~10 GB/s transfer (3x slower!)
+      //
+      // Tradeoff:
+      // - Pinned memory cannot be swapped out
+      // - May cause out-of-memory if too much pinned
+      // - Recommendation: Always use true unless OOM on CPU
+
+      "buffer_size": "auto"
+      // [EXPLANATION] **STAGING BUFFER SIZE**
+      //
+      // Purpose: Temporary buffer in CPU for batching transfers
+      //
+      // How it works:
+      // - Small parameters batched into buffer
+      // - Single transfer instead of many small transfers
+      // - Reduces transfer overhead
+      //
+      // "auto" behavior:
+      // - DeepSpeed estimates based on:
+      //   * Available CPU memory
+      //   * Model size
+      //   * Number of parameters
+      //
+      // Manual tuning:
+      // - Larger buffer (e.g., 1e9 = 1GB): Better batching, more CPU memory
+      // - Smaller buffer (e.g., 1e8 = 100MB): Less CPU memory, more transfers
+      //
+      // Typical values: 100MB to 5GB
+    }
+  },
+
+  // -------------------------------------------------------------------------
+  // BATCH SIZE CONFIGURATION
+  // -------------------------------------------------------------------------
+  "train_batch_size": 1
+  // [EXPLANATION] **EFFECTIVE BATCH SIZE**
+  //
+  // Formula:
+  // train_batch_size = micro_batch_size × num_gpus × gradient_accumulation_steps
+  //
+  // Example with 8 GPUs:
+  // - micro_batch_size_per_gpu: 1
+  // - num_gpus: 8
+  // - gradient_accumulation_steps: 4
+  // - train_batch_size: 1 × 8 × 4 = 32
+  //
+  // With CPU offload:
+  // - Start with small batch size (1-2) to test performance
+  // - Increase gradually while monitoring memory usage
+
+  // =========================================================================
+  // MEMORY BREAKDOWN EXAMPLE
+  // =========================================================================
+  //
+  // Model: LLaMA-2 13B parameters, BF16, 8× A100-40GB GPUs
+  //
+  // WITHOUT ZeRO-3 (Standard data parallelism):
+  //   Each GPU:
+  //     - Parameters: 13B × 2 bytes = 26 GB
+  //     - Gradients: 13B × 2 bytes = 26 GB
+  //     - Optimizer (Adam): 13B × 12 bytes = 156 GB
+  //     - Total: 208 GB per GPU → DOES NOT FIT in 40GB GPU!
+  //
+  // WITH ZeRO-3 (No offload):
+  //   Each GPU:
+  //     - Parameters (1/8): 26 GB / 8 = 3.25 GB
+  //     - Gradients (1/8): 26 GB / 8 = 3.25 GB
+  //     - Optimizer (1/8): 156 GB / 8 = 19.5 GB
+  //     - Activations: ~20 GB (depends on sequence length)
+  //     - Total: ~46 GB → DOES NOT FIT in 40GB GPU!
+  //
+  // WITH ZeRO-3 + CPU OFFLOAD (This config):
+  //   Each GPU:
+  //     - Working parameters: ~3 GB (only current layer)
+  //     - Gradients (1/8): 3.25 GB
+  //     - Activations: ~20 GB
+  //     - Total GPU: ~26 GB → FITS in 40GB GPU!
+  //
+  //   Each CPU (per process):
+  //     - Offloaded parameters: 26 GB / 8 = 3.25 GB
+  //     - Optimizer states: 156 GB / 8 = 19.5 GB
+  //     - Total CPU: ~23 GB RAM per process
+  //
+  // =========================================================================
+  // PERFORMANCE CONSIDERATIONS
+  // =========================================================================
+  //
+  // THROUGHPUT IMPACT:
+  // - ZeRO-3 without offload: ~100% baseline
+  // - ZeRO-3 with CPU offload: ~60-80% of baseline
+  //
+  // FACTORS AFFECTING PERFORMANCE:
+  // 1. CPU-GPU bandwidth (PCIe generation)
+  //    - PCIe 3.0: ~16 GB/s → More slowdown
+  //    - PCIe 4.0: ~32 GB/s → Less slowdown
+  //
+  // 2. Model size (larger = more time in computation vs transfer)
+  //    - Small model (1B): More impacted by transfer overhead
+  //    - Large model (70B): Transfer hidden by computation
+  //
+  // 3. Sequence length (longer = more computation)
+  //    - Short sequences (512): More transfer overhead
+  //    - Long sequences (4096): Computation dominates
+  //
+  // 4. Batch size (larger = amortize transfer cost)
+  //    - Batch size 1: Poor amortization
+  //    - Batch size 16: Good amortization
+  //
+  // OPTIMIZATION TIPS:
+  // 1. Use largest batch size that fits in GPU memory
+  // 2. Use gradient accumulation to increase effective batch size
+  // 3. Enable activation checkpointing for more memory savings
+  // 4. Monitor GPU utilization: nvidia-smi dmon -i 0 -s u
+  // 5. If GPU util < 70%, bottleneck is CPU-GPU transfer
+  //
+  // =========================================================================
+  // COMPARISON WITH ZERO-2
+  // =========================================================================
+  //
+  // ZeRO-2:
+  // - Partitions: Gradients + Optimizer states (NOT parameters)
+  // - Full model on each GPU
+  // - Good for: Models that fit in GPU but optimizer doesn't
+  //
+  // ZeRO-3 (this config):
+  // - Partitions: Everything (parameters + gradients + optimizer)
+  // - 1/N of model on each GPU
+  // - Good for: Models larger than GPU memory
+  //
+  // Rule of thumb:
+  // - Model fits in 1 GPU: Use ZeRO-1 or ZeRO-2
+  // - Model doesn't fit in 1 GPU: Use ZeRO-3
+  // - Model doesn't fit in N GPUs: Use ZeRO-3 + CPU offload
+  // - Model doesn't fit in CPU RAM: Use ZeRO-3 + NVMe offload
+  //
+  // =========================================================================
+}
