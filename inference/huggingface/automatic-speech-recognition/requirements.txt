@@ -1,6 +1,6 @@
 deepspeed
 torch
-transformers==4.21.2
+transformers==4.46.3
 soundfile
 jiwer
 datasets
