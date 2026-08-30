@@ -66,15 +66,21 @@ max_batch_size=...)`, retiring completed rows and admitting pending requests.
 All modes use one loaded model, the same deterministic equal-width token-ID
 prompts, response budgets, seed, and capacity. Model loading is outside the
 timed region. Every measured iteration synchronizes CUDA before and after the
-work, resets peak memory statistics at the start of each mode, and checks every
-response token against the sequential eager baseline. Generation is greedy
-only (`--temperature 0`), uses `min_new_tokens == max_new_tokens`, and disables
-EOS (`eos_token_id=None`) so each request consumes its requested budget.
+work and resets peak memory statistics at the start of each mode. Responses
+must be deterministic across measured iterations within each mode. Because
+low-precision kernels are not necessarily invariant to batch and cache shapes,
+cross-mode token agreement with the sequential eager baseline is reported
+rather than required by default. Pass `--require-exact-token-match` to make a
+cross-mode mismatch fail the run. Generation is greedy only (`--temperature
+0`), uses `min_new_tokens == max_new_tokens`, and disables EOS
+(`eos_token_id=None`) so each request consumes its requested budget.
 
 The JSON `environment` records torch/CUDA/Transformers/DeepSpeed versions and
 GPU. `config` records the CLI workload. Each `results` mode reports
 `latency_ms` (mean/p50/p95), useful and computed tokens, useful-token
-throughput, and peak allocated memory in MiB. Useful tokens are always the sum
+throughput, peak allocated memory in MiB, and
+`token_agreement_vs_sequential_eager` (matched/total tokens, agreement rate,
+exact-match status, and the first mismatch). Useful tokens are always the sum
 of response budgets; computed tokens are equal to useful tokens for sequential
 and continuous modes, while static batching uses
 `sum(group_size * group_max_response_length)`. `comparisons` reports percentage

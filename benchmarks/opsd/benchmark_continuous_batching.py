@@ -76,6 +76,8 @@ def _build_parser():
     parser.add_argument("--iterations", type=int, default=3)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=1234)
+    parser.add_argument("--require-exact-token-match", action="store_true",
+                        help="fail when static or continuous responses differ from sequential eager")
     parser.add_argument("--output", default="opsd_continuous_batching.json")
     return parser
 
@@ -125,9 +127,39 @@ def _response(output_ids, prompt_length, response_length):
     return output_ids[0, prompt_length:prompt_length + response_length].detach().cpu()
 
 
-def _assert_matches(reference, candidate, mode, request_index):
+def _assert_matches(reference, candidate, comparison, request_index):
     if len(reference) != len(candidate) or not reference.equal(candidate):
-        raise AssertionError(f"{mode} request {request_index} response tokens differ from sequential_eager")
+        raise AssertionError(f"{comparison} request {request_index} response tokens differ")
+
+
+def token_agreement(references, candidates):
+    """Summarize token agreement without assuming low-precision batch invariance."""
+    if len(references) != len(candidates):
+        raise AssertionError("response counts differ")
+    matched_tokens = 0
+    total_tokens = 0
+    first_mismatch = None
+    for request_index, (reference, candidate) in enumerate(zip(references, candidates)):
+        if len(reference) != len(candidate):
+            raise AssertionError(f"request {request_index} response lengths differ")
+        matches = reference == candidate
+        matched_tokens += int(matches.sum().item())
+        total_tokens += len(reference)
+        if first_mismatch is None and not bool(matches.all().item()):
+            response_position = int((~matches).nonzero().flatten()[0].item())
+            first_mismatch = {
+                "request_index": request_index,
+                "response_position": response_position,
+                "reference_token": int(reference[response_position].item()),
+                "candidate_token": int(candidate[response_position].item()),
+            }
+    return {
+        "matched_tokens": matched_tokens,
+        "total_tokens": total_tokens,
+        "agreement_rate": matched_tokens / total_tokens,
+        "exact_match": matched_tokens == total_tokens,
+        "first_mismatch": first_mismatch,
+    }
 
 
 def _run_sequential(generate, model_config, requests, response_lengths, args, prompt_length):
@@ -155,12 +187,13 @@ def _run_sequential(generate, model_config, requests, response_lengths, args, pr
             reference_responses = outputs
         else:
             for index, response in enumerate(outputs):
-                _assert_matches(reference_responses[index], response, "sequential_eager", index)
+                _assert_matches(reference_responses[index], response, "sequential_eager repeat", index)
     return latencies, reference_responses, _peak_memory_mb()
 
 
 def _run_static(generate, model_config, requests, response_lengths, args, prompt_length, reference_responses):
     latencies = []
+    measured_responses = []
     groups = group_request_indices(response_lengths, args.max_batch_size)
     pad_token_id = getattr(model_config, "pad_token_id", None)
 
@@ -186,13 +219,20 @@ def _run_static(generate, model_config, requests, response_lengths, args, prompt
         outputs = invoke()
         _sync()
         latencies.append((time.perf_counter() - start) * 1000.0)
-        for index, response in enumerate(outputs):
-            _assert_matches(reference_responses[index], response, "static_batch", index)
-    return latencies, _peak_memory_mb()
+        if not measured_responses:
+            measured_responses = outputs
+            if args.require_exact_token_match:
+                for index, response in enumerate(outputs):
+                    _assert_matches(reference_responses[index], response, "static_batch vs sequential_eager", index)
+        else:
+            for index, response in enumerate(outputs):
+                _assert_matches(measured_responses[index], response, "static_batch repeat", index)
+    return latencies, measured_responses, _peak_memory_mb()
 
 
 def _run_continuous(rollout, requests, response_lengths, args, prompt_length, reference_responses):
     latencies = []
+    measured_responses = []
     configs = [_sampling_config(length, args.temperature) for length in response_lengths]
     for _ in range(args.warmup):
         rollout.generate_continuous(requests, configs, max_batch_size=args.max_batch_size)
@@ -203,13 +243,21 @@ def _run_continuous(rollout, requests, response_lengths, args, prompt_length, re
         outputs = rollout.generate_continuous(requests, configs, max_batch_size=args.max_batch_size)
         _sync()
         latencies.append((time.perf_counter() - start) * 1000.0)
-        for index, (output, length) in enumerate(zip(outputs, response_lengths)):
-            response = output.input_ids[0, prompt_length:prompt_length + length].detach().cpu()
-            _assert_matches(reference_responses[index], response, "continuous_batch", index)
-    return latencies, _peak_memory_mb()
+        responses = [output.input_ids[0, prompt_length:prompt_length + length].detach().cpu()
+                     for output, length in zip(outputs, response_lengths)]
+        if not measured_responses:
+            measured_responses = responses
+            if args.require_exact_token_match:
+                for index, response in enumerate(responses):
+                    _assert_matches(reference_responses[index], response,
+                                    "continuous_batch vs sequential_eager", index)
+        else:
+            for index, response in enumerate(responses):
+                _assert_matches(measured_responses[index], response, "continuous_batch repeat", index)
+    return latencies, measured_responses, _peak_memory_mb()
 
 
-def _mode_result(latencies, useful_tokens, computed_tokens, peak_memory):
+def _mode_result(latencies, useful_tokens, computed_tokens, peak_memory, agreement):
     summary = summarize_latencies(latencies)
     mean_latency = summary["mean"]
     return {
@@ -218,6 +266,7 @@ def _mode_result(latencies, useful_tokens, computed_tokens, peak_memory):
         "computed_tokens": computed_tokens,
         "useful_tokens_per_second": useful_tokens / (mean_latency / 1000.0),
         "peak_memory_mb": peak_memory,
+        "token_agreement_vs_sequential_eager": agreement,
     }
 
 
@@ -234,7 +283,8 @@ def _build_result(args, environment, mode_results, useful_tokens):
         "config": {"model": args.model, "dtype": args.dtype, "prompt_length": args.prompt_length,
                     "response_lengths": args.response_lengths, "max_batch_size": args.max_batch_size,
                     "warmup": args.warmup, "iterations": args.iterations,
-                    "temperature": args.temperature, "seed": args.seed},
+                    "temperature": args.temperature, "seed": args.seed,
+                    "require_exact_token_match": args.require_exact_token_match},
         "results": mode_results,
         "comparisons": {
             "continuous_vs_sequential": {
@@ -300,16 +350,19 @@ def run(args):
     hf_generate = model.generate
     sequential_latencies, references, sequential_peak = _run_sequential(
         hf_generate, engine.module.config, requests, args.response_lengths, args, args.prompt_length)
-    static_latencies, static_peak = _run_static(
+    static_latencies, static_responses, static_peak = _run_static(
         hf_generate, engine.module.config, requests, args.response_lengths, args, args.prompt_length, references)
-    continuous_latencies, continuous_peak = _run_continuous(
+    continuous_latencies, continuous_responses, continuous_peak = _run_continuous(
         rollout, requests, args.response_lengths, args, args.prompt_length, references)
     useful_tokens = sum(args.response_lengths)
     mode_results = {
-        "sequential_eager": _mode_result(sequential_latencies, useful_tokens, useful_tokens, sequential_peak),
+        "sequential_eager": _mode_result(sequential_latencies, useful_tokens, useful_tokens, sequential_peak,
+                                           token_agreement(references, references)),
         "static_batch": _mode_result(static_latencies, useful_tokens,
-                                      static_computed_tokens(args.response_lengths, capacity), static_peak),
-        "continuous_batch": _mode_result(continuous_latencies, useful_tokens, useful_tokens, continuous_peak),
+                                      static_computed_tokens(args.response_lengths, capacity), static_peak,
+                                      token_agreement(references, static_responses)),
+        "continuous_batch": _mode_result(continuous_latencies, useful_tokens, useful_tokens, continuous_peak,
+                                          token_agreement(references, continuous_responses)),
     }
     environment = {"torch": torch.__version__, "cuda": torch.version.cuda,
                    "transformers": __import__("transformers").__version__,
