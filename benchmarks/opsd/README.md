@@ -70,7 +70,7 @@ From the DeepSpeedExamples repository root, run the baseline single-GPU OPT-6.7B
 FP16 benchmark with:
 
 ```bash
-PYTHONPATH=/workspace/DeepSpeed_woo:/workspace/DeepSpeedExamples_woo \
+PYTHONPATH=/workspace/DeepSpeed_woo:/workspace/DeepSpeedExamples \
 torchrun --nproc_per_node=1 \
   benchmarks/opsd/benchmark_hybrid_engine_rollout.py \
   --model facebook/opt-6.7b \
@@ -88,7 +88,7 @@ torchrun --nproc_per_node=1 \
 Run the shared-prefill variant with the same workload and controls:
 
 ```bash
-PYTHONPATH=/workspace/DeepSpeed_woo:/workspace/DeepSpeedExamples_woo \
+PYTHONPATH=/workspace/DeepSpeed_woo:/workspace/DeepSpeedExamples \
 torchrun --nproc_per_node=1 \
   benchmarks/opsd/benchmark_hybrid_engine_rollout.py \
   --model facebook/opt-6.7b \
@@ -107,7 +107,7 @@ torchrun --nproc_per_node=1 \
 For a quick local smoke test, reduce warmup and iterations:
 
 ```bash
-PYTHONPATH=/workspace/DeepSpeed_woo:/workspace/DeepSpeedExamples_woo \
+PYTHONPATH=/workspace/DeepSpeed_woo:/workspace/DeepSpeedExamples \
 torchrun --nproc_per_node=1 \
   benchmarks/opsd/benchmark_hybrid_engine_rollout.py \
   --model facebook/opt-6.7b \
