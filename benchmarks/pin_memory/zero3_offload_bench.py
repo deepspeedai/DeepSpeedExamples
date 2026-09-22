@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 """
-ZeRO-3 CPU-offload end-to-end benchmark: registered vs unregistered native
-pinned host memory.
+ZeRO-3 CPU-offload end-to-end benchmark: pinned vs unpinned host memory.
 
-Measures training step time with ZeRO-3, offload_optimizer + offload_param
-(both cpu, pin_memory=True) and DS_PIN_MEMORY_BACKEND=native, comparing
-DS_PIN_MEMORY_REGISTER_DEVICE=1 vs 0. Works on CUDA and XPU (any accelerator
-with native pin + register_host_memory support).
+Measures training step time with ZeRO-3 and offload_optimizer + offload_param
+(both cpu), comparing pin_memory=True (native backend, registered with the
+device) against an unpinned baseline. Pass --ablate-register to additionally
+compare registered vs unregistered pinned memory. Works on CUDA and XPU (any
+accelerator with native pin + register_host_memory support).
 
 Each arm runs in its own subprocess with a fresh rendezvous port so device
 state never leaks between arms.
@@ -49,10 +49,14 @@ def parse_args():
     p.add_argument("--seq", type=int, default=128, help="sequence length")
     p.add_argument("--steps", type=int, default=4, help="timed steps per arm")
     p.add_argument("--warmup", type=int, default=2, help="warmup steps per arm")
+    p.add_argument("--pin", type=int, default=None, help="internal: run a single arm with offload pin_memory=0/1")
     p.add_argument("--register",
                    type=int,
                    default=None,
-                   help="internal: run a single arm with DS_PIN_MEMORY_REGISTER_DEVICE=0/1")
+                   help="internal: run a single pinned arm with DS_PIN_MEMORY_REGISTER_DEVICE=0/1")
+    p.add_argument("--ablate-register",
+                   action="store_true",
+                   help="also report registered vs unregistered pinned memory (for power users)")
     return p.parse_args()
 
 
@@ -97,9 +101,10 @@ def _build_synthetic(hidden, layers):
 
 
 def run_arm(args):
-    """Single arm: one process, one DS_PIN_MEMORY_REGISTER_DEVICE setting."""
+    """Single arm: one process, one pinning/register setting."""
     os.environ["DS_PIN_MEMORY_BACKEND"] = "native"
-    os.environ["DS_PIN_MEMORY_REGISTER_DEVICE"] = str(args.register)
+    # Registering only matters once memory is pinned; keep it off otherwise.
+    os.environ["DS_PIN_MEMORY_REGISTER_DEVICE"] = str(args.register if args.pin else 0)
     os.environ.update(MASTER_ADDR="127.0.0.1", MASTER_PORT=str(_free_port()), RANK="0", WORLD_SIZE="1", LOCAL_RANK="0")
 
     import torch
@@ -151,11 +156,11 @@ def run_arm(args):
             "stage": 3,
             "offload_optimizer": {
                 "device": "cpu",
-                "pin_memory": True
+                "pin_memory": bool(args.pin)
             },
             "offload_param": {
                 "device": "cpu",
-                "pin_memory": True
+                "pin_memory": bool(args.pin)
             },
         },
     }
@@ -187,7 +192,8 @@ def run_arm(args):
             return None
 
     result = {
-        "register": bool(args.register),
+        "pin_memory": bool(args.pin),
+        "register": bool(args.register) if args.pin else None,
         "device": dev.type,
         "model": args.model or f"synthetic-h{args.hidden}-l{args.layers}",
         "params_b": round(n_params / 1e9, 3),
@@ -203,17 +209,21 @@ def run_arm(args):
 
 
 def run_driver(args):
-    """Run both arms in subprocesses and print the comparison."""
+    """Run the arms in subprocesses and print the comparison."""
+    if args.ablate_register:
+        arms = [("unpinned", 0, 0), ("pinned-unregistered", 1, 0), ("pinned-registered", 1, 1)]
+    else:
+        arms = [("unpinned", 0, 0), ("pinned", 1, 1)]
     results = {}
-    for reg in (1, 0):
-        cmd = [sys.executable, os.path.abspath(__file__), "--register", str(reg), "--model"] + \
+    for name, pin, reg in arms:
+        cmd = [sys.executable, os.path.abspath(__file__), "--pin", str(pin), "--register", str(reg), "--model"] + \
               ([args.model] if args.model else ["None"]) + \
               ["--hidden", str(args.hidden), "--layers", str(args.layers), "--batch", str(args.batch),
                "--seq", str(args.seq), "--steps", str(args.steps), "--warmup", str(args.warmup)]
         # argparse cannot take a literal None for --model; drop it instead.
         if not args.model:
             cmd = cmd[:cmd.index("--model")] + cmd[cmd.index("--model") + 2:]
-        print(f"[driver] running arm register={reg} ...", flush=True)
+        print(f"[driver] running arm {name} ...", flush=True)
         proc = subprocess.run(cmd, env=os.environ.copy(), capture_output=True, text=True)
         arm = None
         for line in proc.stdout.splitlines():
@@ -222,32 +232,36 @@ def run_driver(args):
         if arm is None:
             print(proc.stdout[-2000:])
             print(proc.stderr[-2000:], file=sys.stderr)
-            raise RuntimeError(f"arm register={reg} produced no result (rc={proc.returncode})")
-        results[reg] = arm
+            raise RuntimeError(f"arm {name} produced no result (rc={proc.returncode})")
+        results[name] = arm
 
-    on, off = results[1], results[0]
+    unpinned = results["unpinned"]
+    pinned = results["pinned-registered"] if args.ablate_register else results["pinned"]
     print("\n================ ZeRO-3 CPU-offload step time ================")
-    print(f"model: {on['model']}  params: {on['params_b']}B  device: {on['device']}")
-    print(f"batch: {on['batch']} x seq: {on['seq']}  ({on['tokens_per_step']} tokens/step)")
+    print(f"model: {pinned['model']}  params: {pinned['params_b']}B  device: {pinned['device']}")
+    print(f"batch: {pinned['batch']} x seq: {pinned['seq']}  ({pinned['tokens_per_step']} tokens/step)")
     print()
     print(f"{'arm':<22}{'avg step (s)':>14}{'min step (s)':>14}{'GPU peak (GB)':>16}")
-    print(f"{'registered':<22}{on['step_avg_s']:>14.3f}{on['step_min_s']:>14.3f}"
-          f"{(on['gpu_peak_gb'] or 0):>16.2f}")
-    print(f"{'unregistered':<22}{off['step_avg_s']:>14.3f}{off['step_min_s']:>14.3f}"
-          f"{(off['gpu_peak_gb'] or 0):>16.2f}")
-    speedup = off['step_avg_s'] / on['step_avg_s']
-    saved = off['step_avg_s'] - on['step_avg_s']
-    tok_on = on['tokens_per_step'] / on['step_avg_s']
-    tok_off = off['tokens_per_step'] / off['step_avg_s']
+    for name, _, _ in arms:
+        r = results[name]
+        print(f"{name:<22}{r['step_avg_s']:>14.3f}{r['step_min_s']:>14.3f}"
+              f"{(r['gpu_peak_gb'] or 0):>16.2f}")
+    speedup = unpinned['step_avg_s'] / pinned['step_avg_s']
+    saved = unpinned['step_avg_s'] - pinned['step_avg_s']
+    tok_pin = pinned['tokens_per_step'] / pinned['step_avg_s']
+    tok_unpin = unpinned['tokens_per_step'] / unpinned['step_avg_s']
     print()
-    print(f"speedup: {speedup:.2f}x   saved: {saved:.3f} s/step   "
-          f"throughput: {tok_on:.0f} vs {tok_off:.0f} tok/s")
-    print(f"DRIVERRESULT={json.dumps({'registered': on, 'unregistered': off, 'speedup': speedup})}", flush=True)
+    print(f"pinning speedup: {speedup:.2f}x   saved: {saved:.3f} s/step   "
+          f"throughput: {tok_pin:.0f} vs {tok_unpin:.0f} tok/s")
+    summary = {'unpinned': unpinned, 'pinned': pinned, 'speedup': speedup}
+    if args.ablate_register:
+        summary['pinned-unregistered'] = results['pinned-unregistered']
+    print(f"DRIVERRESULT={json.dumps(summary)}", flush=True)
 
 
 if __name__ == "__main__":
     _args = parse_args()
-    if _args.register is None:
+    if _args.pin is None:
         run_driver(_args)
     else:
         run_arm(_args)
