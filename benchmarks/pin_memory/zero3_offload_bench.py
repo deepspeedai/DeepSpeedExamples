@@ -128,7 +128,8 @@ def run_arm(args):
         from transformers import AutoConfig, AutoModelForCausalLM
         config = AutoConfig.from_pretrained(args.model)
         model = AutoModelForCausalLM.from_config(config)
-        vocab = config.vocab_size
+        # Newer config classes may nest vocab_size, so read it off the model.
+        vocab = model.get_input_embeddings().weight.shape[0]
 
         def forward_loss(engine, ids):
             return engine(ids).logits.sum()
