@@ -113,6 +113,49 @@ With AutoEP, each rank holds a different expert shard. The training script saves
 
 Use `convert_ds_to_hf.py` to merge all shards back into a standard HuggingFace model.
 
+## Validate AutoEP checkpoint resume
+
+`run_autoep_affine_ir_checkpoint_experiment.sh` compares the loss from uninterrupted
+training with loss after resuming from both a native DeepSpeed checkpoint and a
+Universal checkpoint. It runs each path through step 100, saves a native
+checkpoint at step 50, converts that checkpoint to Universal format, and compares
+the losses for steps 51-100.
+
+Run the experiment on a Linux host with the required GPUs and dependencies
+installed. Set `DEEPSPEED_REPO` to the root of a DeepSpeed checkout that provides
+`deepspeed/checkpoint/ds_to_universal.py`. The model and dataset must already be
+cached because Transformers and Datasets offline mode are enabled by default:
+
+```bash
+cd training/deepspeed_finetune_demo
+export DEEPSPEED_REPO=/path/to/DeepSpeed
+./run_autoep_affine_ir_checkpoint_experiment.sh
+```
+
+The script defaults to 8 GPUs, AutoEP size 8, ZeRO stage 2, the
+`moonshotai/Moonlight-16B-A3B` model, and the `tatsu-lab/alpaca` dataset. Override
+these settings with environment variables as needed:
+
+```bash
+NUM_GPUS=8 AUTOEP_SIZE=8 ZERO_STAGE=2 \
+MODEL_NAME=moonshotai/Moonlight-16B-A3B \
+DATASET_NAME=tatsu-lab/alpaca \
+OUTPUT_ROOT=/path/to/experiment \
+./run_autoep_affine_ir_checkpoint_experiment.sh
+```
+
+`DEEPSPEED_LAUNCHER` defaults to `ds`; set it to `deepspeed` if that is the
+launcher available in your environment. To use GPUs selected by DeepSpeed's
+`--include` option, set `GPU_INCLUDE` (for example, `GPU_INCLUDE=localhost:0,1`).
+To allow downloads instead of using cached model and dataset files, set
+`TRANSFORMERS_OFFLINE=0 HF_DATASETS_OFFLINE=0`.
+
+The output directory contains the run logs, generated DeepSpeed configs,
+`loss_comparison.csv` with per-step losses, and `loss_comparison.txt` with the
+maximum and mean absolute loss differences from the uninterrupted baseline. A
+successful run means both resume paths produced comparable losses; inspect the
+logs and differences when diagnosing a mismatch.
+
 ## HumanEval results
 
 | Model | HumanEval (base) | HumanEval+ |
