@@ -1,49 +1,36 @@
-# ZeRO-3 CPU-Offload Pinned-Memory Benchmark
+# Pinned-memory experiments
 
-This directory contains an end-to-end benchmark for ZeRO-3 CPU offload that
-measures training step time with pinned vs unpinned host memory, plus an
-opt-in ablation of registered vs unregistered pinned memory.
+Harnesses for pin vs pageable host memory on CPU offload. Each subdirectory is
+one experiment. Shared subprocess/JSON helpers live in `common.py`.
 
-## Files in this Directory
+Native backends `mlock` host memory: raise `RLIMIT_MEMLOCK` (`ulimit -l`) or
+run as root for multi-GB models.
 
-- **zero3_offload_bench.py**: Benchmarking script; the model can be a real
-  architecture fetched from the HuggingFace hub (random weights) or a
-  synthetic MLP stack that needs no network access.
+## Layout
 
-## What it Measures
+| Folder | Blog experiment | Default command |
+|--------|-----------------|-----------------|
+| [`model_tensor_offload/`](model_tensor_offload/) | ZeRO CPU param/optimizer offload (stage 3 default; `--zero-stage 1\|2` optional) | `python model_tensor_offload/bench.py --hidden 2048 --layers 12 --batch 4 --seq 128` |
+| [`activation_offload/`](activation_offload/) | Checkpoint hidden-state offload; `use_pin_memory` on/off, **async on** | `python activation_offload/bench.py --hidden 1024 --layers 8 --batch 1 --seq 2048` |
+| [`h2d_d2h/`](h2d_d2h/) | Supporting H2D/D2H GB/s (pageable, torch, native-unregistered, native-registered) | `python h2d_d2h/bench.py` |
+| [`grad_offload/`](grad_offload/) | Optional #8207-style grad offload (wraps model-tensor ZeRO-3) | `python grad_offload/bench.py --hidden 2048 --layers 12` |
+| [`cpu_pin/`](cpu_pin/) | Optional CPU-only native vs Torch pin | `python cpu_pin/bench.py` |
+| [`deepcompile_activation/`](deepcompile_activation/) | Optional `compile.offload_activation_pin_memory` | `python deepcompile_activation/bench.py` |
 
-By default the script runs ZeRO-3 with `offload_optimizer` and `offload_param`
-(both CPU) in two arms and reports the step-time comparison:
+`zero3_offload_bench.py` at this directory root still runs **model-tensor ZeRO-3** (same flags as before).
 
-| Arm | offload `pin_memory` | `DS_PIN_MEMORY_REGISTER_DEVICE` |
-|-----|----------------------|---------------------------------|
-| `unpinned` | `False` | (n/a) |
-| `pinned` | `True` (`DS_PIN_MEMORY_BACKEND=native`) | `1` |
+## Model-tensor arms
 
-Works on any accelerator with native pin + `register_host_memory` support
-(CUDA and XPU are tested). Each arm runs in its own subprocess with a fresh
-rendezvous port so device state never leaks between arms.
+| Arm | `offload_*.pin_memory` | Backend |
+|-----|------------------------|---------|
+| unpinned | `false` | n/a |
+| pinned | `true` | `DS_PIN_MEMORY_BACKEND=native`, `DS_PIN_MEMORY_REGISTER_DEVICE=1` |
 
-Power users can additionally ablate device registration of pinned buffers:
-
-```bash
-python zero3_offload_bench.py --ablate-register ...
-```
-
-which adds a `pinned-unregistered` arm (`DS_PIN_MEMORY_REGISTER_DEVICE=0`).
-
-## Usage
+`--ablate-register` adds `pinned-unregistered`. CUDA-oriented; skip on XPU if `register_host_memory` is missing (`h2d_d2h/bench.py --skip-native-register`).
 
 ```bash
-# real model architecture (config fetched from the HF hub, random weights)
-python zero3_offload_bench.py --model Qwen/Qwen2.5-7B --batch 4 --seq 512
-
-# synthetic MLP stack, no network needed
-python zero3_offload_bench.py --hidden 2048 --layers 12 --batch 4 --seq 128
+python model_tensor_offload/bench.py --model Qwen/Qwen2.5-7B --batch 4 --seq 512
+python model_tensor_offload/bench.py --zero-stage 2 --hidden 2048 --layers 12 --batch 4 --seq 128
 ```
 
-Results are printed as a table (avg/min step time, GPU peak memory) and as a
-JSON line (`DRIVERRESULT=...`) with per-arm details and the pinning speedup.
-
-> **Note**: the native backend mlocks host memory; raise `RLIMIT_MEMLOCK`
-> (`ulimit -l`) or run as root for multi-GB models.
+Each arm is a subprocess with a fresh rendezvous port. Results: table plus `DRIVERRESULT=` JSON.
