@@ -186,20 +186,10 @@ def get_argument_parser():
         help=
         'Use DeepSpeed transformer kernel memory optimization to checkpoint GELU activation.'
     )
-    parser.add_argument('--deepspeed_sparse_attention',
-                        default=False,
-                        action='store_true',
-                        help='Use DeepSpeed sparse self attention.')
-
     parser.add_argument('--use_nvidia_dataset',
                         default=False,
                         action='store_true',
                         help='Use Nvidia pretraining dataset.')
-
-    parser.add_argument('--progressive_layer_drop',
-                        default=False,
-                        action='store_true',
-                        help="Whether to enable progressive layer dropping or not")
 
     return parser
 

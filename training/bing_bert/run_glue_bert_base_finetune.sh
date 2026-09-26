@@ -48,7 +48,7 @@ run_cmd="python3.6 -m torch.distributed.launch \
        --learning_rate ${LR} \
        --num_train_epochs ${NUM_EPOCH} \
        --output_dir ${OUTPUT_DIR}_${TASK} \
-       --progressive_layer_drop \
+       --preln \
        --model_file $CHECKPOINT_PATH &> $LOG_DIR/${model_name}/${JOBNAME}_${TASK}_bzs${EFFECTIVE_BATCH_SIZE}_lr${LR}_epoch${NUM_EPOCH}.txt
        "
 echo ${run_cmd}

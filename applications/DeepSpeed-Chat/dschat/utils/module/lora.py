@@ -6,7 +6,7 @@ import math
 import torch
 from torch import nn
 import torch.nn.functional as F
-from deepspeed.compression.helper import recursive_getattr, recursive_setattr
+from deepspeed.utils.module_utils import recursive_getattr, recursive_setattr
 import deepspeed
 
 

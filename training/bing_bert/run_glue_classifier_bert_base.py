@@ -679,18 +679,10 @@ def main():
                         help="Whether to use Focal Loss for finetuning.")
     parser.add_argument('--gamma', type=float, default=0.5,
                         help="Gamma parameter to be used in focal loss.")
-    parser.add_argument('--deepspeed_sparse_attention',
-                        default=False,
-                        action='store_true',
-                        help='Use DeepSpeed sparse self attention.')
     parser.add_argument('--deepspeed_transformer_kernel',
                         default=False,
                         action='store_true',
                         help='Use DeepSpeed transformer kernel to accelerate.')
-    parser.add_argument('--progressive_layer_drop',
-                        default=False,
-                        action='store_true',
-                        help="Whether to enable progressive layer dropping or not")
     parser.add_argument(
         '--preln',
         action='store_true',
@@ -815,10 +807,7 @@ def main():
         "initializer_range": 0.02
     }
 
-    if args.progressive_layer_drop:
-        print("BertBaseConfigPreLnLayerDrop")
-        from nvidia.modelingpreln_layerdrop import BertForSequenceClassification, BertConfig
-    elif args.preln:
+    if args.preln:
         from nvidia.modelingpreln import BertForSequenceClassification, BertConfig, BertLayer
     else:
         from nvidia.modeling import BertForSequenceClassification, BertConfig, BertLayer
