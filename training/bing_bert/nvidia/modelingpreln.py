@@ -541,7 +541,7 @@ class BertEncoder(nn.Module):
                 local_rank=args.local_rank
                 if hasattr(args, 'local_rank') else -1,
                 seed=args.seed,
-                fp16=ds_config.fp16_enabled,
+                fp16=ds_config.float16_config.enabled,
                 pre_layer_norm=True,
                 attn_dropout_checkpoint=args.attention_dropout_checkpoint,
                 normalize_invertible=args.normalize_invertible,
@@ -1230,6 +1230,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
     the pooled output.
 
     Params:
+        `args`: the parsed command-line arguments (e.g. `args.deepspeed_transformer_kernel`).
         `config`: a BertConfig class instance with the configuration to build a new model.
         `num_labels`: the number of classes for the classifier. Default = 2.
 
@@ -1265,14 +1266,14 @@ class BertForSequenceClassification(BertPreTrainedModel):
 
     num_labels = 2
 
-    model = BertForSequenceClassification(config, num_labels)
+    model = BertForSequenceClassification(args, config, num_labels)
     logits = model(input_ids, token_type_ids, input_mask)
     ```
     """
-    def __init__(self, config, num_labels):
+    def __init__(self, args, config, num_labels):
         super(BertForSequenceClassification, self).__init__(config)
         self.num_labels = num_labels
-        self.bert = BertModel(config)
+        self.bert = BertModel(config, args=args)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, num_labels)
         self.apply(self.init_bert_weights)

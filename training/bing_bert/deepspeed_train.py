@@ -425,9 +425,7 @@ def prepare_model_optimizer(args):
     model.set_device(args.device)
     args.fp16 = model.network.fp16_enabled()
     args.use_lamb = (model.network.optimizer_name() ==
-                     deepspeed.runtime.config.LAMB_OPTIMIZER
-                     or model.network.optimizer_name() ==
-                     deepspeed.runtime.config.ONEBIT_LAMB_OPTIMIZER)
+                     deepspeed.runtime.config.LAMB_OPTIMIZER)
 
     # Prepare Summary Writer and saved_models path
     if dist.get_rank() == 0:

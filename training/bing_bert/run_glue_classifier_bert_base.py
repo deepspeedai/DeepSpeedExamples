@@ -652,10 +652,6 @@ def main():
     parser.add_argument('--fp16',
                         action='store_true',
                         help="Whether to use 16-bit float precision instead of 32-bit")
-    parser.add_argument('--deepscale',
-                        default=False,
-                        action='store_true',
-                        help="Whether to use 16-bit float precision instead of 32-bit")
     parser.add_argument('--loss_scale',
                         type=float, default=0,
                         help="Loss scaling to improve fp16 numeric stability. Only used when fp16 set to True.\n"
@@ -683,6 +679,22 @@ def main():
                         default=False,
                         action='store_true',
                         help='Use DeepSpeed transformer kernel to accelerate.')
+    parser.add_argument('--stochastic_mode',
+                        default=False,
+                        action='store_true',
+                        help='Use stochastic mode for high-performance transformer kernel.')
+    parser.add_argument('--attention_dropout_checkpoint',
+                        default=False,
+                        action='store_true',
+                        help='Use DeepSpeed transformer kernel memory optimization to checkpoint dropout output.')
+    parser.add_argument('--normalize_invertible',
+                        default=False,
+                        action='store_true',
+                        help='Use DeepSpeed transformer kernel memory optimization to perform invertible normalize backpropagation.')
+    parser.add_argument('--gelu_checkpoint',
+                        default=False,
+                        action='store_true',
+                        help='Use DeepSpeed transformer kernel memory optimization to checkpoint GELU activation.')
     parser.add_argument(
         '--preln',
         action='store_true',
@@ -727,16 +739,12 @@ def main():
         "wnli": "classification",
     }
 
-    if args.local_rank == -1 or args.no_cuda:
-        device = torch.device(
-            "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-        n_gpu = torch.cuda.device_count()
-    else:
-        torch.cuda.set_device(args.local_rank)
-        device = torch.device("cuda", args.local_rank)
-        n_gpu = 1
-        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
-        torch.distributed.init_process_group(backend='nccl')
+    # DeepSpeed sets up torch.distributed; launch with the `deepspeed` launcher (or torchrun).
+    deepspeed.init_distributed(dist_backend='nccl')
+    args.local_rank = int(os.environ['LOCAL_RANK'])
+    torch.cuda.set_device(args.local_rank)
+    device = torch.device("cuda", args.local_rank)
+    n_gpu = 1
     logger.info("device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".format(
         device, n_gpu, bool(args.local_rank != -1), args.fp16))
 
@@ -808,9 +816,9 @@ def main():
     }
 
     if args.preln:
-        from nvidia.modelingpreln import BertForSequenceClassification, BertConfig, BertLayer
+        from nvidia.modelingpreln import BertForSequenceClassification, BertConfig
     else:
-        from nvidia.modeling import BertForSequenceClassification, BertConfig, BertLayer
+        from nvidia.modeling import BertForSequenceClassification, BertConfig
 
     bert_config = BertConfig(**bert_base_model_config)
     bert_config.vocab_size = len(tokenizer.vocab)
@@ -841,36 +849,9 @@ def main():
         logger.info("USING RANDOM INITIALISATION FOR FINETUNING")
         model.apply(model.init_bert_weights)
 
-    if args.fp16:
-        model.half()
+    # DeepSpeed casts the model to fp16 and handles data parallelism. The old replace_transformer_layer()
+    # training-kernel injection no longer exists; use --deepspeed_transformer_kernel for DeepSpeed kernels.
     model.to(device)
-    if args.local_rank != -1:
-        try:
-            if args.deepscale:
-                print("Enabling DeepScale")
-                from deepscale.distributed_apex import DistributedDataParallel as DDP
-            else:
-                from apex.parallel import DistributedDataParallel as DDP
-        except ImportError:
-            raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use distributed and fp16 training.")
-
-        model = DDP(model)
-    elif n_gpu > 1:
-        model = torch.nn.DataParallel(model)
-
-    # Patch model with deepspeed transformer kernel
-    if not args.deepspeed_transformer_kernel:
-        from deepspeed import replace_transformer_layer
-        model = deepspeed.module_inject.replace_transformer_layer(
-               orig_layer_impl=BertLayer,
-               model=model,
-               micro_batch_size=args.train_batch_size,
-               bert_config=bert_config,
-               seed=args.seed,
-               preln=True,
-               fp16=args.fp16,
-               huggingface=False)
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -890,6 +871,11 @@ def main():
         model=model,
         model_parameters=optimizer_grouped_parameters,
         dist_init_required=True)
+
+    # The DeepSpeed config is the source of truth for precision, micro-batch size and gradient accumulation.
+    args.fp16 = model.fp16_enabled()
+    args.train_batch_size = model.train_micro_batch_size_per_gpu()
+    args.gradient_accumulation_steps = model.gradient_accumulation_steps()
 
     global_step = 0
     nb_tr_steps = 0
@@ -927,6 +913,8 @@ def main():
             train_sampler = DistributedSampler(train_data)
         train_dataloader = DataLoader(
             train_data, sampler=train_sampler, batch_size=args.train_batch_size)
+        num_train_optimization_steps = len(train_dataloader) // args.gradient_accumulation_steps * int(
+            args.num_train_epochs)
 
         model.train()
         for _ in trange(int(args.num_train_epochs), desc="Epoch"):
@@ -951,25 +939,13 @@ def main():
                     loss_fct = MSELoss()
                     loss = loss_fct(logits.view(-1), label_ids.view(-1))
 
-                if n_gpu > 1:
-                    loss = loss.mean()  # mean() to average on multi-gpu.
-                if args.gradient_accumulation_steps > 1:
-                    loss = loss / args.gradient_accumulation_steps
-
-                if args.deepscale and args.local_rank != -1:
-                    model.disable_need_reduction()
-                    if (step + 1) % args.gradient_accumulation_steps == 0:
-                        model.enable_need_reduction()
-
-                if args.fp16:
-                    optimizer.backward(loss)
-                else:
-                    loss.backward()
+                # DeepSpeed scales the loss for gradient accumulation and all-reduces the gradients.
+                model.backward(loss)
 
                 tr_loss += loss.item()
                 nb_tr_examples += input_ids.size(0)
                 nb_tr_steps += 1
-                if (step + 1) % args.gradient_accumulation_steps == 0:
+                if model.is_gradient_accumulation_boundary():
                     if args.fp16:
                         # modify learning rate with special warm up BERT uses
                         # if args.fp16 is False, BertAdam is used that handles this automatically
@@ -978,9 +954,9 @@ def main():
                                 global_step/num_train_optimization_steps, args.warmup_proportion)
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
-                    optimizer.step()
-                    optimizer.zero_grad()
                     global_step += 1
+                # Call on every micro-step; DeepSpeed only updates weights at accumulation boundaries.
+                model.step()
 
     if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         eval_examples = processor.get_dev_examples(args.data_dir)
