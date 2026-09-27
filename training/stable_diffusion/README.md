@@ -32,7 +32,7 @@ Make sure to customize the training parameters in the script to suit your specif
 
 ## Inference
 
-For inference, you can use the `inf-loop.py` Python code. Follow these steps:
+For inference, you can use the `inf_txt2img_loop.py` Python code. Follow these steps:
 
 1. Provide your desired prompts as input in the script.
 2. Run the `inf_txt2img_loop.py` script.
@@ -40,5 +40,5 @@ For inference, you can use the `inf-loop.py` Python code. Follow these steps:
 Here's an example command to run the inference script:
 
 <pre>
-deepspeed inf_txt2img_loop.py
+deepspeed inf_txt2img_loop.py --out_dir out_images/
 </pre>
