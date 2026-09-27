@@ -541,7 +541,7 @@ class BertEncoder(nn.Module):
                 local_rank=args.local_rank
                 if hasattr(args, 'local_rank') else -1,
                 seed=args.seed,
-                fp16=ds_config.fp16_enabled,
+                fp16=ds_config.float16_config.enabled,
                 pre_layer_norm=True,
                 # attn_dropout_checkpoint=args.attention_dropout_checkpoint,
                 # normalize_invertible=args.normalize_invertible,

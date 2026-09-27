@@ -517,7 +517,7 @@ class BertEncoder(nn.Module):
                 initializer_range=config.initializer_range,
                 local_rank=args.local_rank,
                 seed=args.seed,
-                fp16=ds_config.fp16_enabled,
+                fp16=ds_config.float16_config.enabled,
                 pre_layer_norm=False)
 
             self.layer = nn.ModuleList([
