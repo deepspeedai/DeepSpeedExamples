@@ -29,16 +29,15 @@ else
        GRAD_ACCUM_STEPS=$((PER_GPU_BATCH_SIZE/MAX_GPU_BATCH_SIZE))
 fi
 
+mkdir -p ${LOG_DIR}/${model_name}
 echo "Fine Tuning $CHECKPOINT_PATH"
-run_cmd="python3.6 -m torch.distributed.launch \
-       --nproc_per_node=${NGPU} \
-       --master_port=${MASTER_PORT} \
-       run_glue_classifier_bert_base.py \
+run_cmd="deepspeed --num_gpus=${NGPU} \
+       ${SCRIPT_DIR}/run_glue_classifier_bert_base.py \
        --task_name $TASK \
        --do_train \
        --do_eval \
        --deepspeed \
-       --deepspeed_config ${base_dir}/glue_bert_base.json \
+       --deepspeed_config ${SCRIPT_DIR}/glue_bert_base.json \
        --do_lower_case \
        --data_dir $GLUE_DIR/$TASK/ \
        --bert_model bert-large-uncased \
@@ -48,7 +47,7 @@ run_cmd="python3.6 -m torch.distributed.launch \
        --learning_rate ${LR} \
        --num_train_epochs ${NUM_EPOCH} \
        --output_dir ${OUTPUT_DIR}_${TASK} \
-       --progressive_layer_drop \
+       --preln \
        --model_file $CHECKPOINT_PATH &> $LOG_DIR/${model_name}/${JOBNAME}_${TASK}_bzs${EFFECTIVE_BATCH_SIZE}_lr${LR}_epoch${NUM_EPOCH}.txt
        "
 echo ${run_cmd}

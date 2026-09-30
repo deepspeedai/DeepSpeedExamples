@@ -4,7 +4,7 @@ import deepspeed
 import argparse
 from datasets import load_dataset
 from torch.utils.data import DataLoader, DistributedSampler
-from transformers import AutoModelForCausalLM, AutoTokenizer, default_data_collator
+from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, default_data_collator
 from transformers.integrations.deepspeed import HfDeepSpeedConfig
 import json
 import random
@@ -28,6 +28,15 @@ def set_seed(seed):
 
 
 DATASET_REGISTRY = {
+    "tatsu-lab/alpaca": {
+        "split": "train",
+        "preprocessor": "alpaca",
+        "field_map": {
+            "instruction": "instruction",
+            "input": "input",
+            "output": "output",
+        },
+    },
     "sahil2801/CodeAlpaca-20k": {
         "split": "train",
         "preprocessor": "alpaca",
@@ -251,9 +260,81 @@ def _save_weights(model_engine, tokenizer, output_dir, step, keep_last=2):
     print_r(0, f"Saved checkpoint to {ckpt_dir}")
 
 
+def _save_deepspeed_checkpoint(model_engine, output_dir, step, epoch, step_in_epoch):
+    """Save model, optimizer, scheduler, and resume position for exact continuation."""
+    tag = f"step_{step}"
+    client_state = {
+        "global_step": step,
+        "epoch": epoch,
+        "step_in_epoch": step_in_epoch,
+    }
+    model_engine.save_checkpoint(output_dir, tag=tag, client_state=client_state)
+    print_r(0, f"Saved DeepSpeed checkpoint to {os.path.join(output_dir, tag)}")
+
+
+def _load_deepspeed_checkpoint(model_engine, checkpoint_dir, tag):
+    load_path, client_state = model_engine.load_checkpoint(checkpoint_dir, tag=tag)
+    if load_path is None:
+        raise RuntimeError(f"DeepSpeed checkpoint was not loaded: {checkpoint_dir}/{tag}")
+    return client_state or {}
+
+
+def _first_tensor(value):
+    if torch.is_tensor(value):
+        return value
+    if isinstance(value, (tuple, list)):
+        for item in value:
+            tensor = _first_tensor(item)
+            if tensor is not None:
+                return tensor
+    if isinstance(value, dict):
+        for item in value.values():
+            tensor = _first_tensor(item)
+            if tensor is not None:
+                return tensor
+    return None
+
+
+def _register_nonfinite_hooks(model):
+    state = {"found": False}
+    handles = []
+
+    def make_hook(name):
+        def hook(_module, _inputs, output):
+            if state["found"] or dist.get_rank() != 0:
+                return
+            tensor = _first_tensor(output)
+            if tensor is not None and not torch.isfinite(tensor).all().item():
+                state["found"] = True
+                max_value = tensor.float().abs().max().item()
+                print_r(0, f"First non-finite module output: {name}, shape={tuple(tensor.shape)}, abs_max={max_value}")
+        return hook
+
+    for name, module in model.named_modules():
+        handles.append(module.register_forward_hook(make_hook(name)))
+    return handles
+
+
+def _reset_rotary_embeddings(model):
+    for module in model.modules():
+        rotary_emb = getattr(module, "rotary_emb", None)
+        if rotary_emb is None or not hasattr(rotary_emb, "inv_freq"):
+            continue
+        inv_freq = 1.0 / (
+            rotary_emb.base
+            ** (torch.arange(0, rotary_emb.dim, 2, dtype=torch.float32) / rotary_emb.dim)
+        )
+        rotary_emb.register_buffer("inv_freq", inv_freq, persistent=False)
+        rotary_emb.max_seq_len_cached = None
+
+
 def main(args):
     logging.basicConfig(level=logging.INFO, filename="pytorch_log.txt")
     set_seed(args.seed)
+    # Moonlight's checked-in modeling file imports this legacy helper.
+    from transformers.utils import import_utils
+    if not hasattr(import_utils, "is_torch_fx_available"):
+        import_utils.is_torch_fx_available = lambda: True
 
     # override batch size in ds_config
     with open(args.deepspeed_config, "r") as f:
@@ -266,6 +347,10 @@ def main(args):
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    model_config = AutoConfig.from_pretrained(args.model_name, trust_remote_code=True)
+    if (isinstance(model_config.rope_scaling, dict)
+            and model_config.rope_scaling.get("rope_type") == "default"):
+        model_config.rope_scaling = None
 
     try:
         import flash_attn
@@ -274,10 +359,12 @@ def main(args):
         attn_impl = None
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
+        config=model_config,
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
         attn_implementation=attn_impl,
     )
+    _reset_rotary_embeddings(model)
     model.config.use_cache = False
     model.gradient_checkpointing_enable()
 
@@ -347,6 +434,8 @@ def main(args):
 
     train_sampler = DistributedSampler(
         tokenized_train_dataset,
+        num_replicas=dist.get_world_size(),
+        rank=dist.get_rank(),
         shuffle=True,
         seed=args.seed,
     )
@@ -360,7 +449,16 @@ def main(args):
     )
 
     model_engine.train()
+    nonfinite_hooks = _register_nonfinite_hooks(model_engine.module) if args.debug_nonfinite else []
     global_step = 0
+    start_epoch = 0
+    start_step_in_epoch = 0
+    if args.resume_tag is not None:
+        client_state = _load_deepspeed_checkpoint(model_engine, args.resume_dir or args.output_dir, args.resume_tag)
+        global_step = int(client_state.get("global_step", 0))
+        start_epoch = int(client_state.get("epoch", 0))
+        start_step_in_epoch = int(client_state.get("step_in_epoch", 0))
+        print_r(0, f"Resumed checkpoint at global step {global_step}")
     total_time = 0
     total_count = 0
 
@@ -388,11 +486,13 @@ def main(args):
         wandb.init(project="deepspeed_finetune_demo", name=args.wandb_name)
 
     global_samples = 0
-    for epoch in range(args.num_train_epochs):
+    for epoch in range(start_epoch, args.num_train_epochs):
         print_r(0, f"Starting epoch {epoch + 1}/{args.num_train_epochs}")
         train_dataloader.sampler.set_epoch(epoch)
 
         for step, batch in enumerate(train_dataloader):
+            if epoch == start_epoch and step < start_step_in_epoch:
+                continue
             if prof != None and global_step == args.profile_start:
                 prof.start()
             if prof != None and global_step - args.profile_start == args.profile_steps:
@@ -409,9 +509,18 @@ def main(args):
             batch = {k: v.to(model_engine.device) for k, v in batch.items()}
             outputs = model_engine(**batch)
             loss = outputs.loss
+            if global_step == 0 and dist.get_rank() == 0:
+                valid_labels = int((batch["labels"][:, :-1] != -100).sum().item())
+                finite_params = all(torch.isfinite(param).all().item() for param in model_engine.module.parameters())
+                finite_logits = torch.isfinite(outputs.logits).all().item()
+                logits_max = outputs.logits.float().abs().max().item()
+                print_r(0, f"First batch valid shifted labels: {valid_labels}, finite params: {finite_params}, "
+                           f"finite logits: {finite_logits}, logits abs max: {logits_max:.4g}, "
+                           f"finite loss: {torch.isfinite(loss).item()}")
 
             model_engine.backward(loss)
             model_engine.step()
+            global_step += 1
             global_samples += model_engine.train_batch_size()
 
             step_time = time.time() - step_start_time
@@ -460,8 +569,9 @@ def main(args):
                 and global_step % args.checkpoint_steps == 0
                 and save_checkpoint_p
             ):
-                _save_weights(model_engine, tokenizer, args.output_dir, global_step)
-            global_step += 1
+                if not args.skip_weight_export:
+                    _save_weights(model_engine, tokenizer, args.output_dir, global_step)
+                _save_deepspeed_checkpoint(model_engine, args.output_dir, global_step, epoch, step + 1)
             if prof != None:
                 prof.step()
             if args.max_steps > 0 and global_step >= args.max_steps:
@@ -473,11 +583,16 @@ def main(args):
         if args.max_steps > 0 and global_step >= args.max_steps:
             break
 
+    for handle in nonfinite_hooks:
+        handle.remove()
+
     if args.bench_start >= 0 and args.bench_steps > 0:
         print_r(0, f"Average iteration time = {total_time / total_count}")
 
-    if save_checkpoint_p:
-        _save_weights(model_engine, tokenizer, args.output_dir, global_step)
+    if save_checkpoint_p and args.save_final_checkpoint:
+        if not args.skip_weight_export:
+            _save_weights(model_engine, tokenizer, args.output_dir, global_step)
+        _save_deepspeed_checkpoint(model_engine, args.output_dir, global_step, epoch, step + 1)
 
     print_r(0, "Training complete!")
 
@@ -520,6 +635,17 @@ if __name__ == "__main__":
         "--checkpoint_steps", type=int, default=0,
         help="Save a checkpoint every N steps (0 disables); keeps last 2",
     )
+    parser.add_argument(
+        "--resume_tag", type=str, default=None,
+        help="DeepSpeed checkpoint tag to resume from",
+    )
+    parser.add_argument(
+        "--resume_dir", type=str, default=None,
+        help="Directory containing resume_tag (defaults to output_dir)",
+    )
+    parser.add_argument("--skip_weight_export", action="store_true")
+    parser.add_argument("--save_final_checkpoint", action="store_true")
+    parser.add_argument("--debug_nonfinite", action="store_true")
     parser.add_argument(
         "--eval_batch_size", type=int, default=4, help="Eval batch size per rank"
     )

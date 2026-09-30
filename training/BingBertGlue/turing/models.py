@@ -105,12 +105,7 @@ class BertMultiTask:
         self.config = args.config
 
         if not args.use_pretrain:
-
-            if args.progressive_layer_drop:
-                print("BertConfigPreLnLayerDrop")
-                from nvidia.modelingpreln_layerdrop import BertForPreTrainingPreLN, BertConfig
-            else:
-                from nvidia.modelingpreln import BertForPreTrainingPreLN, BertConfig
+            from nvidia.modelingpreln import BertForPreTrainingPreLN, BertConfig
 
             bert_config = BertConfig(**self.config["bert_model_config"])
             bert_config.vocab_size = len(args.tokenizer.vocab)
