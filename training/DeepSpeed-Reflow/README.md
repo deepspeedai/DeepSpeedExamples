@@ -1,8 +1,8 @@
 # Reflow Fine-Tuning Examples
 
-Fine-tune large language models with [DeepSpeed](https://www.deepspeed.ai/) ZeRO Stage 3 + **Reflow**, an asynchronous CPU-offload optimizer for mixed-precision BF16 training. Reflow keeps the optimizer state and FP32 master weights on the CPU like ZeRO-Offload, but overlaps the CPU optimizer work with the backward pass instead of running it serially afterward. It uses the **same GPU memory** as ZeRO-Offload and **~12% less host RAM** (OPT-30B: ~549 vs ~625 GB) — gradients are offloaded in half precision (BF16) and promoted to FP32 inside the CPU kernel, so there is no CPU-side FP32 gradient buffer (see [Memory](#memory) for measured numbers).
+Fine-tune large language models with [DeepSpeed](https://www.deepspeed.ai/) ZeRO Stage 3 + **Reflow**, an asynchronous CPU-offload optimizer for mixed-precision FP16/BF16 training. Reflow keeps the optimizer state and FP32 master weights on the CPU like ZeRO-Offload, but overlaps the CPU optimizer work with the backward pass instead of running it serially afterward. It uses the **same GPU memory** as ZeRO-Offload and **~12% less host RAM** (OPT-30B: ~549 vs ~625 GB) — gradients are offloaded in half precision (FP16/BF16) and promoted to FP32 inside the CPU kernel, so there is no CPU-side FP32 gradient buffer (see [Memory](#memory) for measured numbers).
 
-Reflow supports **Adam/AdamW and Lion** with BF16 model parameters and gradients, FP32 master weights, and FP32 optimizer states. The same scripts run the Reflow path or the plain ZeRO-Offload baseline. `check_bitexact.sh` compares deterministic per-step losses for a selected model and configuration.
+Reflow supports **Adam/AdamW and Lion** with FP16/BF16 model parameters and gradients, FP32 master weights, and FP32 optimizer states. The same scripts run the Reflow path or the plain ZeRO-Offload baseline. `check_bitexact.sh` compares deterministic per-step losses for a selected model and configuration.
 
 ## Quick Start
 
@@ -110,10 +110,10 @@ An exact loss match validates the recorded losses for that run. It does not esta
 
 ## Requirements
 
-* A DeepSpeed build with Reflow, ZeRO Stage 3, and CPU optimizer offload (`offload_optimizer.device = "cpu"`). These examples do not exercise NVMe offload.
+* A DeepSpeed build with Reflow, ZeRO Stage 3, and CPU optimizer offload (`offload_optimizer.device = "cpu"`).
 * An x86 CPU with AVX (BF16 runs on both AVX-512 and AVX-256/AVX2). **AVX-512 is recommended** — AVX-256/AVX2 has no native BF16 support, so the whole BF16 path (gradient accumulation, FP32↔BF16 conversion, and the Adam updates) is emulated with extra instructions and can be slower. Enough cores per rank for the main thread plus the CPU-Adam workers.
 * Host RAM for the CPU-resident FP32 master + optimizer state (e.g. Llama-70B: ~840 GB with Adam, ~560 GB with Lion — Lion keeps one momentum tensor instead of two).
-* BF16 model parameters and gradients with FP32 master weights and optimizer states. FP16/FP32 model parameters, BF16 master weights/states, and `fp32_optimizer_states: false` are rejected by Reflow.
+* Reflow uses FP16/BF16 model parameters and gradients with FP32 master weights and optimizer states. The scripts in this directory select BF16. FP32 model parameters, low-precision master weights/states, and `fp32_optimizer_states: false` are rejected.
 
 ## Memory
 
@@ -193,7 +193,6 @@ Reflow is ~1.9× faster (≈3.1 s vs ≈5.9 s per step) by overlapping the CPU-A
 ## Notes
 
 * **NUMA core binding**: every launch script passes `--bind_cores_to_rank`. Reflow allocates its main reservation and worker masks within the rank's CPU slice. Use physical core reservations and `pin_main_thread` if you need explicit separation of the main thread and worker SMT siblings.
-* These examples use CPU optimizer offload. NVMe offload is not validated here.
 * Use `engine.step()` after `deepspeed.initialize()`; direct calls to `ReflowCPUAdam.step()` or `ReflowCPULion.step()` are rejected.
 * `--save_checkpoint` requires participation by every rank. The script saves the tokenizer on rank 0 and propagates checkpoint failures.
 * **AVX-512 is strongly recommended** for the CPU optimizer; on AVX2 the BF16 path is emulated and slower (see [Requirements](#requirements)).
