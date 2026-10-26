@@ -281,7 +281,8 @@ class DeepSpeedPPOTrainer():
 
     def actor_loss_fn(self, logprobs, old_logprobs, advantages, mask):
         ## policy gradient loss
-        log_ratio = (logprobs - old_logprobs) * mask
+        # Mask by selection: (-inf - -inf) * 0 would remain NaN.
+        log_ratio = torch.where(mask.bool(), logprobs - old_logprobs, torch.zeros_like(logprobs))
         ratio = torch.exp(log_ratio)
         pg_loss1 = -advantages * ratio
         pg_loss2 = -advantages * torch.clamp(ratio, 1.0 - self.cliprange,
