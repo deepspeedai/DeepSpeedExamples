@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Batch-Axis Tiled Rematerialization: Intuition</title>
+</head>
+<body>
+
+<h1>Batch-Axis Tiled Rematerialization</h1>
+<p><i>What the mechanism is and why it exists.</i></p>
+<p>Measured update, 8×H200, ZeRO-2 GPU Adam, FlashAttention, Liger fused cross-entropy, <code>fla</code>, TiledMLP shards=4. Batch-axis tiling now composes with TiledMLP: the reduce waits until both the inner MLP shard and the outer batch tile are last. The Oct 3 Qwen3.5 microbatch cells predate that gate. The Oct 4 Qwen3 microbatch-4 peaks are checkpointing 54.26 GiB and batch tiling 47.21 GiB at 4B, and 57.34 and 52.81 at 8B. Packed whole-sample tiling does run and stacks with <code>ds_async</code>. <code>ds_async</code removes more of the packed-length peak than tiling, and tiling does not raise tokens/s. A single long sample is not cut. Numbers are in <code>WRITEUP_packed_seq_tiled_remat.md</code>. The GiB-per-microbatch decomposition below is the older CPU-Adam ladder with TiledMLP off.</p>
+
+<h2>Motivation</h2>
+<p>After ZeRO, gradient checkpointing, and CPU offload, activation memory can still limit
+training. The relevant baseline is not a naive full-activation graph. It already uses
+FlashAttention, Liger fused linear+cross-entropy (no materialized logits), and TiledMLP. Those
+remove the usual long-sequence FFN and logit tensors.</p>
+
+<p>Checkpointing then keeps layer inputs and recomputes the rest in backward; offload can move
+those <b>stored</b> inputs off the GPU. Backward still rematerializes a
+<b>full-microbatch live set</b> inside sequence-mixing layers. That workspace scales with
+microbatch and, at fixed microbatch, with sequence length. FlashAttention, Liger fused-CE, and
+TiledMLP do not cut it. If it is left unaddressed, the remaining knobs are more PCIe traffic
+or a smaller batch.</p>
+
+<h2>Gap</h2>
+<p>Rematerialization is known to have a live set. What was missing is treating that term as the
+limiter on microbatch <b>after</b> those ALST-style reductions, under combined checkpointing and
+offload, and reducing it along the <b>batch</b> axis of sequence mixers (attention, Gated
+DeltaNet).</p>
+
+<p>TiledMLP and Ulysses shard tokens or sequence. They are the right tools for long sequences at
+microbatch 1. They are the wrong axis when the bound is mixer rematerialization at microbatch
+greater than 1.</p>
+
+<h2>Idea</h2>
+<p>Batch-axis tiled rematerialization: a full-microbatch <code>no_grad</code> forward, then
+rematerialize <b>one batch shard</b> in backward. Sequence mixers are independent across batch,
+so a shard is a valid rematerialize unit.</p>
+
+<p>Saved inputs remain full-batch and can still be offloaded (<code>tiling_offload</code>). ZeRO
+gathers are held across the shard loop and gradients reduce once per backward, so this is not a
+loop of microbatch-1 steps. At microbatch 1 the method is a no-op.</p>
+
+<h2>What this is meant to show</h2>
+<ol>
+  <li>After FlashAttention, Liger fused-CE, TiledMLP, and offload, rematerialize workspace is the
+      activation term that still grows with microbatch.</li>
+  <li>Batch tiling reduces that term without a PCIe round-trip and extends the feasible
+      (microbatch, sequence) region relative to checkpointing or offload on that same stack.</li>
+  <li>Tiling and offload compose: offload owns the store, tiling owns the workspace; the
+      combination is what fits the last operating points. The mechanism complements TiledMLP and
+      Ulysses; it does not replace them.</li>
+</ol>
+
+<h2>Peak decomposition</h2>
+<p>Peak allocated memory is <b>floor + on-GPU checkpoint store + remat workspace</b>.
+Floor (parameters + optimizer) does not grow with microbatch. Store is the saved layer
+inputs; offload can move it to CPU. Workspace is the live set of a full-microbatch
+rematerialize; checkpointing and offload leave it intact.</p>
+<p>On Qwen3.5-4B, ZeRO-2 + CPU Adam, 32k, 8×H200 (shards=2), each extra microbatch costs
+<b>20.8 GiB</b>. <b>16.1 GiB (77%) is remat workspace</b>; only <b>4.7 GiB (23%) is store</b>.
+That wrap is not one tensor class: <b>~14.3 GiB/mbs is mixer remainder</b> (GDN/FA + residuals);
+<b>~1.8 GiB/mbs is FFN</b> (<code>3·B·S·I + B·S·H</code> bf16, TiledMLP off).
+Offload can remove the 4.7. Tiling cuts the whole wrap <b>16.1 → 8.6 GiB/mbs</b>. Accounting:
+store = tiled peak − tiled_offload peak; workspace = peak − floor − on-GPU store; floor is
+the mbs intercept (~11.4 GiB). FFN is an architecture estimate; mixer is measured wrap minus
+that slice.</p>
+<p>CUDA max allocated, GiB. The tall segment is mixer remat on every rung.</p>
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr>
+    <th>mbs</th>
+    <th>Mode</th>
+    <th>Floor</th>
+    <th>Store</th>
+    <th>Mixer remat</th>
+    <th>FFN remat</th>
+    <th>Peak</th>
+  </tr>
+  <tr><td>2</td><td>Checkpointing</td><td>11.4</td><td>9.4</td><td><b>28.7</b></td><td>3.7</td><td>53.2</td></tr>
+  <tr><td>2</td><td>Offload</td><td>11.4</td><td>0</td><td><b>28.4</b></td><td>3.7</td><td>43.5</td></tr>
+  <tr><td>2</td><td>Tiling</td><td>11.4</td><td>9.4</td><td><b>15.2</b></td><td>1.9</td><td>37.8</td></tr>
+  <tr><td>2</td><td>Tiling + offload</td><td>11.4</td><td>0</td><td><b>15.2</b></td><td>1.9</td><td>28.5</td></tr>
+  <tr><td>4</td><td>Checkpointing</td><td>11.4</td><td>18.8</td><td><b>57.6</b></td><td>7.4</td><td>95.1</td></tr>
+  <tr><td>4</td><td>Offload</td><td>11.4</td><td>0</td><td><b>57.0</b></td><td>7.4</td><td>75.8</td></tr>
+  <tr><td>4</td><td>Tiling</td><td>11.4</td><td>18.8</td><td><b>30.3</b></td><td>3.9</td><td>64.3</td></tr>
+  <tr><td>4</td><td>Tiling + offload</td><td>11.4</td><td>0</td><td><b>30.3</b></td><td>3.9</td><td>45.6</td></tr>
+</table>
+<p>Offload removes store; tiling halves the wrap; both compose. ZeRO-3 + GPU Adam on the same
+4B/32k ladder has the same store (4.7 GiB/mbs) and the same ~78% workspace share; Z3 changes
+the floor, not which term scales with batch.</p>
+
+<h2>Illustration</h2>
+<p>On Qwen3.5-4B with ZeRO-2 (Liger fused-CE, FlashAttention 2), that workspace slope is why
+tiling trains 128k where checkpointing and offload do not, and why tiling plus offload uniquely
+reaches 192k.</p>
+
+<p>Maximum microbatch at 32k:</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+  <tr>
+    <th>Mode</th>
+    <th>Max microbatch (4B, ZeRO-2, 32k)</th>
+  </tr>
+  <tr><td>Checkpointing</td><td>4</td></tr>
+  <tr><td>Activation offload</td><td>6</td></tr>
+  <tr><td>Tiling</td><td>8</td></tr>
+  <tr><td>Tiling + offload</td><td>12</td></tr>
+</table>
+
+<p>On Qwen3.5-35B-A3B (AutoEP, ZeRO-2, GPU Adam), the combined mode uniquely fits 64k and
+microbatch 16 in current sweeps.</p>
+
+<p>Whether the same tile can be the expert-parallel communication grain is a separate question.</p>
+
+</body>
+</html>
