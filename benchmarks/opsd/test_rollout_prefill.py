@@ -56,6 +56,8 @@ class CalibrationFitTest(unittest.TestCase):
         self.assertTrue(all(np.isfinite(value) and value >= 0 for value in costs.values()))
 
     def test_cli_rejects_stale_or_missing_source_hash(self):
+        costs = dict.fromkeys(("prefill_fixed_cost_ms", "prefill_token_cost_ms", "prefill_attention_cost_ms",
+                              "prefill_kv_cost_ms", "continuous_decode_cost_ms"), 1.0)
         with tempfile.TemporaryDirectory() as directory:
             costs_path = Path(directory) / "costs.json"
             output_path = Path(directory) / "sweep.json"
@@ -63,7 +65,7 @@ class CalibrationFitTest(unittest.TestCase):
             with patch("rollout_prefill.get_accelerator", return_value=SimpleNamespace(device_name=lambda: "cpu")), \
                     patch("torch.cuda.get_device_name", return_value="test-device"), \
                     patch("torch.cuda.get_device_properties", return_value=SimpleNamespace(multi_processor_count=1)), \
-                    patch("rollout_prefill.calibrate", return_value=({}, {})), \
+                    patch("rollout_prefill.calibrate", return_value=(costs, {})), \
                     patch("rollout_prefill.sweep", return_value={"smoke": {"auto_vs_best": 1.0}}) as sweep, \
                     redirect_stdout(io.StringIO()):
                 with patch("sys.argv", ["rollout_prefill.py", "--calibrate", str(costs_path)]):
@@ -101,6 +103,19 @@ class CalibrationFitTest(unittest.TestCase):
                     main()
                 self.assertEqual(error.exception.code, 2)
                 self.assertEqual(sweep.call_count, 1)
+                for missing in (None, *costs):
+                    with self.subTest(missing_cost=missing):
+                        calibration = json.loads(json.dumps(saved))
+                        if missing is None:
+                            calibration.pop("costs")
+                        else:
+                            calibration["costs"].pop(missing)
+                        costs_path.write_text(json.dumps(calibration))
+                        with patch("sys.argv", args), redirect_stderr(io.StringIO()), \
+                                self.assertRaises(SystemExit) as error:
+                            main()
+                        self.assertEqual(error.exception.code, 2)
+                        self.assertEqual(sweep.call_count, 1)
 
 
 if __name__ == "__main__":

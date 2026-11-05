@@ -288,6 +288,10 @@ def main():
                 if calibration['metadata'].get(key) != metadata[key]:
                     parser.error(f'calibration differs in {key}; recalibrate for this configuration')
         costs = calibration.get('costs', {})
+        required_costs = ('prefill_fixed_cost_ms', 'prefill_token_cost_ms', 'prefill_attention_cost_ms',
+                          'prefill_kv_cost_ms', 'continuous_decode_cost_ms')
+        if args.cost_config and (not isinstance(costs, dict) or any(key not in costs for key in required_costs)):
+            parser.error('cost-config requires all five calibrated costs; rerun --calibrate')
         # A supplied JSON uses the same validated public configuration fields as an application.
         cfg = HybridEngineRolloutConfig(adaptive_prefill=True, **costs)
         report = {
