@@ -6,7 +6,7 @@ on H200.
 
 ## Code lives in
 
-- DeepSpeed: `sfc-gh-truwase/DeepSpeed`, branch `docs/cpu-checkpointing-perf-note`
+- DeepSpeed: `sfc-gh-truwase/DeepSpeed`, branch `tjruwase/tiled-remat`
   (packed-sequence tiled rematerialization with activation offload).
 - ArcticTraining: `sfc-gh-truwase/ArcticTraining`, branch `tjruwase/activation-checkpointing`
   (trainer options, tiled remat for mixers, packing fix, Qwen3.5 GDN boundary fix, configs).
