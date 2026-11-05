@@ -19,5 +19,11 @@ on H200.
 - `WRITEUP_tiled_remat_intuition.md` (and `.html`): the intuition behind tiling.
 - `WRITEUP_qwen3_capacity_estimates.md`, `WRITEUP_qwen35_capacity_estimates.md`: memory
   capacity estimates for Qwen3 and Qwen3.5.
+- `bench_qwen3_offload.py`: single-GPU (or torchrun) activation-memory microbenchmark for
+  Qwen3 and Qwen3.5 full-parameter SFT. It compares gradient checkpointing, native DeepSpeed
+  CPU activation offload, tiled MLP and packed-sequence tiled rematerialization, one child
+  process per configuration. Packed tiled remat comes from
+  `deepspeed.runtime.activation_checkpointing.hf_tiled_rematerialization` in the DeepSpeed
+  branch above. Run `python bench_qwen3_offload.py --help` for the options.
 - `at_skew_probe.py`: probe used to root-cause the packed-sequence collective hang. Set
   `AT_SKEW_PROBE_DIR` to choose where it writes; the default is `autorun/_skew3`.
