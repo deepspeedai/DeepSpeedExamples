@@ -1,0 +1,96 @@
+{
+    "model": {
+        "model_name_or_path": "font-info/qwen3-4b-sft-SGLang-RL",
+        "dtype": "bfloat16",
+        "attn_implementation": "sdpa",
+        "gradient_checkpointing": true
+    },
+    "rollout": {
+        "engine": "hybrid_engine",
+        "multi_turn": true,
+        "max_turns": 16,
+        "max_context_len": 8192,
+        "max_new_tokens": 8192,
+        "max_new_tokens_per_turn": 4096,
+        "temperature": 1.0,
+        "repetition_penalty": 1.0,
+        "n_samples_per_prompt": 8,
+        "tool_call_parser": "hermes",
+        "use_graph_capture": true,
+        "continuous_batch_size": 32,
+        "continuous_poll_steps": 16,
+        "return_log_probs": false
+    },
+    "tool": {
+        "timeout": 120,
+        "memory_limit_gb": 4,
+        "max_concurrency": 32,
+        "max_output_chars": 4096
+    },
+    "algorithm": {
+        "eps_clip": 0.2,
+        "eps_clip_high": 0.28,
+        "logprob_chunk_size": 1024,
+        "tool_call_bonus": false,
+        "loss_aggregation": "token_mean"
+    },
+    "training": {
+        "global_batch_size": 64,
+        "micro_batch_size": 2,
+        "num_rollouts": 500,
+        "logging_steps": 1,
+        "save_steps": 50,
+        "save_dir": "./checkpoints/qwen3_4b_sft_1gpu",
+        "resume_from": "",
+        "seed": 42
+    },
+    "data": {
+        "path": "data/dapo-math-17k/dapo-math-17k.jsonl",
+        "prompt_key": "prompt",
+        "label_key": "label",
+        "shuffle": true
+    },
+    "eval": {
+        "path": "data/aime-2024/aime-2024.jsonl",
+        "interval": 20,
+        "at_end": true,
+        "n_samples_per_prompt": 16,
+        "max_new_tokens": 8192,
+        "max_new_tokens_per_turn": 4096,
+        "temperature": 1.0
+    },
+    "deepspeed_config": {
+        "bf16": {
+            "enabled": true
+        },
+        "zero_optimization": {
+            "stage": 2,
+            "offload_optimizer": {
+                "device": "cpu",
+                "pin_memory": true
+            },
+            "overlap_comm": true,
+            "contiguous_gradients": true,
+            "reduce_bucket_size": 200000000.0,
+            "allgather_bucket_size": 200000000.0
+        },
+        "optimizer": {
+            "type": "AdamW",
+            "params": {
+                "lr": 1e-06,
+                "betas": [
+                    0.9,
+                    0.98
+                ],
+                "eps": 1e-08,
+                "weight_decay": 0.1
+            }
+        },
+        "gradient_clipping": 1.0,
+        "hybrid_engine": {
+            "enabled": true
+        },
+        "steps_per_print": 1000000,
+        "wall_clock_breakdown": false
+    }
+}
