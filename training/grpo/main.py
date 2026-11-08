@@ -91,7 +91,8 @@ def main() -> None:
     tool = CodeInterpreter(timeout=cfg.tool.timeout,
                            memory_limit_gb=cfg.tool.memory_limit_gb,
                            max_concurrency=cfg.tool.max_concurrency,
-                           max_output_chars=cfg.tool.max_output_chars)
+                           max_output_chars=cfg.tool.max_output_chars,
+                           show_last_value=cfg.tool.show_last_value)
     rollout = build_rollout(cfg.rollout,
                             generation_engine=RolloutEngineView(engine),
                             tokenizer=tokenizer,

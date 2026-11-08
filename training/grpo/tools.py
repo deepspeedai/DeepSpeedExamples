@@ -147,12 +147,34 @@ def check_code_safety(code: str):
     return None
 
 
+def show_last_value(code: str) -> str:
+    """``code`` changed to print the value of its last statement when that is an expression, as a notebook shows it.
+
+    The value is printed with ``repr``, after anything the code printed itself, and not at all when it is None, so
+    code that ends with ``print(...)`` runs as it is. ``code`` must parse.
+    """
+    last = ast.parse(code).body[-1:]
+    if not last or not isinstance(last[0], ast.Expr):
+        return code
+    expr = last[0]
+    # ast offsets count UTF-8 bytes from the start of a line.
+    lines = code.encode().split(b"\n")
+    before = b"\n".join(lines[:expr.lineno - 1] + [lines[expr.lineno - 1][:expr.col_offset]])
+    after = b"\n".join([lines[expr.end_lineno - 1][expr.end_col_offset:]] + lines[expr.end_lineno:])
+    value = ast.get_source_segment(code, expr.value)
+    # The last statement is at the top level, so the print runs right after it at no indent.
+    return (before.decode() + f"_last_value = ({value})" + after.decode() +
+            "\nif _last_value is not None:\n    print(repr(_last_value))\n")
+
+
 class CodeInterpreter(Tool):
     name = "code_interpreter"
-    # The tool returns only what the code prints, as a script does: a bare expression on the last line, as in a
-    # notebook, gives no output.
+    # Without show_last_value the tool returns only what the code prints, as a script does.
     description = ("A tool for executing Python code in a safe sandbox environment. Only printed output is returned, "
                    "so print() every value you need.")
+    # With show_last_value, like a notebook cell.
+    notebook_description = ("A tool for executing Python code in a safe sandbox environment. It returns the printed "
+                            "output and, as in a notebook, the value of the last line when that is an expression.")
     parameters = {
         "type": "object",
         "properties": {
@@ -168,11 +190,15 @@ class CodeInterpreter(Tool):
                  timeout: float = 120.0,
                  memory_limit_gb: int = 4,
                  max_concurrency: int = 32,
-                 max_output_chars: int = 4096):
+                 max_output_chars: int = 4096,
+                 show_last_value: bool = False):
         self.timeout = timeout
         self.memory_limit = memory_limit_gb * 1024**3
         self.max_concurrency = max_concurrency
         self.max_output_chars = max_output_chars
+        self.show_last_value = show_last_value
+        if show_last_value:
+            self.description = self.notebook_description
         self._loop = None
         self._semaphore = None
 
@@ -204,7 +230,7 @@ class CodeInterpreter(Tool):
         if error is not None:
             return f"Error: {error}"
         async with self._limiter():
-            return await self._run(code)
+            return await self._run(show_last_value(code) if self.show_last_value else code)
 
     async def _run(self, code: str) -> str:
         indented = "\n".join("    " + line for line in code.split("\n"))

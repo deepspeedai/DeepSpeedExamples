@@ -55,6 +55,9 @@ class ToolConfig:
     max_concurrency: int = 32
     # Long tool outputs are cut so one print cannot overflow the context.
     max_output_chars: int = 4096
+    # Also return the value of a bare expression on the code's last line, as a notebook shows it; off returns only
+    # what the code prints.
+    show_last_value: bool = False
 
 
 @dataclass

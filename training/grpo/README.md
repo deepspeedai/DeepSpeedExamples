@@ -8,7 +8,7 @@ Rollout and training share one DeepSpeed **hybrid engine** (ZeRO-2): the policy 
 
 Each training step has three phases:
 
-1. **Rollout.** Each rank takes its share of the step's prompts and samples `n_samples_per_prompt` trajectories per prompt with `HybridEngineRollout`. When the model writes a `<tool_call>` block, the rollout runs it in the sandboxed `code_interpreter` (`tools.py`) and appends the output as a tool message, for up to `max_turns` turns. With continuous batching, each turn takes a free decode row and releases it when the turn ends, and tools run while the other rows keep decoding.
+1. **Rollout.** Each rank takes its share of the step's prompts and samples `n_samples_per_prompt` trajectories per prompt with `HybridEngineRollout`. When the model writes a `<tool_call>` block, the rollout runs it in the sandboxed `code_interpreter` (`tools.py`) and appends what the code prints as a tool message, for up to `max_turns` turns. With continuous batching, each turn takes a free decode row and releases it when the turn ends, and tools run while the other rows keep decoding.
 2. **Reward.** A DAPO strict-box check (`reward.py`) scores each trajectory +1 if the last `\boxed{...}` of the response equals the label, and −1 otherwise. `group_advantages` normalizes each reward within its prompt's group.
 3. **Update.** `ResponseTokenBatch.from_rollout` turns the trajectories into training targets with a mask that keeps only the tokens the model generated, so prompts, padding and tool output are not trained on. `grpo_policy_loss` computes PPO-clip with clip-higher (0.2 / 0.28) and no KL term. The loss is averaged over every generated token across ranks, or per trajectory first with `algorithm.loss_aggregation: "sample_mean"`, and the step takes one optimizer update, accumulated over micro-batches.
 
@@ -103,6 +103,7 @@ The main settings:
 - `training.global_batch_size`: trajectories per step across all ranks, a multiple of ranks × `n_samples_per_prompt` so that each rank rolls out whole prompts.
 - `training.micro_batch_size`: trajectories per forward and backward pass across all ranks, split evenly between them. It must divide `global_batch_size`; gradient accumulation covers the rest, so it changes memory and speed, not the update.
 - `tool.timeout`, `tool.max_output_chars`: limits on each interpreter call; long output is cut so that one large print cannot fill the context.
+- `tool.show_last_value`: also return the value of a bare expression on the code's last line, as a notebook does, and say so in the tool description. Off by default, so only printed output comes back. Models that write notebook-style code, such as Qwen3-4B-Instruct-2507, which almost never ends its code with `print()`, otherwise get empty tool output.
 - `algorithm.tool_call_bonus`: an optional reward bonus for calling tools on wrong answers, off by default.
 - `algorithm.loss_aggregation`: `"token_mean"` (default) weighs every generated token of the step equally; `"sample_mean"` averages each trajectory over its own tokens first, then over trajectories.
 
