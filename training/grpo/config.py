@@ -18,7 +18,8 @@ from deepspeed.runtime.rollout import RolloutConfig as _BaseRolloutConfig
 class ModelConfig:
     model_name_or_path: str
     dtype: str = "bfloat16"
-    attn_implementation: str = "sdpa"
+    # "sdpa_gqa_decode" (policy.py) is SDPA with faster decode steps for models with grouped KV heads.
+    attn_implementation: str = "sdpa_gqa_decode"
     gradient_checkpointing: bool = True
     trust_remote_code: bool = False
 
@@ -45,8 +46,6 @@ class RolloutConfig(_BaseRolloutConfig):
     # Trajectories per generate call, in whole prompts and at least one; None rolls out a rank's share of the
     # step in one call. Bounds the KV cache and prefill memory of a call.
     generate_batch_size: Optional[int] = None
-    # Read by HybridEngineRollout: decode steps between checks for finished turns under continuous batching.
-    continuous_poll_steps: int = 16
 
 
 @dataclass

@@ -2,7 +2,7 @@
     "model": {
         "model_name_or_path": "Qwen/Qwen3-8B",
         "dtype": "bfloat16",
-        "attn_implementation": "sdpa",
+        "attn_implementation": "sdpa_gqa_decode",
         "gradient_checkpointing": true
     },
     "rollout": {
@@ -18,7 +18,6 @@
         "tool_call_parser": "hermes",
         "use_graph_capture": true,
         "continuous_batch_size": 16,
-        "continuous_poll_steps": 16,
         "return_log_probs": false,
         "chat_template_kwargs": {
             "enable_thinking": false

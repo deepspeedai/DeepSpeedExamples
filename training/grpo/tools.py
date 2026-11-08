@@ -8,11 +8,13 @@ block each other. The filter only screens obvious misuse; it is not a security
 boundary.
 """
 
+import ast
 import asyncio
 import os
 import re
 import sys
 import tempfile
+import traceback
 
 from deepspeed.runtime.rollout import Tool
 
@@ -102,13 +104,44 @@ except Exception as e:
 """
 
 
+def imported_modules(tree: ast.AST) -> set:
+    """The top-level modules a parsed program imports: ``a`` for ``import a.b`` and for ``from a.b import c``."""
+    modules = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            # A relative import has no module to check against the allowlist.
+            modules.add(node.module.split(".")[0] if node.module and not node.level else ".")
+    return modules
+
+
+# A Markdown code fence around the whole program: ```py / ```python / ``` ... ```.
+_CODE_FENCE = re.compile(r"\A\s*```[\w+-]*[ \t]*\n(.*?)\n?[ \t]*(?:```\s*)?\Z", re.DOTALL)
+
+
+def strip_code_fence(code: str) -> str:
+    """``code`` without a Markdown fence around it, as Qwen3-2507 models write their ``code_interpreter`` calls.
+
+    Only a fence that wraps the whole argument is removed (its closing line may be missing); code that merely
+    contains backticks is left as it is.
+    """
+    match = _CODE_FENCE.match(code)
+    return match.group(1) if match else code
+
+
 def check_code_safety(code: str):
-    """Return an error message if ``code`` matches a blocked pattern or import, else None."""
+    """Return an error message if ``code`` matches a blocked pattern, does not parse or imports a blocked module, else None."""
     for pattern in DANGEROUS_PATTERNS:
         if re.search(pattern, code, re.IGNORECASE):
             return f"Code contains dangerous pattern: {pattern}"
-    imports = set(re.findall(r"import\s+(\w+)", code) + re.findall(r"from\s+(\w+)", code))
-    for module in sorted(imports):
+    try:
+        tree = ast.parse(code, filename="<code>")
+    except SyntaxError as e:
+        # Python compiles the whole program before running any of it, so code that does not parse cannot run;
+        # return the error Python would raise.
+        return "Code does not compile\n" + "".join(traceback.format_exception_only(type(e), e)).rstrip()
+    for module in sorted(imported_modules(tree)):
         if module not in ALLOWED_MODULES:
             return f"Import of '{module}' is not allowed"
     return None
@@ -116,7 +149,10 @@ def check_code_safety(code: str):
 
 class CodeInterpreter(Tool):
     name = "code_interpreter"
-    description = "A tool for executing Python code in a safe sandbox environment."
+    # The tool returns only what the code prints, as a script does: a bare expression on the last line, as in a
+    # notebook, gives no output.
+    description = ("A tool for executing Python code in a safe sandbox environment. Only printed output is returned, "
+                   "so print() every value you need.")
     parameters = {
         "type": "object",
         "properties": {
@@ -153,6 +189,8 @@ class CodeInterpreter(Tool):
         code = arguments.get("code", "")
         if isinstance(code, list):
             code = "\n".join(str(line) for line in code)
+        if isinstance(code, str):
+            code = strip_code_fence(code)
         output = await self._execute(code)
         if len(output) > self.max_output_chars:
             output = output[:self.max_output_chars] + "\n... (output truncated)"

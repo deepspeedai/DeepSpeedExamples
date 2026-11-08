@@ -1,8 +1,8 @@
 {
     "model": {
-        "model_name_or_path": "font-info/qwen3-4b-sft-SGLang-RL",
+        "model_name_or_path": "Qwen/Qwen3-4B-Instruct-2507",
         "dtype": "bfloat16",
-        "attn_implementation": "sdpa",
+        "attn_implementation": "sdpa_gqa_decode",
         "gradient_checkpointing": true
     },
     "rollout": {
@@ -17,8 +17,7 @@
         "n_samples_per_prompt": 8,
         "tool_call_parser": "hermes",
         "use_graph_capture": true,
-        "continuous_batch_size": 32,
-        "continuous_poll_steps": 16,
+        "continuous_batch_size": 16,
         "return_log_probs": false
     },
     "tool": {
@@ -40,7 +39,7 @@
         "num_rollouts": 500,
         "logging_steps": 1,
         "save_steps": 50,
-        "save_dir": "./checkpoints/qwen3_4b_sft_1gpu",
+        "save_dir": "./checkpoints/qwen3_4b_instruct_1gpu",
         "resume_from": "",
         "seed": 42
     },
@@ -52,7 +51,7 @@
     },
     "eval": {
         "path": "data/aime-2024/aime-2024.jsonl",
-        "interval": 20,
+        "interval": 100,
         "at_end": true,
         "n_samples_per_prompt": 16,
         "max_new_tokens": 8192,
