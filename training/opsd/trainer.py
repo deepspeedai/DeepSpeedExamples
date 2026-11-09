@@ -33,8 +33,17 @@ from deepspeed.accelerator import get_accelerator
 
 from config import OPSDConfig
 from losses import streamed_distillation_loss
-from utils import build_response_mask
-from deepspeed.runtime.rollout import RolloutEngine, RolloutRequest, SamplingConfig
+from deepspeed.runtime.rollout import ResponseTokenBatch, RolloutEngine, RolloutRequest, SamplingConfig
+from deepspeed.runtime.rollout.base import RolloutRecord
+
+
+def rollout_request(prompt_ids: torch.Tensor, prompt_attention_mask: torch.Tensor) -> RolloutRequest:
+    """A rollout request with one record per row of a left-padded prompt batch, holding the row's real tokens."""
+    samples = []
+    for row, (ids, mask) in enumerate(zip(prompt_ids.tolist(), prompt_attention_mask.tolist())):
+        tokens = [token for token, keep in zip(ids, mask) if keep]
+        samples.append(RolloutRecord(group_index=row, tokens=tokens, attention_mask=[1] * len(tokens)))
+    return RolloutRequest(samples=samples)
 
 
 def _is_rank_zero() -> bool:
@@ -101,9 +110,6 @@ class OPSDTrainer(RLHFTrainer):
     def _train_step(self, batch) -> dict:
         t_start = time.time()
 
-        prompt_ids = batch["prompt_ids"].to(self.device, non_blocking=True)
-        prompt_attn = batch["prompt_attention_mask"].to(self.device, non_blocking=True)
-
         # Sync student weights into the rollout backend.
         self.rollout.sync_weights(self.step)
 
@@ -117,14 +123,10 @@ class OPSDTrainer(RLHFTrainer):
             top_k=self.cfg.rollout.top_k,
             n_samples_per_prompt=self.cfg.rollout.n_samples_per_prompt,
         )
-        roll = self.rollout.generate(
-            RolloutRequest(prompt_ids=prompt_ids, prompt_attention_mask=prompt_attn),
-            sampling,
-        )
-        input_ids = roll.input_ids.to(self.device, non_blocking=True)
-        attention_mask = roll.attention_mask.to(self.device, non_blocking=True)
-        response_start_idx = roll.response_start_idx.to(self.device, non_blocking=True)
-        response_mask = build_response_mask(response_start_idx, attention_mask)
+        roll = self.rollout.generate(rollout_request(batch["prompt_ids"], batch["prompt_attention_mask"]), sampling)
+        # Prompt + response per sample, left-padded to one width, with the response targets shifted by one.
+        tokens = ResponseTokenBatch.from_rollout(roll, pad_token_id=self._pad_token_id(), device=self.device)
+        input_ids, attention_mask = tokens.input_ids, tokens.attention_mask
         t_rollout = time.time() - t_start
 
         # --- Phase 1: teacher forward → host-cached logits ----------------
@@ -141,8 +143,8 @@ class OPSDTrainer(RLHFTrainer):
         # Shift for next-token prediction: logits at position t predict token
         # at t+1, so the loss aligns student_logits[:, :-1] with the position
         # t+1 entries of the response mask.
-        student_logits_shifted = student_logits[:, :-1, :]
-        mask_shifted = response_mask[:, 1:].contiguous()
+        student_logits_shifted = tokens.select_causal_logits(student_logits)
+        mask_shifted = tokens.response_mask
 
         def _fetch(start: int, end: int) -> torch.Tensor:
             # The cache holds *unshifted* teacher logits; for the next-token
@@ -183,6 +185,10 @@ class OPSDTrainer(RLHFTrainer):
             "step_s": time.time() - t_start,
             "response_tokens": int(mask_shifted.sum().item()),
         }
+
+    def _pad_token_id(self) -> int:
+        pad = self.tokenizer.pad_token_id
+        return pad if pad is not None else self.tokenizer.eos_token_id
 
     # ------------------------------------------------------------------
     # Logging / checkpointing

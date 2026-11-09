@@ -90,12 +90,7 @@ def main() -> None:
     teacher = TeacherWrapper(cfg.teacher, world_size=dist_world_size())
 
     # --- rollout engine ----------------------------------------------------
-    rollout = build_rollout(
-        cfg.rollout,
-        student_engine=student_engine,
-        tokenizer=tokenizer,
-        student_model_path=cfg.student.model_name_or_path,
-    )
+    rollout = build_rollout(cfg.rollout, generation_engine=student_engine, tokenizer=tokenizer)
 
     # --- dataloader --------------------------------------------------------
     dataset = PromptDataset(

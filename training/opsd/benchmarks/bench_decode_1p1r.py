@@ -20,7 +20,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from deepspeed.accelerator import get_accelerator
 
 from deepspeed.runtime.rollout.hybrid_engine_rollout import HybridEngineRollout
-from deepspeed.runtime.rollout.base import RolloutRequest, SamplingConfig
+from deepspeed.runtime.rollout.base import RolloutRecord, RolloutRequest, SamplingConfig
 
 
 def bench_decode_raw(model, tokenizer, device, prompt_len=64, max_new_tokens=64, num_warmup=3, num_iters=10):
@@ -113,10 +113,9 @@ def bench_decode_raw(model, tokenizer, device, prompt_len=64, max_new_tokens=64,
 
 def bench_hybrid_rollout(rollout, tokenizer, device, prompt_len=64, max_new_tokens=64, num_warmup=3, num_iters=10):
     """Benchmark the full HybridEngineRollout.generate() path."""
-    input_ids = torch.randint(10, 1000, (1, prompt_len), device=device)
-    attn_mask = torch.ones(1, prompt_len, dtype=torch.long, device=device)
+    input_ids = torch.randint(10, 1000, (prompt_len, )).tolist()
     sampling = SamplingConfig(max_new_tokens=max_new_tokens, temperature=1.0, top_p=1.0)
-    request = RolloutRequest(prompt_ids=input_ids, prompt_attention_mask=attn_mask)
+    request = RolloutRequest(samples=[RolloutRecord(tokens=input_ids, attention_mask=[1] * prompt_len)])
 
     times = []
     for _ in range(num_warmup + num_iters):
@@ -162,7 +161,8 @@ def main():
     print(f"  Total:                {raw['total_ms']:.1f} ms")
 
     print(f"\n=== HybridEngineRollout benchmark (graph_capture={args.graph_capture}) ===")
-    engine = type('Engine', (), {'module': model})()  # lightweight wrapper
+    # A lightweight stand-in for a DeepSpeed engine: the model, with its weights unpartitioned.
+    engine = type('Engine', (), {'module': model, 'zero_optimization_partition_weights': lambda self: False})()
     from deepspeed.runtime.rollout.hybrid_engine_rollout import HybridEngineRolloutConfig
     cfg = HybridEngineRolloutConfig(use_graph_capture=args.graph_capture)
     rollout = HybridEngineRollout(engine, tokenizer, cfg=cfg)
