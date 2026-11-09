@@ -12,8 +12,7 @@ DeepSpeed PR #8295:
 
 https://github.com/deepspeedai/DeepSpeed/pull/8295
 
-Use a DeepSpeed checkout that contains that API and place it first on
-`PYTHONPATH`. The current validation scope is one process, one GPU, and ZeRO-0.
+It also builds its requests from per-sample `RolloutRecord`s, the rollout API of stage 1 of [RFC #8942](https://github.com/deepspeedai/DeepSpeed/issues/8942). Use a DeepSpeed checkout that contains both and place it first on `PYTHONPATH`. The current validation scope is one process, one GPU, and ZeRO-0.
 This is a HybridEngine rollout benchmark, not a complete OPSD training-step
 benchmark; it does not measure teacher inference, loss computation, backward,
 or optimizer work.

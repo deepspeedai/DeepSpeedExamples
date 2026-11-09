@@ -37,7 +37,6 @@ training/opsd/
 ├── teacher.py                         # frozen teacher + TeacherLogitCache
 ├── losses.py                          # streamed distillation loss (fwd/rev KL, JSD)
 ├── data.py                            # PromptDataset + left-padded collator
-├── utils.py                           # response-mask helpers
 ├── configs/
 │   ├── ds_zero3.json                  # base DeepSpeed ZeRO-3 + hybrid engine
 │   ├── opsd_hybrid_engine.json        # production-ish hybrid-engine OPSD config
@@ -57,18 +56,11 @@ training/opsd/
 
 ### Install
 
-This example uses DeepSpeed's `deepspeed.runtime.rollout` module (hybrid
-engine + rollout API), which landed on `master` after the 0.19.2 release and
-is not yet on PyPI. Until DeepSpeed 0.19.3 is released, install it from
-source:
+This example uses DeepSpeed's `deepspeed.runtime.rollout` module (hybrid engine + rollout API) in the form that stage 1 of [RFC #8942](https://github.com/deepspeedai/DeepSpeed/issues/8942) gives it: requests and results are lists of per-sample `RolloutRecord`s, and `ResponseTokenBatch` turns a result into training tensors. That API is not in a DeepSpeed release yet, so install DeepSpeed from source with that code, then:
 
 ```
-pip install git+https://github.com/deepspeedai/DeepSpeed.git@master
 pip install transformers>=5.0.0 datasets accelerate
 ```
-
-Once DeepSpeed 0.19.3 ships, a plain `pip install deepspeed` works and the
-source line above can be dropped.
 
 ### Hybrid-engine training
 
