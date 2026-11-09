@@ -18,8 +18,7 @@ from deepspeed.runtime.rollout import RolloutConfig as _BaseRolloutConfig
 class ModelConfig:
     model_name_or_path: str
     dtype: str = "bfloat16"
-    # "sdpa_gqa_decode" (policy.py) is SDPA with faster decode steps for models with grouped KV heads.
-    attn_implementation: str = "sdpa_gqa_decode"
+    attn_implementation: str = "sdpa"
     gradient_checkpointing: bool = True
     trust_remote_code: bool = False
 

@@ -17,40 +17,6 @@ the rollout gets a :class:`RolloutEngineView` whose ``module`` is that model.
 import torch
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
-from transformers import AttentionInterface
-from transformers.integrations.sdpa_attention import sdpa_attention_forward
-from transformers.masking_utils import AttentionMaskInterface, sdpa_mask
-
-# SDPA that reads grouped KV heads in place on decode steps; see _sdpa_gqa_decode.
-SDPA_GQA_DECODE = "sdpa_gqa_decode"
-
-
-def _sdpa_gqa_decode(module, query, key, value, attention_mask, dropout=0.0, scaling=None, **kwargs):
-    """Hugging Face SDPA attention, except that one-token decode steps read grouped KV heads in place.
-
-    With an attention mask, Hugging Face's SDPA copies each KV head once per query head it serves before
-    attending. Rollout decodes with a mask over each row's whole KV cache, so for Qwen3 (8 KV heads for 32
-    query heads) that copy reads and writes the full cache four times over at every step, and dominates
-    decode time. ``enable_gqa`` attends to the shared heads directly. Prefill and training, where the query
-    is longer than one token, keep Hugging Face's SDPA path.
-    """
-    if query.shape[2] != 1 or getattr(module, "num_key_value_groups", 1) == 1:
-        return sdpa_attention_forward(module, query, key, value, attention_mask, dropout=dropout, scaling=scaling,
-                                      **kwargs)
-    output = F.scaled_dot_product_attention(query,
-                                            key,
-                                            value,
-                                            attn_mask=attention_mask,
-                                            dropout_p=dropout,
-                                            scale=scaling,
-                                            enable_gqa=True)
-    return output.transpose(1, 2).contiguous(), None
-
-
-def register_attention() -> None:
-    """Make ``SDPA_GQA_DECODE`` available as an ``attn_implementation``, with SDPA's attention masks."""
-    AttentionInterface.register(SDPA_GQA_DECODE, _sdpa_gqa_decode)
-    AttentionMaskInterface.register(SDPA_GQA_DECODE, sdpa_mask)
 
 
 def _chunk_log_probs(hidden, lm_head, targets, temperature):

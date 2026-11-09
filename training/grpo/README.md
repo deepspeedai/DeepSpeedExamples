@@ -21,7 +21,7 @@ With one update per rollout, the old policy is the current one, so the old log-p
 | `main.py` | Entry point: builds the model, the hybrid engine, the rollout and the data, then trains |
 | `trainer.py` | The training loop: rollout, reward, update, evaluation, logging and checkpoints |
 | `config.py` | The configuration dataclasses and their checks |
-| `policy.py` | The policy as DeepSpeed trains it: token log-probs from a chunked LM head, and the decode attention |
+| `policy.py` | The policy as DeepSpeed trains it: token log-probs from a chunked LM head |
 | `tools.py` | The sandboxed Python interpreter the model calls |
 | `reward.py` | The strict-box answer check |
 | `data.py` | JSONL prompt loading |
@@ -85,8 +85,6 @@ Rank 0 prints the loss and the mean reward after each step. When `eval.path` is 
 | Thinking mode | off | none (an instruct model) | off |
 
 All three turn on every rollout optimization that works together: CUDA-graph decode (`use_graph_capture`) and multi-turn continuous batching (`continuous_batch_size`). Training uses bf16, gradient checkpointing, the chunked LM head, SDPA attention, and ZeRO-2 with overlapped communication.
-
-The configs set `model.attn_implementation` to `sdpa_gqa_decode`, which `policy.py` registers with Hugging Face: SDPA, except that decode steps read Qwen3's shared KV heads in place. Hugging Face's SDPA copies each KV head once per query head it serves whenever there is an attention mask, and rollout decodes with a mask over each row's whole KV cache, so the copy dominates decode time; skipping it makes Qwen3-4B decode about three times faster on an A100 with the same outputs. Prefill and training use Hugging Face's SDPA unchanged.
 
 Each config holds the DeepSpeed config inline under `deepspeed_config`, which can also be the path of a DeepSpeed JSON. The trainer fills in `train_micro_batch_size_per_gpu` and `gradient_accumulation_steps`, so that one step covers all of a rank's trajectories.
 

@@ -26,7 +26,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from config import GRPOConfig
 from data import PromptDataset, collate_rows, load_prompts
 from deepspeed.runtime.rollout import build_rollout
-from policy import PolicyModel, RolloutEngineView, register_attention
+from policy import PolicyModel, RolloutEngineView
 from tools import CodeInterpreter
 from trainer import GRPOTrainer
 
@@ -64,7 +64,6 @@ def main() -> None:
         tokenizer.pad_token = tokenizer.eos_token
 
     # --- policy + DeepSpeed hybrid engine ----------------------------------
-    register_attention()
     model = AutoModelForCausalLM.from_pretrained(
         cfg.model.model_name_or_path,
         dtype=_resolve_dtype(cfg.model.dtype),
