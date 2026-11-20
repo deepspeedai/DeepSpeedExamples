@@ -1,0 +1,6 @@
+# Subchannel quantization is not merged yet: install the tip of DeepSpeed PR #9131.
+deepspeed @ git+https://github.com/deepspeedai/DeepSpeed.git@refs/pull/9131/head
+torch>=2.8
+triton>=3.4
+transformers>=5.2
+datasets>=2.14.0
