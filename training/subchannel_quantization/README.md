@@ -77,7 +77,8 @@ The script reads at most the first 60,000 rows of WikiText-103, about enough for
 ## Full training from scratch
 
 `from_scratch.py` trains a Llama-architecture model built from a config (default: 8 layers, hidden 4096, MLP 11008, 1.82B parameters, GPT-2 tokenizer) on all of WikiText-103 with a warmup + cosine schedule that decays to zero, and reports final validation and test loss.
-It supports the `bf16`, `e4m3_row` and `e4m3` recipes and plain data parallelism under ZeRO-2.
+With `--moe` it trains a Qwen2-MoE-architecture model with AutoEP instead.
+It supports the `bf16`, `e4m3_row` and `e4m3` recipes under ZeRO-2.
 
 Tokenize the dataset once, in a single process:
 
@@ -104,10 +105,19 @@ Options:
 
 - `--seed`, `--epochs`, `--lr`, `--warmup`, `--seq_len`, `--batch_size`, `--eval_every`: training schedule and sizes.
 - `--layers`, `--hidden`, `--intermediate`: model shape. The head count is `hidden / 128`.
+- `--moe`: build a Qwen2-MoE-architecture model and train it with AutoEP, with `autoep_size` set to the GPU count. `--intermediate` then sets the shared expert's width.
+- `--num_experts` (default 16, must be divisible by the GPU count), `--experts_per_token` (default 4), `--moe_intermediate` (default 1408): MoE shape.
 - `--max_steps`: stop early without changing the schedule, for timing runs.
 - `--data_dir`: where `--prep` writes the tokenized splits (default `data/` next to the script).
 
 The number of steps per epoch, and so the schedule, depends on the GPU count.
+
+The MoE reference results below use Qwen1.5-MoE-A2.7B's layer shapes with fewer layers and experts (about 1.6B parameters):
+
+```bash
+torchrun --nproc_per_node 2 from_scratch.py --moe --hidden 2048 --intermediate 5632 \
+    --recipe e4m3_row --seed 0 --out results/moe_e4m3_row_s0.json
+```
 
 ## Reference results
 
@@ -146,9 +156,20 @@ Full training from scratch with the `from_scratch.py` defaults, 2 GPUs per run, 
 | `e4m3_row` | 1 | 2.9631 | 2.9828 | 19.74 | 305 ms | 29.9 GiB |
 | `e4m3` | 1 | 2.9545 | 2.9792 | 19.67 | 386 ms | 29.9 GiB |
 
+Full MoE training from scratch with the `--moe` command above, AutoEP on 2 GPUs per run. Every run, `bf16` included, overfits in the last epoch, so the best validation loss is shown as well:
+
+| Recipe | Seed | Best val loss (step 21,500) | Final val loss | Test loss | Test ppl | Step p50 | Peak memory |
+| ------ | ---- | --------------------------- | -------------- | --------- | -------- | -------- | ----------- |
+| `bf16` | 0 | 2.8972 | 2.9354 | 2.9528 | 19.16 | 217 ms | 26.4 GiB |
+| `e4m3_row` | 0 | 2.8949 | 2.9331 | 2.9519 | 19.14 | 304 ms | 26.4 GiB |
+| `e4m3` | 0 | 2.8973 | 2.9321 | 2.9493 | 19.09 | 268 ms | 26.4 GiB |
+| `bf16` | 1 | 2.9048 | 2.9361 | 2.9573 | 19.25 | 218 ms | 26.8 GiB |
+| `e4m3_row` | 1 | 2.9009 | 2.9297 | 2.9530 | 19.16 | 305 ms | 26.7 GiB |
+| `e4m3` | 1 | 2.9026 | 2.9307 | 2.9542 | 19.19 | 268 ms | 26.8 GiB |
+
 What to expect:
 
-- In full training, both FP8 recipes end within seed-to-seed variation of BF16: the two BF16 seeds differ by 0.010 in test loss, and each FP8 run is within 0.007 of BF16 at the same seed. This covers one dense architecture and one dataset; MoE models and the INT8 recipes have not been trained to convergence.
+- In full training, both FP8 recipes end within seed-to-seed variation of BF16 on the dense model and on the MoE model. Dense: the two BF16 seeds differ by 0.010 in test loss, and each FP8 run is within 0.007 of BF16 at the same seed. MoE: 0.0045 between seeds, and FP8 within 0.0043 of BF16. This covers one dense and one MoE shape on one dataset; the INT8 recipes have not been trained to convergence.
 
 - Row-scaled FP8 beats BF16 only when layers are wide (about 5000 and up) and each GPU processes several thousand tokens per step. On the MoE models above, whose layers are about 2048 wide, it is about 1.5x slower.
 - Block-scaled recipes are slower than BF16 on every model measured.

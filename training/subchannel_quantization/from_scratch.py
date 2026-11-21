@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
-"""Train a wide Llama-architecture LM from scratch on WikiText-103 to convergence, with or without subchannel FP8.
+"""Train a dense or MoE (AutoEP) LM from scratch on WikiText-103 to convergence, with or without subchannel FP8.
 
 For a given seed, every recipe starts from the same initial weights and sees the same data order, so final validation
 and test loss can be compared against the ``bf16`` baseline. Run ``python from_scratch.py --prep`` once (single
@@ -103,13 +103,20 @@ def main():
     parser.add_argument("--layers", type=int, default=8)
     parser.add_argument("--hidden", type=int, default=4096)
     parser.add_argument("--intermediate", type=int, default=11008)
+    parser.add_argument(
+        "--moe",
+        action="store_true",
+        help="train a Qwen2-MoE-architecture model with AutoEP")
+    parser.add_argument("--num_experts", type=int, default=16)
+    parser.add_argument("--experts_per_token", type=int, default=4)
+    parser.add_argument("--moe_intermediate", type=int, default=1408)
     args = parser.parse_args()
     if args.prep:
         return prep(args.data_dir)
     if args.recipe is None or args.out is None:
         parser.error("--recipe and --out are required for training")
 
-    from transformers import LlamaConfig, LlamaForCausalLM
+    from transformers import LlamaConfig, LlamaForCausalLM, Qwen2MoeConfig, Qwen2MoeForCausalLM
     world = int(os.environ.get("WORLD_SIZE", 1))
     train = blocks_of(args.data_dir, "train", args.seq_len)
     val = blocks_of(args.data_dir, "validation", args.seq_len)
@@ -145,6 +152,9 @@ def main():
             }
         },
     }
+    if args.moe:
+        # Every GPU holds num_experts / world experts; tokens travel to the GPU that owns their expert.
+        config["expert_parallel"] = {"enabled": True, "autoep_size": world}
     if RECIPES[args.recipe] is not None:
         config["quantization"] = {
             "subchannel": {
@@ -154,17 +164,27 @@ def main():
         }
 
     torch.manual_seed(args.seed)
-    model = LlamaForCausalLM(
-        LlamaConfig(vocab_size=50257,
-                    hidden_size=args.hidden,
-                    intermediate_size=args.intermediate,
-                    num_hidden_layers=args.layers,
-                    num_attention_heads=args.hidden // 128,
-                    num_key_value_heads=args.hidden // 128,
-                    max_position_embeddings=args.seq_len,
-                    tie_word_embeddings=True,
-                    bos_token_id=50256,
-                    eos_token_id=50256))
+    shape = dict(vocab_size=50257,
+                 hidden_size=args.hidden,
+                 intermediate_size=args.intermediate,
+                 num_hidden_layers=args.layers,
+                 num_attention_heads=args.hidden // 128,
+                 num_key_value_heads=args.hidden // 128,
+                 max_position_embeddings=args.seq_len,
+                 tie_word_embeddings=True,
+                 bos_token_id=50256,
+                 eos_token_id=50256)
+    if args.moe:
+        # --intermediate is the width of the shared expert that every token passes through.
+        moe_config = Qwen2MoeConfig(
+            num_experts=args.num_experts,
+            num_experts_per_tok=args.experts_per_token,
+            moe_intermediate_size=args.moe_intermediate,
+            shared_expert_intermediate_size=args.intermediate,
+            **shape)
+        model = Qwen2MoeForCausalLM(moe_config)
+    else:
+        model = LlamaForCausalLM(LlamaConfig(**shape))
     engine, _, _, scheduler = deepspeed.initialize(model=model, config=config)
     rank = dist.get_rank()
     params = sum(p.numel() for p in model.parameters())
