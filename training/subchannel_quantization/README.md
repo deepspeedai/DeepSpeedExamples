@@ -78,7 +78,7 @@ The script reads at most the first 60,000 rows of WikiText-103, about enough for
 
 `from_scratch.py` trains a Llama-architecture model built from a config (default: 8 layers, hidden 4096, MLP 11008, 1.82B parameters, GPT-2 tokenizer) on all of WikiText-103 with a warmup + cosine schedule that decays to zero, and reports final validation and test loss.
 With `--moe` it trains a Qwen2-MoE-architecture model with AutoEP instead.
-It supports the `bf16`, `e4m3_row` and `e4m3` recipes under ZeRO-2.
+It supports all five recipes under ZeRO-2.
 
 Tokenize the dataset once, in a single process:
 
@@ -163,13 +163,18 @@ Full MoE training from scratch with the `--moe` command above, AutoEP on 2 GPUs 
 | `bf16` | 0 | 2.8972 | 2.9354 | 2.9528 | 19.16 | 217 ms | 26.4 GiB |
 | `e4m3_row` | 0 | 2.8949 | 2.9331 | 2.9519 | 19.14 | 304 ms | 26.4 GiB |
 | `e4m3` | 0 | 2.8973 | 2.9321 | 2.9493 | 19.09 | 268 ms | 26.4 GiB |
+| `int8` | 0 | 2.8951 | 2.9352 | 2.9554 | 19.21 | 266 ms | 26.4 GiB |
+| `int8_h128` | 0 | 2.8926 | 2.9308 | 2.9481 | 19.07 | 329 ms | 26.4 GiB |
 | `bf16` | 1 | 2.9048 | 2.9361 | 2.9573 | 19.25 | 218 ms | 26.8 GiB |
 | `e4m3_row` | 1 | 2.9009 | 2.9297 | 2.9530 | 19.16 | 305 ms | 26.7 GiB |
 | `e4m3` | 1 | 2.9026 | 2.9307 | 2.9542 | 19.19 | 268 ms | 26.8 GiB |
+| `int8` | 1 | 2.9011 | 2.9296 | 2.9501 | 19.11 | 267 ms | 26.9 GiB |
+| `int8_h128` | 1 | 2.9016 | 2.9311 | 2.9504 | 19.11 | 326 ms | 27.0 GiB |
 
 What to expect:
 
-- In full training, both FP8 recipes end within seed-to-seed variation of BF16 on the dense model and on the MoE model. Dense: the two BF16 seeds differ by 0.010 in test loss, and each FP8 run is within 0.007 of BF16 at the same seed. MoE: 0.0045 between seeds, and FP8 within 0.0043 of BF16. This covers one dense and one MoE shape on one dataset; the INT8 recipes have not been trained to convergence.
+- In full training, both FP8 recipes end within seed-to-seed variation of BF16 on the dense model and on the MoE model. Dense: the two BF16 seeds differ by 0.010 in test loss, and each FP8 run is within 0.007 of BF16 at the same seed. MoE: 0.0045 between seeds, and FP8 within 0.0043 of BF16. This covers one dense and one MoE shape on one dataset.
+- The INT8 recipes were trained to convergence on the MoE model only. Both end between 0.003 above and 0.007 below BF16 in test loss at the same seed; the Hadamard rotation makes no consistent difference to loss and adds about 23% to the step time.
 
 - Row-scaled FP8 beats BF16 only when layers are wide (about 5000 and up) and each GPU processes several thousand tokens per step. On the MoE models above, whose layers are about 2048 wide, it is about 1.5x slower.
 - Block-scaled recipes are slower than BF16 on every model measured.

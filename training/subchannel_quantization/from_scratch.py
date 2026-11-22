@@ -28,6 +28,21 @@ RECIPES = {
         }
         for name in ("forward", "dx", "dw")
     },
+    "int8": {
+        name: {
+            "format": "int8",
+            "stochastic_rounding": name != "forward"
+        }
+        for name in ("forward", "dx", "dw")
+    },
+    "int8_h128": {
+        name: {
+            "format": "int8",
+            "hadamard_size": 128,
+            "stochastic_rounding": name != "forward"
+        }
+        for name in ("forward", "dx", "dw")
+    },
 }
 
 
