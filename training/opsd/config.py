@@ -8,6 +8,7 @@ rest is application-level (trainer, data, distillation).
 """
 
 import json
+import math
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -17,6 +18,7 @@ from deepspeed.runtime.rollout import RolloutConfig as _BaseRolloutConfig
 @dataclass
 class RolloutConfig(_BaseRolloutConfig):
     """Extends DeepSpeed's RolloutConfig with OPSD generation knobs."""
+    use_shared_prefill: bool = False
     max_prompt_length: int = 1024
     max_response_length: int = 1024
     temperature: float = 0.0
@@ -47,6 +49,7 @@ class DistillationConfig:
     loss_type: str = "reverse_kl"
     temperature: float = 1.0
     chunk_size: int = 512
+    loss_backend: str = "dense"
 
 
 @dataclass
@@ -111,3 +114,14 @@ class OPSDConfig:
             raise ValueError(f"Unknown rollout engine {self.rollout.engine!r}; expected 'hybrid_engine'")
         if self.distillation.chunk_size <= 0:
             raise ValueError("distillation.chunk_size must be positive")
+        if not math.isfinite(self.distillation.temperature) or self.distillation.temperature <= 0:
+            raise ValueError("distillation.temperature must be finite and positive")
+        if self.distillation.loss_backend not in ("dense", "vocab_parallel"):
+            raise ValueError(f"Unknown loss_backend {self.distillation.loss_backend!r}")
+        if self.distillation.loss_backend == "vocab_parallel":
+            if self.distillation.loss_type == "jsd":
+                raise ValueError("vocab_parallel supports forward/reverse KL; use dense for JSD")
+            if self.rollout.temperature != 0 or self.rollout.n_samples_per_prompt != 1:
+                raise ValueError("vocab_parallel currently supports single-sample greedy rollout")
+            if self.rollout.use_graph_capture or self.rollout.use_shared_prefill:
+                raise ValueError("vocab_parallel requires eager rollout without shared prefill")

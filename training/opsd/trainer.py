@@ -25,6 +25,7 @@ stage, offload, hybrid engine) is owned entirely by the DeepSpeed JSON config.
 import os
 import time
 from abc import ABC, abstractmethod
+from contextlib import nullcontext
 from typing import Any
 
 import torch
@@ -34,6 +35,7 @@ from deepspeed.accelerator import get_accelerator
 from config import OPSDConfig
 from losses import streamed_distillation_loss
 from utils import build_response_mask
+from vocab_parallel import gathered_rollout_logits, validate_tp_batch, validate_training_logits
 from deepspeed.runtime.rollout import RolloutEngine, RolloutRequest, SamplingConfig
 
 
@@ -73,6 +75,7 @@ class OPSDTrainer(RLHFTrainer):
 
         self.device = get_accelerator().current_device_name()
         self.step = 0
+        self.vocab_layout = getattr(student_engine, "_opsd_vocab_layout", None)
 
     # ------------------------------------------------------------------
     # Driver
@@ -117,14 +120,19 @@ class OPSDTrainer(RLHFTrainer):
             top_k=self.cfg.rollout.top_k,
             n_samples_per_prompt=self.cfg.rollout.n_samples_per_prompt,
         )
-        roll = self.rollout.generate(
-            RolloutRequest(prompt_ids=prompt_ids, prompt_attention_mask=prompt_attn),
-            sampling,
-        )
+        scope = (gathered_rollout_logits(self.student_engine.module, self.vocab_layout)
+                 if self.vocab_layout is not None else nullcontext())
+        with scope:
+            roll = self.rollout.generate(
+                RolloutRequest(prompt_ids=prompt_ids, prompt_attention_mask=prompt_attn),
+                sampling,
+            )
         input_ids = roll.input_ids.to(self.device, non_blocking=True)
         attention_mask = roll.attention_mask.to(self.device, non_blocking=True)
         response_start_idx = roll.response_start_idx.to(self.device, non_blocking=True)
         response_mask = build_response_mask(response_start_idx, attention_mask)
+        if self.vocab_layout is not None:
+            validate_tp_batch(self.vocab_layout, input_ids, attention_mask, response_mask)
         t_rollout = time.time() - t_start
 
         # --- Phase 1: teacher forward → host-cached logits ----------------
@@ -132,11 +140,35 @@ class OPSDTrainer(RLHFTrainer):
         teacher_cache = self.teacher.forward_to_cache(input_ids, attention_mask)
         t_teacher = time.time() - t1
 
+        try:
+            loss, response_tokens, t_student = self._student_update(input_ids, attention_mask, response_mask,
+                                                                  teacher_cache)
+        finally:
+            teacher_cache.free()
+
+        loss_for_log = loss.detach().clone()
+        if dist.is_initialized():
+            dist.all_reduce(loss_for_log)
+            loss_for_log /= dist.get_world_size()
+
+        return {
+            "loss": float(loss_for_log.item()),
+            "rollout_s": t_rollout,
+            "teacher_s": t_teacher,
+            "student_s": t_student,
+            "step_s": time.time() - t_start,
+            "response_tokens": response_tokens,
+        }
+
+    def _student_update(self, input_ids, attention_mask, response_mask, teacher_cache):
+
         # --- Phase 2: student forward + streamed KL + backward ------------
         t2 = time.time()
         self.student_engine.train()
         outputs = self.student_engine(input_ids=input_ids, attention_mask=attention_mask)
         student_logits = outputs.logits  # [B, T, V]
+        if self.vocab_layout is not None:
+            validate_training_logits(self.vocab_layout, student_logits, teacher_cache)
 
         # Shift for next-token prediction: logits at position t predict token
         # at t+1, so the loss aligns student_logits[:, :-1] with the position
@@ -161,28 +193,15 @@ class OPSDTrainer(RLHFTrainer):
             loss_type=self.cfg.distillation.loss_type,
             temperature=self.cfg.distillation.temperature,
             chunk_size=self.cfg.distillation.chunk_size,
+            loss_backend=self.cfg.distillation.loss_backend,
+            vocab_layout=self.vocab_layout,
         )
 
         self.student_engine.backward(loss)
         self.student_engine.step()
 
-        teacher_cache.free()
         t_student = time.time() - t2
-
-        # Reduce loss across ranks for a clean log line.
-        loss_for_log = loss.detach().clone()
-        if dist.is_initialized():
-            dist.all_reduce(loss_for_log)
-            loss_for_log /= dist.get_world_size()
-
-        return {
-            "loss": float(loss_for_log.item()),
-            "rollout_s": t_rollout,
-            "teacher_s": t_teacher,
-            "student_s": t_student,
-            "step_s": time.time() - t_start,
-            "response_tokens": int(mask_shifted.sum().item()),
-        }
+        return loss, int(mask_shifted.sum().item()), t_student
 
     # ------------------------------------------------------------------
     # Logging / checkpointing

@@ -118,6 +118,127 @@ python -m pytest tests/ -v
 
 See `configs/opsd_hybrid_engine.json` for a fully-populated example.
 
+### Vocabulary-parallel KL
+
+The default `distillation.loss_backend` is `"dense"`. To keep training and
+teacher-cache logits in their actual AutoTP vocabulary shards, opt in with:
+
+```json
+{
+  "teacher": {"autotp_size": 2, "offload_to_cpu": false},
+  "distillation": {
+    "loss_backend": "vocab_parallel",
+    "loss_type": "reverse_kl",
+    "temperature": 1.0,
+    "chunk_size": 32
+  },
+  "rollout": {
+    "temperature": 0.0,
+    "n_samples_per_prompt": 1,
+    "use_graph_capture": false,
+    "use_shared_prefill": false
+  }
+}
+```
+
+These fields supplement the existing model, data and training settings.
+The DeepSpeed JSON must set the same `tensor_parallel.autotp_size` for the
+student and select student ZeRO-0 or ZeRO-2. The entry point enables
+`tensor_parallel.vocab_parallel_lm_head` before Engine initialization.
+Vocabulary-parallel KL requires the DeepSpeed operators introduced by
+[PR #8791](https://github.com/deepspeedai/DeepSpeed/pull/8791).
+The dense default explicitly retains full-vocabulary heads on both models,
+including tied heads that a HuggingFace TP plan would otherwise shard.
+
+The adapter checks each producer's actual shard ranges, ordered TP members,
+physical vocabulary width and tokenizer token-ID semantics. TP peers must
+consume identical tokens and masks; DP replicas may use different samples
+and lengths. TP=1 keeps the vocabulary local even when DP>1. Teacher logits
+move directly from the local shard to a host cache; they are not gathered
+and sliced. The cache completes D2H before becoming readable and must not
+be used after `free()`.
+
+Greedy eager rollout temporarily gathers only the last position's vocabulary
+logits, so generation selects a global token. Training and teacher forwards
+retain local logits. The hook preserves the head's Parameter objects and
+tied-weight identity, and is removed on both success and failure. The
+existing next-token shift, temperature-squared scaling, local response-token
+mean and Engine gradient-accumulation scaling remain unchanged.
+
+The supported opt-in route uses forward/reverse KL, single-sample greedy HF
+generation, no teacher CPU offload, no pipeline/sequence parallelism and no
+compiled or accelerated HybridEngine training. JSD, stochastic rollout,
+graph capture and shared prefill are rejected. Frozen Qwen3 teachers can
+fail in the dependency's replicated-parameter AutoTP gradient-hook setup;
+that initialization issue is separate from the KL adapter.
+
+Run the device integration harnesses from this directory with its modules
+on `PYTHONPATH`:
+
+```sh
+PYTHONPATH="$PWD" torchrun --standalone --nproc_per_node=2 \
+  tests/distributed/run_numeric_and_preflight.py --out artifacts/numeric
+PYTHONPATH="$PWD" torchrun --standalone --nproc_per_node=4 \
+  tests/distributed/run_trainer_integration.py --tp 2 --dtype bfloat16 \
+  --tied --student-zero 2 --vocab-size 67 --empty-mask \
+  --phase continuous --checkpoint artifacts/checkpoint --out artifacts/trainer
+```
+
+The numeric harness compares the actual CUDA operator with an FP64 dense
+oracle and checks uniform rejection of malformed layouts and inconsistent
+TP inputs. The trainer harness uses random tiny Qwen2 models and real
+Engine optimizers; these tests qualify integration mechanics, rather than
+pretrained distillation quality. Its `save` phase performs two optimizer
+updates and its `resume` phase loads the checkpoint in a new process before
+performing the remaining three. Compare those final parameters with a
+separate five-update `continuous` run.
+
+`benchmarks/bench_vocab_parallel_opsd.py` measures a full online training
+update or replay of frozen real rollout responses. `upstream_dense` imports
+an unchanged upstream OPSD directory supplied by `--upstream-opsd-dir`;
+the harness explicitly selects the dependency's documented full-logits
+configuration for both producers, including the upstream teacher initializer.
+`gathered_reference` uses the same candidate head layout with dense math and
+a local-slice gather backward; `vocab_parallel` retains local logits. Replay
+excludes generation. Online always generates new responses. The benchmark
+checks that `--implementation` matches the configured loss backend before
+initializing models: `upstream_dense`/`dense_default` require `dense` (or the
+omitted default), while `gathered_reference`/`vocab_parallel` require
+`vocab_parallel` to construct the sharded heads. It also creates and checks
+the result directory before starting GPU work. Report actual
+optimizer updates, unique response tokens counted once per TP group, each
+run's workload hash, cache payload and device peak; distinguish these from
+the original trainer's unsynchronized diagnostic phase timers.
+
+The Qwen2.5 smoke config uses the same 16 math/instruction prompts as the
+recorded short-input runs. Replace the model IDs with pinned local snapshot
+paths when reproducing a particular result. The measured snapshots were
+`7ae557604adf67be50417f59c2c2f167def9a775` for the student and
+`989aa7980e4cf806f80c7fef2b1adb7bc71aa306` for the teacher.
+
+```sh
+PYTHONPATH="$PWD" torchrun --standalone --nproc_per_node=2 \
+  benchmarks/bench_vocab_parallel_opsd.py \
+  --config configs/opsd_vocab_parallel_smoke.json \
+  --mode online --implementation vocab_parallel --sdpa-backend math \
+  --fixture artifacts/smoke-fixture --warmup-updates 0 --measure-updates 5 \
+  --output-jsonl artifacts/smoke.jsonl
+```
+
+The benchmark checks the actual FP32 optimizer parameters and rejects any
+skipped update. `Engine.global_steps` alone is insufficient, since overflow
+can advance that counter without updating weights. Model-weight hashes are
+reported separately from optimizer-master hashes.
+
+`--sdpa-backend math` selects PyTorch's public math SDPA backend uniformly
+for A, B and C. With Torch 2.12.1+cu130 on H100, the default SDPA selection
+produced finite logits and KL logit gradients but NaN model gradients on a
+long-input, early-EOS batch; the optimizer skipped the update. The matched
+math-backend diagnostic had finite gradients and changed FP32 masters.
+This is a measured backend limitation, separate from vocabulary-parallel
+KL. The benchmark does not change the application's default attention
+backend, and these measurements do not qualify every PyTorch/backend pair.
+
 ## Design notes
 
 * **Why CPU-cache the teacher logits?** Holding both student and teacher
@@ -126,6 +247,9 @@ See `configs/opsd_hybrid_engine.json` for a fully-populated example.
   the worst-case GPU footprint of the loss path. The streamed loss
   (`losses.streamed_distillation_loss`) pulls teacher chunks back to GPU
   one sequence slice at a time so the full tensor never re-materialises.
+  A teacher forward still materializes its output, and backward may retain
+  tensors from multiple loss chunks. Chunk size bounds a copy/temporary
+  workspace; it does not establish a bound on full-step device peak memory.
 
 * **Why an abstract `RolloutEngine`?** The ABC keeps the trainer
   engine-agnostic so additional backends can be added without touching the

@@ -1,0 +1,40 @@
+{
+    "student": {
+        "model_name_or_path": "Qwen/Qwen2.5-0.5B-Instruct",
+        "dtype": "bfloat16"
+    },
+    "teacher": {
+        "model_name_or_path": "Qwen/Qwen2.5-1.5B-Instruct",
+        "dtype": "bfloat16",
+        "offload_to_cpu": false,
+        "autotp_size": 2
+    },
+    "distillation": {
+        "loss_backend": "vocab_parallel",
+        "loss_type": "reverse_kl",
+        "temperature": 1.0,
+        "chunk_size": 32
+    },
+    "rollout": {
+        "max_prompt_length": 128,
+        "max_response_length": 64,
+        "temperature": 0.0,
+        "use_graph_capture": false
+    },
+    "training": {
+        "micro_batch_size_per_gpu": 1,
+        "gradient_accumulation_steps": 2,
+        "max_steps": 10,
+        "num_train_epochs": 20,
+        "learning_rate": 5e-06,
+        "logging_steps": 2,
+        "save_steps": 100000,
+        "seed": 42,
+        "save_dir": "artifacts/checkpoints"
+    },
+    "data": {
+        "path": "data/vocab_parallel_prompts.jsonl",
+        "shuffle": false
+    },
+    "deepspeed_config": "configs/ds_vocab_parallel_smoke.json"
+}

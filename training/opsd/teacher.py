@@ -9,8 +9,9 @@ The trainer runs each step in two phases:
      teacher weight buffers can be released before the student backward pass.
   2. **Student phase.** Forward + backward on the student. The distillation
      loss pulls teacher logits back to GPU **one sequence chunk at a time** via
-     :meth:`TeacherLogitCache.chunk_to_device`, so peak GPU memory for teacher
-     data is only ``[B, chunk, V]``.
+     :meth:`TeacherLogitCache.chunk_to_device`. Each copy is bounded by
+     ``[B, chunk, V]``; the teacher forward and tensors retained by backward
+     must still be included when measuring full-step device memory.
 
 This module deliberately lazy-imports ``deepspeed`` and ``transformers`` so
 that the pure data-handling pieces (``TeacherLogitCache`` and the streamed
@@ -18,7 +19,7 @@ loss in :mod:`opsd.losses`) remain importable in CPU-only unit tests that do
 not have a working DeepSpeed launcher.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Tuple
 
 import torch
@@ -38,6 +39,8 @@ class TeacherLogitCache:
     """
 
     cpu_logits: torch.Tensor  # [B, T, V]
+    layout: Optional[object] = None
+    _freed: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.cpu_logits.dim() != 3:
@@ -46,30 +49,38 @@ class TeacherLogitCache:
         if self.cpu_logits.device.type != "cpu":
             raise ValueError(f"cpu_logits must live on CPU; got device "
                              f"{self.cpu_logits.device}")
+        if self.layout is not None and self.cpu_logits.shape[-1] != self.layout.local_size:
+            raise ValueError("Teacher cache width differs from its vocabulary shard")
 
     @classmethod
-    def from_gpu_logits(cls, logits: torch.Tensor, store_dtype: torch.dtype = torch.bfloat16) -> "TeacherLogitCache":
+    def from_gpu_logits(cls, logits: torch.Tensor, store_dtype: torch.dtype = torch.bfloat16,
+                        *, layout=None) -> "TeacherLogitCache":
         """Detach + downcast + move to (pinned) host memory.
 
-        ``non_blocking=True`` lets the copy overlap with the next CUDA op when
-        the destination is pinned; we try to pin and fall back silently if the
-        host doesn't support it (e.g. CPU-only test environments).
+        Complete the copy before exposing CPU storage. This also gives dense
+        and sharded paths the same copy-readiness contract.
         """
         downcast = logits.detach().to(dtype=store_dtype)
         try:
             host = torch.empty(downcast.shape, dtype=store_dtype, pin_memory=True)
-            host.copy_(downcast, non_blocking=True)
         except RuntimeError:
-            host = downcast.cpu()
-        return cls(cpu_logits=host)
+            host = torch.empty(downcast.shape, dtype=store_dtype)
+        host.copy_(downcast, non_blocking=False)
+        return cls(cpu_logits=host, layout=layout)
+
+    def _require_alive(self) -> None:
+        if self._freed:
+            raise RuntimeError("Teacher cache has been freed")
 
     @property
     def shape(self) -> Tuple[int, int, int]:
+        self._require_alive()
         s = self.cpu_logits.shape
         return (int(s[0]), int(s[1]), int(s[2]))
 
     @property
     def dtype(self) -> torch.dtype:
+        self._require_alive()
         return self.cpu_logits.dtype
 
     def chunk_to_device(self,
@@ -80,19 +91,30 @@ class TeacherLogitCache:
         """Slice ``[:, start:end, :]`` and stage it on ``device``.
 
         ``dtype`` is the dtype on the destination; if ``None``, the stored
-        dtype is preserved.
+        dtype is preserved. Off-host destinations convert after the copy.
         """
-        _, T, _ = self.shape
+        B, T, _ = self.shape
         if not (0 <= start < end <= T):
             raise ValueError(f"chunk bounds [{start}, {end}) invalid for T={T}")
         chunk = self.cpu_logits[:, start:end]
-        out = chunk.to(device=device, dtype=dtype if dtype is not None else chunk.dtype, non_blocking=True)
-        return out
+        dtype = dtype if dtype is not None else chunk.dtype
+        if torch.device(device).type == "cpu":
+            return chunk.to(dtype=dtype)
+        # For B > 1 the slice is strided, and copying it to a device first makes a
+        # contiguous temporary in pageable memory. Each row's slice is contiguous
+        # in the pinned buffer, so copy rows directly. The pinned allocator keeps
+        # the buffer until the copies finish, even if the cache is freed earlier.
+        pinned = self.cpu_logits.is_pinned()
+        out = torch.empty(chunk.shape, dtype=chunk.dtype, device=device)
+        for row in range(B):
+            out[row].copy_(chunk[row], non_blocking=pinned)
+        return out.to(dtype=dtype)
 
     def free(self) -> None:
         """Drop the underlying buffer so a step's teacher cache can be GC'd
         before the next teacher forward."""
         self.cpu_logits = torch.empty(0)
+        self._freed = True
 
 
 _DTYPE_MAP = {
@@ -129,11 +151,13 @@ class TeacherWrapper:
     can fill them, which surfaces as a "size mismatch" load error.
     """
 
-    def __init__(self, cfg: TeacherConfig, world_size: int):
+    def __init__(self, cfg: TeacherConfig, world_size: int, *, vocab_parallel: bool = False):
         import deepspeed
         from transformers import AutoModelForCausalLM
 
         self.cfg = cfg
+        self.vocab_parallel = vocab_parallel
+        self.vocab_layout = None
         dtype = _resolve_dtype(cfg.dtype)
 
         model = AutoModelForCausalLM.from_pretrained(
@@ -164,8 +188,13 @@ class TeacherWrapper:
             "fp16": {"enabled": dtype is torch.float16},
             "zero_optimization": zero_opt,
         }
-        if use_autotp:
-            ds_config["tensor_parallel"] = {"autotp_size": cfg.autotp_size}
+        if use_autotp or vocab_parallel:
+            ds_config["tensor_parallel"] = {
+                "autotp_size": cfg.autotp_size,
+                # HF plans can infer vocabulary sharding for tied heads.
+                # Dense OPSD requires full logits from both producers.
+                "vocab_parallel_lm_head": vocab_parallel,
+            }
         self._callable, *_ = deepspeed.initialize(model=model, config=ds_config)
 
     @torch.no_grad()
@@ -175,4 +204,6 @@ class TeacherWrapper:
                          store_dtype: torch.dtype = torch.bfloat16) -> TeacherLogitCache:
         """Run teacher forward and stage logits onto the host."""
         outputs = self._callable(input_ids=input_ids, attention_mask=attention_mask)
-        return TeacherLogitCache.from_gpu_logits(outputs.logits, store_dtype=store_dtype)
+        if self.vocab_parallel and self.vocab_layout is None:
+            raise RuntimeError("Validate the teacher vocabulary layout before its first forward")
+        return TeacherLogitCache.from_gpu_logits(outputs.logits, store_dtype=store_dtype, layout=self.vocab_layout)

@@ -58,6 +58,27 @@ def test_rejects_gpu_resident_logits():
         TeacherLogitCache(cpu_logits=torch.zeros(1, 8, 4, device="cuda"))
 
 
+def test_device_chunks_match_host_slices():
+    if not torch.cuda.is_available():  #ignore-cuda
+        pytest.skip("no CUDA available to stage chunks on a GPU")
+    torch.manual_seed(0)
+    for batch in [1, 3]:
+        src = torch.randn(batch, 50, 24)
+        for store, override in [(torch.bfloat16, torch.float32), (torch.float32, torch.bfloat16)]:
+            pinned = TeacherLogitCache.from_gpu_logits(src, store_dtype=store)
+            pageable = TeacherLogitCache(cpu_logits=pinned.cpu_logits.clone())
+            assert pinned.cpu_logits.is_pinned() and not pageable.cpu_logits.is_pinned()
+            for cache in [pinned, pageable]:
+                # Includes the last partial chunk and a single position.
+                for start, end in [(0, 16), (16, 32), (48, 50), (5, 6)]:
+                    for dtype in [None, override]:
+                        expected = cache.cpu_logits[:, start:end].to(dtype=dtype or store).contiguous()
+                        got = cache.chunk_to_device(start, end, torch.device("cuda"), dtype=dtype)
+                        assert got.is_contiguous() and got.dtype == expected.dtype
+                        bits = torch.int16 if expected.dtype == torch.bfloat16 else torch.int32
+                        assert torch.equal(got.cpu().view(bits), expected.view(bits))
+
+
 def test_dtype_override_in_chunk_to_device():
     src = torch.randn(2, 8, 16, dtype=torch.float32)
     cache = TeacherLogitCache.from_gpu_logits(src, store_dtype=torch.float32)

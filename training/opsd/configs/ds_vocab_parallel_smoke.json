@@ -1,0 +1,21 @@
+{
+    "train_micro_batch_size_per_gpu": 1,
+    "gradient_accumulation_steps": 2,
+    "tensor_parallel": {
+        "autotp_size": 2,
+        "vocab_parallel_lm_head": true
+    },
+    "zero_optimization": {
+        "stage": 0
+    },
+    "bf16": {
+        "enabled": true
+    },
+    "gradient_clipping": 0.0,
+    "optimizer": {
+        "type": "SGD",
+        "params": {
+            "lr": 5e-06
+        }
+    }
+}
