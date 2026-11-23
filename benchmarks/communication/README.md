@@ -38,8 +38,8 @@ deepspeed run_all.py
 Like the individual benchmarks, `run_all.py` supports scanning arguments for the max message size, bw-unit, etc. Simply pass the desired arguments to `run_all.py` and they'll be propagated to each comm op.
 
 <pre>
-usage: ds_bench [-h] [--local_rank LOCAL_RANK] [--trials TRIALS] [--warmups WARMUPS] [--maxsize MAXSIZE] [--async-op] [--bw-unit {Gbps,GBps}] [--backend {nccl}] [--dist {deepspeed,torch}] [--scan] [--raw] [--all-reduce] [--all-gather] [--all-to-all]
-                [--pt2pt] [--broadcast] [--dtype DTYPE] [--mem-factor MEM_FACTOR] [--debug]
+usage: run_all.py [-h] [--local_rank LOCAL_RANK] [--trials TRIALS] [--warmups WARMUPS] [--maxsize MAXSIZE] [--async-op] [--bw-unit {Gbps,GBps}] [--backend {nccl}] [--dist {deepspeed,torch}] [--scan] [--raw] [--all-reduce] [--all-gather] [--all-to-all]
+                  [--pt2pt] [--broadcast] [--dtype DTYPE] [--mem-factor MEM_FACTOR] [--debug]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -65,13 +65,7 @@ optional arguments:
   --debug               Enables all_to_all debug prints
 </pre>
 
-Note that `ds_bench` is a pre-packaged wrapper around `run_all.py`. Users can pass the same arguments as well:
-
-<pre>
-<path to deepspeed>/bin/ds_bench --scan --trials=10
-</pre>
-
-Finally, users can choose specific communication operations to run in `run_all.py` or `ds_bench` by passing them as arguments (all operations are run by default). For example:
+Finally, users can choose specific communication operations to run in `run_all.py` by passing them as arguments (all operations are run by default). For example:
 
 <pre>
 deepspeed run_all.py --scan --all-reduce --all-to-all --broadcast
