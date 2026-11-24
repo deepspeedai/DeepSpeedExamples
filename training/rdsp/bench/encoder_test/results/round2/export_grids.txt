@@ -1,0 +1,3 @@
+exported rows: 3200 images, patches mean 3203, quantiles 0/10/25/50/75/90/100% [816, 1944, 1944, 3772, 3800, 3800, 3888]
+encoder test:  64 images, patches mean 3211, quantiles 0/10/25/50/75/90/100% [352, 1944, 1944, 3800, 3800, 3888, 3888]
+LONGEST 3888

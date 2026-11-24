@@ -1,0 +1,29 @@
+===== A8: --model Qwen/Qwen3-VL-8B-Instruct --stages 8 --check --steps 3 --rows 2 --microbatches 4 --zero 1 --stage 0:offload=1,recompute=1 --stage 1:offload=1 --stage 2:offload=1 --stage 3:offload=1 --stage 4:offload=1 --stage 5:offload=1 --stage 6:offload=1 --stage 7:offload=1
+stages (blocks): [(0, 3), (3, 9), (9, 14), (14, 19), (19, 24), (24, 29), (29, 34), (34, 36)]
+check: pipeline 1.47424  unsplit 1.47424  rel diff 2.02e-08
+step 0 loss 1.4742 15024 ms 136 tok/s
+step 1 loss 0.2807 11436 ms 179 tok/s
+step 2 loss 0.1181 10739 ms 191 tok/s
+exit 0  wall 297s
+peak GPU MiB: {0: 18384, 1: 11458, 2: 10546, 3: 10546, 4: 10546, 5: 10500, 6: 9420, 7: 19316}
+===== B8: --model Qwen/Qwen3-VL-8B-Instruct --stages 8 --steps 6 --zero 1 --stage 0:offload=1,recompute=1 --stage 1:offload=1 --stage 2:offload=1 --stage 3:offload=1 --stage 4:offload=1 --stage 5:offload=1 --stage 6:offload=1 --stage 7:offload=1
+stages (blocks): [(0, 3), (3, 9), (9, 14), (14, 19), (19, 24), (24, 29), (29, 34), (34, 36)]
+step 0 loss 1.6703 22470 ms 365 tok/s
+step 1 loss 0.2584 12277 ms 667 tok/s
+step 2 loss 0.1009 12854 ms 637 tok/s
+step 3 loss 0.0307 12436 ms 659 tok/s
+step 4 loss 0.0004 13038 ms 628 tok/s
+step 5 loss 0.0007 13375 ms 612 tok/s
+exit 0  wall 137s
+peak GPU MiB: {0: 20842, 1: 16226, 2: 12735, 3: 11586, 4: 10435, 5: 9277, 6: 8530, 7: 18223}
+===== C8: --model Qwen/Qwen3-VL-8B-Instruct --stages 7 --steps 6 --zero 1 --stage 0:gpus=2,zero=2,offload=1,recompute=1 --stage 1:offload=1 --stage 2:offload=1 --stage 3:offload=1 --stage 4:offload=1 --stage 5:offload=1 --stage 6:offload=1
+stages (blocks): [(0, 9), (9, 14), (14, 19), (19, 24), (24, 29), (29, 34), (34, 36)]
+step 0 loss 1.6670 44058 ms 186 tok/s
+step 1 loss 0.2535 33753 ms 243 tok/s
+step 2 loss 0.1031 35382 ms 232 tok/s
+step 3 loss 0.0318 32372 ms 253 tok/s
+step 4 loss 0.0007 34293 ms 239 tok/s
+step 5 loss 0.0014 34324 ms 239 tok/s
+exit 0  wall 263s
+peak GPU MiB: {0: 22270, 1: 14552, 2: 12767, 3: 11586, 4: 10435, 5: 9277, 6: 8530, 7: 18222}
+ALL_RUNS_DONE

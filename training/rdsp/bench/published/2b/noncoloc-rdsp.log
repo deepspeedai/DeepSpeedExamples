@@ -1,0 +1,78 @@
+Fetching 10 files:   0%|          | 0/10 [00:00<?, ?it/s]Fetching 10 files: 100%|██████████| 10/10 [00:00<00:00, 2521.52it/s]
+2026-10-05 01:50:22,146	WARNING authentication_token_setup.py:85 -- Token authentication is enabled for this Ray cluster. Set RAY_AUTH_MODE=disabled to opt out. For more information, see https://docs.ray.io/en/latest/ray-security/token-auth.html
+2026-10-05 01:50:25,004	INFO worker.py:2033 -- Started a local Ray instance.
+[36m(StageWorkerActor pid=319004)[0m [rank0]:[W1005 01:50:35.920647466 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[36m(StageWorkerActor pid=319004)[0m begin bf16_optimizer
+[36m(StageWorkerActor pid=319004)[0m MA 0.62 GB         Max_MA 0.62 GB         CA 0.63 GB         Max_CA 1 GB 
+[36m(StageWorkerActor pid=319004)[0m CPU Virtual Memory:  used = 26.54 GB, percent = 3.7%
+[36m(StageWorkerActor pid=319004)[0m before initializing group 0
+[36m(StageWorkerActor pid=319004)[0m MA 0.62 GB         Max_MA 0.62 GB         CA 0.63 GB         Max_CA 1 GB 
+[36m(StageWorkerActor pid=319004)[0m CPU Virtual Memory:  used = 26.54 GB, percent = 3.7%
+[36m(StageWorkerActor pid=319004)[0m after initializing group 0
+[36m(StageWorkerActor pid=319004)[0m MA 3.09 GB         Max_MA 3.09 GB         CA 4.34 GB         Max_CA 4 GB 
+[36m(StageWorkerActor pid=319004)[0m CPU Virtual Memory:  used = 26.58 GB, percent = 3.7%
+[36m(StageWorkerActor pid=319004)[0m end bf16_ optimizer
+[36m(StageWorkerActor pid=319004)[0m MA 3.09 GB         Max_MA 3.09 GB         CA 4.34 GB         Max_CA 4 GB 
+[36m(StageWorkerActor pid=319004)[0m CPU Virtual Memory:  used = 26.58 GB, percent = 3.7%
+stages (blocks): [(0, 0), (0, 24)]
+step 0 loss 0.9286 18923 ms 3317 real tok/s 6927 padded tok/s real 62758 supervised 12716
+[36m(StageWorkerActor pid=319003)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+[36m(StageWorkerActor pid=319003)[0m   return func(*args, **kwargs)
+[36m(StageWorkerActor pid=319007)[0m [rank0]:[W1005 01:50:35.951786874 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+step 1 loss 0.5092 8489 ms 7619 real tok/s 15440 padded tok/s real 64678 supervised 12306
+step 2 loss 0.2855 8791 ms 7642 real tok/s 14910 padded tok/s real 67178 supervised 12077
+step 3 loss 0.1720 8250 ms 7968 real tok/s 15887 padded tok/s real 65735 supervised 13341
+step 4 loss 0.1772 8095 ms 8154 real tok/s 16192 padded tok/s real 66005 supervised 14074
+step 5 loss 0.1309 8835 ms 7687 real tok/s 14836 padded tok/s real 67916 supervised 13226
+step 6 loss 0.1152 8051 ms 8081 real tok/s 16281 padded tok/s real 65054 supervised 13273
+step 7 loss 0.1100 8267 ms 7847 real tok/s 15854 padded tok/s real 64875 supervised 11475
+step 8 loss 0.0907 7983 ms 8113 real tok/s 16419 padded tok/s real 64765 supervised 13068
+step 9 loss 0.0668 8411 ms 7894 real tok/s 15583 padded tok/s real 66397 supervised 12054
+step 10 loss 0.0889 8025 ms 7969 real tok/s 16333 padded tok/s real 63955 supervised 12301
+step 11 loss 0.0924 7496 ms 8157 real tok/s 17485 padded tok/s real 61145 supervised 14656
+step 12 loss 0.0651 8382 ms 7834 real tok/s 15638 padded tok/s real 65662 supervised 13386
+step 13 loss 0.0505 7722 ms 7908 real tok/s 16974 padded tok/s real 61063 supervised 11616
+step 14 loss 0.0493 8292 ms 7937 real tok/s 15808 padded tok/s real 65810 supervised 12363
+step 15 loss 0.0507 8254 ms 7991 real tok/s 15880 padded tok/s real 65959 supervised 12782
+step 16 loss 0.0482 8323 ms 7927 real tok/s 15749 padded tok/s real 65979 supervised 13546
+step 17 loss 0.0424 8764 ms 7842 real tok/s 14955 padded tok/s real 68728 supervised 13276
+step 18 loss 0.0341 8168 ms 7756 real tok/s 16047 padded tok/s real 63353 supervised 13362
+step 19 loss 0.0404 8621 ms 7746 real tok/s 15204 padded tok/s real 66778 supervised 12869
+step 20 loss 0.0429 9081 ms 7313 real tok/s 14433 padded tok/s real 66409 supervised 11187
+step 21 loss 0.0386 7893 ms 8046 real tok/s 16605 padded tok/s real 63513 supervised 13209
+step 22 loss 0.0318 8239 ms 7838 real tok/s 15910 padded tok/s real 64572 supervised 12025
+step 23 loss 0.0426 8202 ms 7903 real tok/s 15980 padded tok/s real 64820 supervised 13737
+step 24 loss 0.0517 7980 ms 7767 real tok/s 16426 padded tok/s real 61975 supervised 13653
+step 25 loss 0.0208 7960 ms 7884 real tok/s 16465 padded tok/s real 62758 supervised 12716
+step 26 loss 0.0226 8245 ms 7845 real tok/s 15898 padded tok/s real 64678 supervised 12306
+step 27 loss 0.0316 8692 ms 7729 real tok/s 15080 padded tok/s real 67178 supervised 12077
+step 28 loss 0.0227 8369 ms 7854 real tok/s 15661 padded tok/s real 65735 supervised 13341
+step 29 loss 0.0272 8316 ms 7937 real tok/s 15761 padded tok/s real 66005 supervised 14074
+step 30 loss 0.0178 9254 ms 7339 real tok/s 14164 padded tok/s real 67916 supervised 13226
+step 31 loss 0.0187 8269 ms 7867 real tok/s 15850 padded tok/s real 65054 supervised 13273
+step 32 loss 0.0255 8514 ms 7619 real tok/s 15394 padded tok/s real 64875 supervised 11475
+step 33 loss 0.0270 8211 ms 7888 real tok/s 15964 padded tok/s real 64765 supervised 13068
+step 34 loss 0.0147 8615 ms 7707 real tok/s 15214 padded tok/s real 66397 supervised 12054
+step 35 loss 0.0211 8207 ms 7792 real tok/s 15970 padded tok/s real 63955 supervised 12301
+step 36 loss 0.0290 7634 ms 8009 real tok/s 17169 padded tok/s real 61145 supervised 14656
+step 37 loss 0.0163 8563 ms 7668 real tok/s 15308 padded tok/s real 65662 supervised 13386
+step 38 loss 0.0128 7872 ms 7757 real tok/s 16650 padded tok/s real 61063 supervised 11616
+step 39 loss 0.0136 8473 ms 7767 real tok/s 15469 padded tok/s real 65810 supervised 12363
+step 40 loss 0.0154 8414 ms 7839 real tok/s 15577 padded tok/s real 65959 supervised 12782
+step 41 loss 0.0161 8445 ms 7813 real tok/s 15521 padded tok/s real 65979 supervised 13546
+step 42 loss 0.0137 8935 ms 7692 real tok/s 14670 padded tok/s real 68728 supervised 13276
+step 43 loss 0.0100 8298 ms 7635 real tok/s 15796 padded tok/s real 63353 supervised 13362
+step 44 loss 0.0140 8639 ms 7730 real tok/s 15172 padded tok/s real 66778 supervised 12869
+step 45 loss 0.0141 8819 ms 7530 real tok/s 14862 padded tok/s real 66409 supervised 11187
+step 46 loss 0.0156 8092 ms 7849 real tok/s 16197 padded tok/s real 63513 supervised 13209
+step 47 loss 0.0080 8375 ms 7710 real tok/s 15650 padded tok/s real 64572 supervised 12025
+step 48 loss 0.0142 8324 ms 7787 real tok/s 15746 padded tok/s real 64820 supervised 13737
+step 49 loss 0.0211 7983 ms 7764 real tok/s 16420 padded tok/s real 61975 supervised 13653
+[36m(StageWorkerActor pid=319043)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.[32m [repeated 3x across cluster][0m
+[36m(StageWorkerActor pid=319043)[0m   return func(*args, **kwargs)[32m [repeated 3x across cluster][0m
+[36m(StageWorkerActor pid=319007)[0m begin bf16_optimizer
+[36m(StageWorkerActor pid=319007)[0m MA 10.32 GB         Max_MA 10.32 GB         CA 13.16 GB         Max_CA 13 GB [32m [repeated 4x across cluster][0m
+[36m(StageWorkerActor pid=319007)[0m CPU Virtual Memory:  used = 28.39 GB, percent = 3.9%[32m [repeated 4x across cluster][0m
+[36m(StageWorkerActor pid=319007)[0m before initializing group 0
+[36m(StageWorkerActor pid=319007)[0m after initializing group 0
+[36m(StageWorkerActor pid=319007)[0m end bf16_ optimizer

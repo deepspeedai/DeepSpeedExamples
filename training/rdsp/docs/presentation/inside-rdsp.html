@@ -1,0 +1,817 @@
+<title>Inside rdsp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{
+  --bg:#F1F3F2; --surface:#FFFFFF; --sunk:#E6EAE8; --ink:#121C24; --body:#34424D; --muted:#5B6974; --line:#D0D8D5;
+  --drv:#3F4B57; --ray:#B45F12; --ds:#2F55C4; --fwd:#0B7A66; --bwd:#B3265F;
+  --drv-soft:#E3E7EA; --ray-soft:#F6E6D5; --ds-soft:#DFE6F8; --fwd-soft:#D5EEE8; --bwd-soft:#F6DDE7;
+  --stage:#F6F8F7;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --cond:'IBM Plex Sans Condensed','IBM Plex Sans','Arial Narrow',Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1418; --surface:#151E24; --sunk:#1C272E; --ink:#E6EDF0; --body:#BFCBD2; --muted:#8E9DA7; --line:#2A3942;
+    --drv:#A7B4BF; --ray:#E39A4F; --ds:#7C9BF2; --fwd:#3CC3A6; --bwd:#F07AA8;
+    --drv-soft:#243039; --ray-soft:#3A2A18; --ds-soft:#1D2848; --fwd-soft:#15362F; --bwd-soft:#3D1B2A;
+    --stage:#121A20;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1418; --surface:#151E24; --sunk:#1C272E; --ink:#E6EDF0; --body:#BFCBD2; --muted:#8E9DA7; --line:#2A3942;
+  --drv:#A7B4BF; --ray:#E39A4F; --ds:#7C9BF2; --fwd:#3CC3A6; --bwd:#F07AA8;
+  --drv-soft:#243039; --ray-soft:#3A2A18; --ds-soft:#1D2848; --fwd-soft:#15362F; --bwd-soft:#3D1B2A;
+  --stage:#121A20;
+}
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--body); font-family:var(--sans); font-size:16px; line-height:1.6; margin:0}
+.wrap{max-width:1040px; margin:0 auto; padding-inline:20px; padding-block:40px 80px}
+h1,h2,h3{font-family:var(--cond); color:var(--ink); text-wrap:balance; margin:0}
+h1{font-size:clamp(34px,6vw,54px); line-height:1.05; letter-spacing:-.01em}
+h2{font-size:30px; line-height:1.15; margin-top:8px}
+h3{font-size:20px; line-height:1.25}
+p{margin:0; max-width:68ch}
+code,.mono{font-family:var(--mono); font-size:.86em}
+a{color:var(--fwd)}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.lede{font-size:19px; color:var(--body); margin-top:14px; max-width:62ch}
+section{margin-top:72px; display:flex; flex-direction:column; gap:18px}
+.stack{display:flex; flex-direction:column; gap:12px}
+
+/* legend chips */
+.roles{display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:22px}
+.chip{display:inline-flex; align-items:center; gap:8px; padding:5px 11px 5px 9px; border-radius:999px; font-size:13.5px; font-weight:500; color:var(--ink); background:var(--surface); border:1px solid var(--line)}
+.dot{width:10px; height:10px; border-radius:3px; flex:none}
+.d-drv{background:var(--drv)} .d-ray{background:var(--ray)} .d-ds{background:var(--ds)} .d-fwd{background:var(--fwd)} .d-bwd{background:var(--bwd)}
+
+/* cast */
+.cast{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+.who{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; gap:8px; border-top:4px solid var(--c)}
+.who h3{display:flex; align-items:center; gap:8px}
+.who ul{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px; font-size:14.5px}
+.who .files{font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:auto; padding-top:6px}
+.not{font-size:13.5px; color:var(--muted)}
+
+/* tables */
+.tscroll{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:720px}
+th{font-family:var(--cond); font-weight:600; color:var(--ink); text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--sunk); font-size:14px}
+td{padding:10px 14px; border-top:1px solid var(--line); vertical-align:top}
+tr:first-child td{border-top:none}
+td .mono{color:var(--ink)}
+.tag{display:inline-flex; align-items:center; gap:6px; font-weight:600; color:var(--ink); white-space:nowrap}
+
+/* setup steps */
+.steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0; counter-reset:s}
+.steps>li{display:grid; grid-template-columns:44px 1fr; gap:14px; padding:16px 0; border-top:1px solid var(--line)}
+.steps>li:first-child{border-top:none}
+.num{font-family:var(--cond); font-weight:600; font-size:22px; color:var(--muted); line-height:1.2}
+.steps h3{margin-bottom:4px}
+.lanes{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px}
+.lane{font-size:12px; font-weight:600; padding:2px 8px; border-radius:6px}
+.l-drv{background:var(--drv-soft); color:var(--drv)} .l-ray{background:var(--ray-soft); color:var(--ray)} .l-ds{background:var(--ds-soft); color:var(--ds)} .l-rd{background:var(--fwd-soft); color:var(--fwd)} .l-bwd{background:var(--bwd-soft); color:var(--bwd)}
+.steps ul{margin:6px 0 0; padding-left:18px; font-size:15px; display:flex; flex-direction:column; gap:4px}
+.where{font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:8px}
+.note{background:var(--ray-soft); border-radius:8px; padding:10px 14px; font-size:14.5px; color:var(--ink); margin-top:10px; max-width:72ch}
+.note b{color:var(--ray)}
+
+/* simulator */
+.sim{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:14px}
+.controls{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+button{font-family:var(--sans); font-size:14px; font-weight:500; color:var(--ink); background:var(--sunk); border:1px solid var(--line); border-radius:8px; padding:7px 13px; cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--fwd); outline-offset:2px}
+button.primary{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+input[type=range]{flex:1; min-width:160px; accent-color:var(--fwd)}
+.counter{font-family:var(--mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; min-width:70px; text-align:right}
+.svgbox{overflow-x:auto}
+.svgbox svg{display:block}
+.narr{display:grid; grid-template-columns:1fr; gap:6px; background:var(--stage); border:1px solid var(--line); border-radius:10px; padding:14px 16px; min-height:170px}
+.narr .who-line{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.narr h3{font-size:19px}
+.narr p{font-size:15.5px; max-width:none}
+.narr .where{margin-top:4px}
+.gpu rect{fill:var(--surface); stroke:var(--line); stroke-width:1.5}
+.gpu.on rect{stroke:var(--ink); stroke-width:2.5}
+.gpu text{font-family:var(--mono); font-size:13px; fill:var(--ink); font-weight:500}
+.stagebox{fill:var(--stage); stroke:var(--line); stroke-width:1}
+.slabel{font-family:var(--cond); font-size:14px; font-weight:600; fill:var(--ink)}
+.ssub{font-family:var(--sans); font-size:11.5px; fill:var(--muted)}
+.wire{fill:none; stroke-width:2; opacity:.16; transition:opacity .25s}
+.wire.on{opacity:1; stroke-width:3}
+.w-ray{stroke:var(--ray); stroke-dasharray:5 5}
+.w-fwd{stroke:var(--fwd)} .w-bwd{stroke:var(--bwd)} .w-ds{stroke:var(--ds)}
+.ah-fwd{fill:var(--fwd)} .ah-bwd{fill:var(--bwd)} .ah-ray{fill:var(--ray)} .ah-ds{fill:var(--ds)}
+.drvbox{fill:var(--drv-soft); stroke:var(--drv); stroke-width:1.5}
+.drvbox.on{stroke-width:3}
+.drvtext{font-family:var(--cond); font-size:14px; font-weight:600; fill:var(--drv)}
+.wlabel{font-family:var(--sans); font-size:11px; font-weight:600}
+.axis{font-family:var(--mono); font-size:11px; fill:var(--muted)}
+.lanelabel{font-family:var(--mono); font-size:12px; fill:var(--ink)}
+.blk{stroke:var(--surface); stroke-width:1}
+.blk.cur{stroke:var(--ink); stroke-width:2.5}
+.blabel{font-family:var(--mono); font-size:10.5px; fill:var(--ink); pointer-events:none}
+.legend{display:flex; flex-wrap:wrap; gap:14px; font-size:13px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.sw{width:18px; height:0; border-top:3px solid; display:inline-block}
+.oplists{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; font-family:var(--mono); font-size:13px}
+.oplists div{background:var(--stage); border:1px solid var(--line); border-radius:8px; padding:8px 10px}
+.oplists b{font-family:var(--cond); font-size:14px; color:var(--ink); display:block}
+
+/* boundary explorer */
+.bx{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px; display:flex; flex-direction:column; gap:14px}
+.bx-controls{display:flex; flex-wrap:wrap; gap:10px 22px; font-size:14px}
+.bx-controls fieldset{border:none; margin:0; padding:0; display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.bx-controls legend{font-family:var(--cond); font-weight:600; color:var(--ink); float:left; margin-right:6px; font-size:15px}
+select{font-family:var(--sans); font-size:14px; color:var(--ink); background:var(--sunk); border:1px solid var(--line); border-radius:6px; padding:5px 8px}
+.bx-dir{display:flex; gap:6px}
+.bx-dir button[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+.bx-out{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; font-size:14.5px}
+.stat{background:var(--stage); border:1px solid var(--line); border-radius:8px; padding:10px 12px}
+.stat b{font-family:var(--cond); font-size:22px; color:var(--ink); display:block; font-variant-numeric:tabular-nums}
+.bx-text{font-size:15px; display:flex; flex-direction:column; gap:4px}
+.bx-text li{max-width:80ch}
+
+/* failure */
+.fsm{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px}
+.fcase{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px; display:flex; flex-direction:column; gap:8px}
+.fcase .when{font-family:var(--mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase}
+.fcase ol{margin:0; padding-left:18px; font-size:14.5px; display:flex; flex-direction:column; gap:4px}
+.k-ok{color:var(--fwd)} .k-warn{color:var(--ray)} .k-bad{color:var(--bwd)}
+
+footer{margin-top:80px; font-size:13px; color:var(--muted); border-top:1px solid var(--line); padding-top:16px}
+@media (max-width:640px){ .steps>li{grid-template-columns:30px 1fr; gap:10px} h2{font-size:25px} }
+@media (prefers-reduced-motion:reduce){ .wire{transition:none} }
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">rdsp · ray_deepspeed_pipeline · traced from the source</p>
+  <h1>Inside rdsp: who does what, and where every tensor goes</h1>
+  <p class="lede">Everything below is read from the code in <code>src/ray_deepspeed_pipeline/</code>, the design that is running today (stage-local dispatch). Five parties are involved, and the colours stay the same all the way down the page.</p>
+  <div class="roles" aria-label="Colour key">
+    <span class="chip"><i class="dot d-drv"></i>Your script / the driver</span>
+    <span class="chip"><i class="dot d-ray"></i>Ray: starts workers, carries commands</span>
+    <span class="chip"><i class="dot d-ds"></i>DeepSpeed: the work inside one stage</span>
+    <span class="chip"><i class="dot d-fwd"></i>rdsp forward line: activations</span>
+    <span class="chip"><i class="dot d-bwd"></i>rdsp backward line: gradients</span>
+  </div>
+</header>
+
+<!-- ============================================================ CAST -->
+<section id="cast">
+  <p class="eyebrow">The cast</p>
+  <h2>Four pieces of software, one job each</h2>
+  <div class="cast">
+    <div class="who" style="--c:var(--drv)">
+      <h3><i class="dot d-drv"></i>The driver (your process)</h3>
+      <ul>
+        <li>Plans the split and the schedule</li>
+        <li>Pulls the data, hands it out</li>
+        <li>Starts each step, then waits</li>
+        <li>Decides when every stage may update its weights</li>
+      </ul>
+      <p class="not">Never holds weights or activations: only small results (losses, ok/failed).</p>
+      <p class="files">api.py · engine.py · compiler.py · schedule.py · coordinator.py</p>
+    </div>
+    <div class="who" style="--c:var(--ray)">
+      <h3><i class="dot d-ray"></i>Ray</h3>
+      <ul>
+        <li>Finds free GPUs; keeps each stage's GPUs on one machine</li>
+        <li>Starts one worker process per GPU</li>
+        <li>Delivers the driver's calls and their small replies</li>
+        <li>Kills and restarts workers on recovery</li>
+      </ul>
+      <p class="not">Does not move activations or gradients between stages.</p>
+      <p class="files">used in stage_group.py (placement groups, actors, ray.get)</p>
+    </div>
+    <div class="who" style="--c:var(--ds)">
+      <h3><i class="dot d-ds"></i>DeepSpeed (one engine per GPU)</h3>
+      <ul>
+        <li>Runs the stage's layers forward and backward</li>
+        <li>Splits work across the stage's own GPUs (data, tensor, sequence, expert parallel)</li>
+        <li>Averages gradients across those GPUs</li>
+        <li>Runs the optimizer; saves and loads its own checkpoint</li>
+      </ul>
+      <p class="not">Knows nothing about other stages. It is used unmodified.</p>
+      <p class="files">deepspeed_adapter.py wraps deepspeed.initialize()</p>
+    </div>
+    <div class="who" style="--c:var(--fwd)">
+      <h3><i class="dot d-fwd"></i>rdsp's stage code (in every worker)</h3>
+      <ul>
+        <li>Runs its stage's op list in 1F1B order</li>
+        <li>Opens GPU-to-GPU lines to every other stage (NCCL)</li>
+        <li>Works out which GPU needs which rows, sends and stitches them</li>
+        <li>Cleans up after failed steps</li>
+      </ul>
+      <p class="not">The layer that makes differently-shaped stages fit together.</p>
+      <p class="files">stage_worker.py · stage_group.py · p2p.py · boundary.py</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ WIRES -->
+<section id="wires">
+  <p class="eyebrow">The wiring</p>
+  <h2>Three kinds of connection, and what travels on each</h2>
+  <p>The example used everywhere on this page: a 3-stage pipeline where stage 1 has two GPUs sharing its microbatches (data parallel). Each microbatch has 4 rows (4 sequences of text).</p>
+  <div class="sim" style="padding:14px">
+    <div class="svgbox" id="wiresSvg"></div>
+    <div class="legend">
+      <span><i class="sw" style="border-color:var(--ray); border-top-style:dashed"></i>Ray: commands and small replies</span>
+      <span><i class="sw" style="border-color:var(--fwd)"></i>rdsp forward line</span>
+      <span><i class="sw" style="border-color:var(--bwd)"></i>rdsp backward line</span>
+      <span><i class="sw" style="border-color:var(--ds)"></i>DeepSpeed's line inside a stage</span>
+    </div>
+  </div>
+  <div class="tscroll">
+    <table>
+      <tr><th>Connection</th><th>Set up by</th><th>Who is on it</th><th>What travels on it</th><th>When</th></tr>
+      <tr>
+        <td><span class="tag"><i class="dot d-ray"></i>Ray calls</span></td>
+        <td>Ray</td>
+        <td>The driver and every worker</td>
+        <td>The step command with each GPU's op list; stage 0's input rows and the last stage's labels; replies: losses and ready flags. At setup, the stage's copy of the model.</td>
+        <td>Start of a step, the update barrier, save/load</td>
+      </tr>
+      <tr>
+        <td><span class="tag"><i class="dot d-ds"></i>Stage world</span></td>
+        <td>rdsp calls <code>init_process_group</code>; DeepSpeed uses it</td>
+        <td>The GPUs of <b>one</b> stage only</td>
+        <td>DeepSpeed's own traffic: averaging gradients across the stage's GPUs, tensor-parallel sums, sequence-parallel exchanges, checkpoint barriers</td>
+        <td>Inside forward, backward and the optimizer step</td>
+      </tr>
+      <tr>
+        <td><span class="tag"><i class="dot d-fwd"></i>Forward line</span></td>
+        <td>rdsp, <code>p2p.py</code></td>
+        <td>Every GPU of every stage</td>
+        <td>Activations, downstream. The first message to each receiver per step is a 10-number shape header.</td>
+        <td>After each forward</td>
+      </tr>
+      <tr>
+        <td><span class="tag"><i class="dot d-bwd"></i>Backward line</span></td>
+        <td>rdsp, <code>p2p.py</code></td>
+        <td>Every GPU of every stage</td>
+        <td>Gradients of each stage's input, upstream</td>
+        <td>After each backward</td>
+      </tr>
+      <tr>
+        <td><span class="tag">Address book</span></td>
+        <td>rdsp: a PyTorch <code>TCPStore</code> hosted inside stage 0's first worker</td>
+        <td>Every GPU</td>
+        <td>Only the handshake needed to open the forward and backward lines</td>
+        <td>Setup, and after a failed step (fresh lines)</td>
+      </tr>
+    </table>
+  </div>
+  <p>Why two rdsp lines instead of one: NCCL delivers messages on one line strictly in order. If activations and gradients shared a line, a GPU waiting for a gradient could be stuck behind its own outgoing activation, and so could its neighbour: a deadlock. One direction per line rules that out.</p>
+</section>
+
+<!-- ============================================================ SETUP -->
+<section id="setup">
+  <p class="eyebrow">Phase 1 · once, at start-up</p>
+  <h2>What <code>rdsp.initialize()</code> does, in order</h2>
+  <ol class="steps">
+    <li><span class="num">1</span><div>
+      <h3>Check the inputs</h3>
+      <div class="lanes"><span class="lane l-drv">driver</span></div>
+      <ul>
+        <li>No optimizer or scheduler objects: those are built inside each stage from the DeepSpeed config.</li>
+        <li>The DeepSpeed config must stay ordinary: no pipeline, Ray or placement keys in it.</li>
+        <li>The loss function must be serializable: it is shipped to the last stage only.</li>
+      </ul>
+      <p class="where">api.py · initialize(), _validate_config(), _validate_loss_fn()</p>
+    </div></li>
+    <li><span class="num">2</span><div>
+      <h3>Make the plan</h3>
+      <div class="lanes"><span class="lane l-drv">driver</span></div>
+      <ul>
+        <li>Microbatches per step = DeepSpeed's <code>gradient_accumulation_steps</code> (or <code>PipelineConfig.microbatches</code>; they must agree).</li>
+        <li>Find the layer stack (the longest list of identical blocks) and cut it: equal layer counts, or your explicit cuts. Embedding goes to stage 0; final norm and head to the last stage. Weights shared across stages are rejected.</li>
+        <li>For each stage: its GPU grid (GPUs = data × sequence × tensor parallel) and its own DeepSpeed config: rows per GPU, clipping forced off, and the tensor/sequence/expert settings.</li>
+        <li>Everything goes into a frozen <code>ExecutionPlan</code> with a hash (checkpoints record it).</li>
+      </ul>
+      <p class="where">compiler.py · lower() → partition.py · partition_parameters() → plan.py · ExecutionPlan</p>
+    </div></li>
+    <li><span class="num">3</span><div>
+      <h3>Reserve GPUs and start one worker per GPU</h3>
+      <div class="lanes"><span class="lane l-drv">driver</span><span class="lane l-ray">Ray</span></div>
+      <ul>
+        <li>Requires a running Ray (<code>ray.init()</code>); rdsp never starts one.</li>
+        <li>Per stage: build the stage's module (deep copies of its layers), then a <b>placement group</b> that puts all of the stage's GPUs on one machine (<code>STRICT_PACK</code>).</li>
+        <li>Upload the module once (<code>ray.put</code>), then start one <code>StageWorkerActor</code> per GPU. Ray gives each worker exactly one GPU.</li>
+      </ul>
+      <p class="where">stage_group.py · create_stage_clients()</p>
+      <p class="note"><b>Which stage type:</b> rdsp inspects the model (<code>partition.select_stage_builder</code>). Hugging Face Llama-style causal LMs such as Qwen3 get <code>CausalLMStage</code>, which recomputes the rotary position embeddings on every stage; plain sequential models get the generic chain. A model with rotary embeddings but not the rest of that layout is rejected with a clear error. <i>Fixed 2026-09-25: before this, <code>initialize()</code> always used the generic chain.</i></p>
+    </div></li>
+    <li><span class="num">4</span><div>
+      <h3>Each stage forms its own world, and DeepSpeed starts</h3>
+      <div class="lanes"><span class="lane l-ray">Ray</span><span class="lane l-ds">DeepSpeed</span><span class="lane l-rd">rdsp worker</span></div>
+      <ul>
+        <li>The stage's first worker reports an address (its machine's IP and a free port). Every worker of that stage joins <code>torch.distributed</code> there: the <b>stage world</b>, containing only this stage's GPUs.</li>
+        <li>Each worker calls <code>deepspeed.initialize()</code> on its stage module, with <code>gradient_accumulation_steps = 1</code>. rdsp counts microbatches itself, so the optimizer can only run when the driver says so.</li>
+        <li>Extras by stage type: tensor-parallel rules from the Hugging Face plan, the Ulysses sequence-parallel setup, expert-parallel settings, and two gradient fixes (Qwen3's head norms; folded experts).</li>
+        <li>Each worker reports where DeepSpeed placed it; the driver checks that against the plan (<code>check_mesh</code>).</li>
+      </ul>
+      <p class="where">StageWorkerActor.bootstrap() → deepspeed_adapter.py · DeepSpeedStageAdapter / _deepspeed_engine_factory()</p>
+    </div></li>
+    <li><span class="num">5</span><div>
+      <h3>Open the forward and backward lines between stages</h3>
+      <div class="lanes"><span class="lane l-drv">driver</span><span class="lane l-rd">rdsp worker</span></div>
+      <ul>
+        <li>The driver asks stage 0's first worker for an address, which hosts the address book (<code>TCPStore</code>). The driver passes that address to every worker.</li>
+        <li>Every GPU gets a pipeline-wide number (stage offset + its rank) and joins two NCCL groups spanning <b>all</b> GPUs: <code>fwd</code> and <code>bwd</code>.</li>
+        <li>Each GPU sends a one-number test message to every neighbour it will ever talk to, so no connection is opened in the middle of a step.</li>
+      </ul>
+      <p class="where">stage_group.py · connect_p2p() → stage_worker.py · StageWorkerActor.init_p2p() → p2p.py · PipelineP2P, _warm_up_links()</p>
+    </div></li>
+    <li><span class="num">6</span><div>
+      <h3>Hand back the engine</h3>
+      <div class="lanes"><span class="lane l-drv">driver</span></div>
+      <ul><li>A <code>PipelineCoordinator</code> wraps the stage clients; you get a <code>RayPipelineEngine</code>. Its only training call is <code>train_batch()</code>. Calling <code>forward</code>, <code>backward</code> or <code>step</code> on it raises a clear error.</li></ul>
+      <p class="where">api.py · _default_coordinator_factory() → engine.py · RayPipelineEngine</p>
+    </div></li>
+  </ol>
+</section>
+
+<!-- ============================================================ STEP -->
+<section id="step">
+  <p class="eyebrow">Phase 2 · every call to train_batch()</p>
+  <h2>One training step, event by event</h2>
+  <p>Step through it, or press play. The top shows which connection is in use; the timeline below shows every GPU's work. Each stage runs its own list in one-forward-one-backward (1F1B) order: F2 means "forward of microbatch 2", B2 its backward. Timings are illustrative (a backward counted as twice a forward); the order and every message are exact.</p>
+  <div class="oplists" id="opLists" aria-label="Each stage's op list"></div>
+  <div class="sim">
+    <div class="controls">
+      <button type="button" id="bPrev" aria-label="Previous event">◀ Back</button>
+      <button type="button" id="bPlay" class="primary">Play</button>
+      <button type="button" id="bNext" aria-label="Next event">Next ▶</button>
+      <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Event">
+      <span class="counter" id="counter">1 / 1</span>
+    </div>
+    <div class="svgbox" id="topoSvg"></div>
+    <div class="narr" aria-live="polite">
+      <div class="who-line" id="nWho"></div>
+      <h3 id="nTitle"></h3>
+      <p id="nBody"></p>
+      <p class="where" id="nCode"></p>
+    </div>
+    <div class="svgbox" id="ganttSvg"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--fwd-soft); outline:1px solid var(--fwd)"></i>forward</span>
+      <span><i class="dot" style="background:var(--bwd-soft); outline:1px solid var(--bwd)"></i>backward</span>
+      <span><i class="dot" style="background:var(--drv-soft); outline:1px solid var(--drv)"></i>driver work</span>
+      <span><i class="dot" style="background:var(--ds-soft); outline:1px solid var(--ds)"></i>optimizer update (DeepSpeed)</span>
+      <span><i class="dot" style="background:var(--sunk); outline:1px solid var(--muted)"></i>start-of-step / ready check</span>
+    </div>
+  </div>
+  <p>Two things to notice while stepping. First, the driver is idle for the whole middle of the step: Ray carried one call to each GPU at the start, and carries nothing again until the replies. Second, stage 1's two GPUs never talk to each other until the last backward. That is when DeepSpeed averages their gradients.</p>
+</section>
+
+<!-- ============================================================ BOUNDARY -->
+<section id="boundary">
+  <p class="eyebrow">The part Megatron can't do</p>
+  <h2>How rows are routed between differently shaped stages</h2>
+  <p>Pick a shape for two neighbouring stages. rdsp's rule (<code>boundary.py</code>): each GPU owns a block of rows. A receiving GPU takes messages from every sending GPU whose rows overlap its own, and stitches the part it needs. GPUs in a tensor-parallel pair hold identical results, so only one of them sends. The example microbatch has 8 rows.</p>
+  <div class="bx">
+    <div class="bx-controls">
+      <fieldset><legend>Stage A</legend>
+        <label for="aDp">data-parallel</label><select id="aDp"><option>1</option><option selected>2</option><option>4</option></select>
+        <label for="aTp">tensor-parallel</label><select id="aTp"><option selected>1</option><option>2</option></select>
+      </fieldset>
+      <fieldset><legend>Stage B</legend>
+        <label for="bDp">data-parallel</label><select id="bDp"><option selected>1</option><option>2</option><option>4</option></select>
+        <label for="bTp">tensor-parallel</label><select id="bTp"><option>1</option><option selected>2</option></select>
+      </fieldset>
+      <div class="bx-dir" role="group" aria-label="Direction">
+        <button type="button" id="dFwd" aria-pressed="true">Forward: activations A → B</button>
+        <button type="button" id="dBwd" aria-pressed="false">Backward: gradients B → A</button>
+      </div>
+    </div>
+    <div class="svgbox" id="bxSvg"></div>
+    <div class="bx-out" id="bxStats"></div>
+    <ul class="bx-text" id="bxText"></ul>
+  </div>
+</section>
+
+<!-- ============================================================ FAILURE -->
+<section id="failure">
+  <p class="eyebrow">When something breaks</p>
+  <h2>Three outcomes, decided by <em>when</em> it breaks</h2>
+  <div class="fsm">
+    <div class="fcase">
+      <span class="when k-ok">Normal</span>
+      <h3>Every stage ready → update → next step</h3>
+      <ol>
+        <li>All GPUs report ready.</li>
+        <li>Driver sends "apply"; each runs <code>engine.step()</code> once.</li>
+        <li><code>global_steps</code> goes up by one.</li>
+      </ol>
+    </div>
+    <div class="fcase">
+      <span class="when k-warn">Fails before the update</span>
+      <h3>The step fails cleanly; retry is exact</h3>
+      <ol>
+        <li>Any GPU error or a stuck line (timeout, default 300 s) fails the step; no weight has changed.</li>
+        <li>The driver collects every stage's result so none is left mid-step, then rebuilds the forward/backward lines under a fresh name (<code>epoch</code> + 1).</li>
+        <li>On the next attempt each GPU throws away leftover activations and half-summed gradients and rewinds its random numbers (<code>begin_generation</code>), so the retry matches a first attempt exactly.</li>
+        <li>You get a <code>StepFailed</code> error and can simply call <code>train_batch()</code> again.</li>
+      </ol>
+    </div>
+    <div class="fcase">
+      <span class="when k-bad">Fails during the update</span>
+      <h3>Pipeline locked until you restore</h3>
+      <ol>
+        <li>Some stages may have updated their weights and others not, so the model is inconsistent.</li>
+        <li>The pipeline is marked <b>poisoned</b>: every train, eval or save call is refused.</li>
+        <li><code>load_checkpoint()</code> restores the whole pipeline. If a worker died, all workers are rebuilt, on their old machines where possible, so local checkpoint files stay reachable.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CHECKPOINT -->
+<section id="checkpoint">
+  <p class="eyebrow">Saving and restoring</p>
+  <h2>A checkpoint is one consistent moment across every GPU</h2>
+  <div class="fsm">
+    <div class="fcase">
+      <span class="when" style="color:var(--fwd)">save_checkpoint()</span>
+      <ol>
+        <li>Refused if poisoned; tags can never be overwritten.</li>
+        <li>Every GPU: DeepSpeed saves its own files (weights, optimizer, scheduler) into <code>&lt;tag&gt;/stage&lt;s&gt;/</code>, plus a random-number file.</li>
+        <li>Each stage waits for all its GPUs; its first GPU fingerprints every file (SHA-256).</li>
+        <li>The driver writes <code>manifest.json</code> <b>last</b>: plan hash, step, data position, all fingerprints. Then it moves <code>latest</code>. A folder without a manifest is an unfinished save and is never loaded.</li>
+      </ol>
+      <p class="where">coordinator.save_checkpoint() · StageWorkerActor._save() · checkpoint.py</p>
+    </div>
+    <div class="fcase">
+      <span class="when" style="color:var(--fwd)">load_checkpoint()</span>
+      <ol>
+        <li>The manifest is checked before anything is touched: same plan, every stage and GPU present, files match their fingerprints.</li>
+        <li>Any worker dead? Rebuild every stage from scratch (fresh workers, worlds, engines and lines).</li>
+        <li>Phase 1: each stage re-checks its own files on its own machine. One failure and nothing loads anywhere.</li>
+        <li>Phase 2: every GPU runs DeepSpeed's load plus its random-number state. Only then is the lock cleared and the step count restored.</li>
+      </ol>
+      <p class="where">coordinator.load_checkpoint() · _load_phase() · StageWorkerActor._verify() / _load()</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CODE MAP -->
+<section id="codemap">
+  <p class="eyebrow">Code map</p>
+  <h2>Every file, and where it runs</h2>
+  <div class="tscroll">
+    <table>
+      <tr><th>File</th><th>Runs in</th><th>Does</th></tr>
+      <tr><td class="mono">api.py</td><td>driver</td><td><code>initialize()</code>: checks inputs, builds the plan, workers and coordinator</td></tr>
+      <tr><td class="mono">config.py</td><td>driver</td><td>What you configure: <code>PipelineConfig</code>, split policies, per-stage overrides</td></tr>
+      <tr><td class="mono">partition.py</td><td>driver</td><td>Finds the layer stack, cuts it, builds each stage's module (<code>CausalLMStage</code> for HF models)</td></tr>
+      <tr><td class="mono">compiler.py</td><td>driver</td><td>Turns the config into the frozen plan: per-stage grid and DeepSpeed config</td></tr>
+      <tr><td class="mono">plan.py</td><td>driver</td><td>The plan's data layout and its hash</td></tr>
+      <tr><td class="mono">schedule.py</td><td>driver</td><td>Writes each stage's 1F1B op list per step</td></tr>
+      <tr><td class="mono">coordinator.py</td><td>driver</td><td>Runs one step: data, commands, ready barrier, apply, failure handling, save/load</td></tr>
+      <tr><td class="mono">engine.py</td><td>driver</td><td>The public <code>RayPipelineEngine</code> you call</td></tr>
+      <tr><td class="mono">data.py</td><td>driver</td><td>Takes exactly N microbatches per step; tracks the data position for resume</td></tr>
+      <tr><td class="mono">stage_worker.py</td><td>workers</td><td>The Ray actor per GPU: bootstrap, links to neighbours, the per-step loop <code>run_step()</code></td></tr>
+      <tr><td class="mono">stage_group.py</td><td>driver</td><td>Starting the stages (placement, actors, worlds, links) and the per-stage client the coordinator talks to</td></tr>
+      <tr><td class="mono">deepspeed_adapter.py</td><td>workers</td><td>Wraps one DeepSpeed engine: forward, outside-gradient backward, ready, apply, save/load, clean-up</td></tr>
+      <tr><td class="mono">p2p.py</td><td>workers</td><td>The forward and backward NCCL lines: send, receive, shape headers, abort</td></tr>
+      <tr><td class="mono">boundary.py</td><td>workers</td><td>Which GPU sends which rows to whom; stitching; the gradient scale rule</td></tr>
+      <tr><td class="mono">checkpoint.py</td><td>driver + workers</td><td>Manifest, fingerprints, atomic publish, verification</td></tr>
+      <tr><td class="mono">protocols.py · errors.py</td><td>both</td><td>The command format; the public error types</td></tr>
+    </table>
+  </div>
+</section>
+
+<footer>Traced from rdsp's source as of 2026-09-26. Stage-local dispatch is the only execution path: the older design, where every forward and backward was its own Ray call and Ray carried the tensors, was removed after its results were recorded as a regression reference.</footer>
+</div>
+
+<script>
+(function(){
+/* ---------------- shared geometry ---------------- */
+const GPU = {                       // centre points in the topology drawing
+  G0:{x:120,y:215,stage:0,label:'GPU 0'},
+  G1a:{x:380,y:172,stage:1,label:'GPU 1a'},
+  G1b:{x:380,y:258,stage:1,label:'GPU 1b'},
+  G2:{x:640,y:215,stage:2,label:'GPU 2'}
+};
+const STAGE_BOX = [
+  {x:30,w:180,name:'Stage 0',sub:'embedding + first layers'},
+  {x:290,w:180,name:'Stage 1',sub:'middle layers · 2 GPUs'},
+  {x:550,w:180,name:'Stage 2',sub:'last layers + head + loss'}
+];
+const GW=104, GH=40;
+const DRV={x:300,y:14,w:160,h:40};
+
+function edgeOut(a,b){ // point on a's box edge towards b
+  return {x:a.x + (b.x>a.x? GW/2 : -GW/2), y:a.y};
+}
+function wirePath(id){
+  const [kind,from,to] = id.split('-');
+  if(kind==='ray'){
+    const g=GPU[from]; const sx=DRV.x+DRV.w/2, sy=DRV.y+DRV.h;
+    if(from==='G1b'){ // route around GPU 1a, landing on 1b's left edge
+      const ex=g.x-GW/2-6, ey=g.y;
+      return `M${sx-30},${sy} C${sx-40},${sy+120} ${ex-40},${ey} ${ex},${ey}`;
+    }
+    const ex=g.x, ey=g.y-GH/2;
+    return `M${sx},${sy} C${sx},${sy+50} ${ex},${ey-50} ${ex},${ey-6}`;
+  }
+  if(kind==='ds'){ // arc between the two GPUs of stage 1 on the right
+    const a=GPU.G1a,b=GPU.G1b; const x=a.x+GW/2;
+    return `M${x},${a.y+6} C${x+46},${a.y+12} ${x+46},${b.y-12} ${x},${b.y-6}`;
+  }
+  const a=GPU[from], b=GPU[to];
+  const off = kind==='f' ? -7 : 7;
+  const p=edgeOut(a,b), q=edgeOut(b,a);
+  return `M${p.x},${p.y+off} L${q.x + (kind==='f'? -8: 8)*(b.x>a.x?1:-1)},${q.y+off}`;
+}
+const WIRES = ['ray-G0','ray-G1a','ray-G1b','ray-G2',
+  'f-G0-G1a','f-G0-G1b','f-G1a-G2','f-G1b-G2',
+  'b-G2-G1a','b-G2-G1b','b-G1a-G0','b-G1b-G0','ds'];
+function wireClass(id){ return id.startsWith('ray')?'w-ray':id.startsWith('f-')?'w-fwd':id.startsWith('b-')?'w-bwd':'w-ds'; }
+function marker(id){ return id.startsWith('ray')?'ah-ray':id.startsWith('f-')?'ah-fwd':id.startsWith('b-')?'ah-bwd':'ah-ds'; }
+
+function topology(prefix, labels){
+  let s=`<svg width="760" height="320" viewBox="0 0 760 320" role="img" aria-label="Three stages: stage 0 with GPU 0, stage 1 with GPUs 1a and 1b, stage 2 with GPU 2; the driver above connected by Ray; forward and backward lines between neighbouring stages; a DeepSpeed line between GPUs 1a and 1b">`;
+  s+=`<defs>`;
+  ['ah-ray','ah-fwd','ah-bwd','ah-ds'].forEach(m=>{
+    s+=`<marker id="${prefix}${m}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="${m}"/></marker>`;
+  });
+  s+=`</defs>`;
+  STAGE_BOX.forEach(b=>{
+    s+=`<rect class="stagebox" x="${b.x}" y="96" width="${b.w}" height="210" rx="12"/>`;
+    s+=`<text class="slabel" x="${b.x+14}" y="118">${b.name}</text><text class="ssub" x="${b.x+14}" y="134">${b.sub}</text>`;
+  });
+  s+=`<rect id="${prefix}drv" class="drvbox" x="${DRV.x}" y="${DRV.y}" width="${DRV.w}" height="${DRV.h}" rx="8"/>`;
+  s+=`<text class="drvtext" x="${DRV.x+DRV.w/2}" y="${DRV.y+26}" text-anchor="middle">Driver (your process)</text>`;
+  WIRES.forEach(id=>{
+    const dsEnd = id==='ds' ? ` marker-start="url(#${prefix}ah-ds)"` : '';
+    s+=`<path id="${prefix}${id}" class="wire ${wireClass(id)}" d="${wirePath(id)}" marker-end="url(#${prefix}${marker(id)})"${dsEnd}/>`;
+  });
+  Object.entries(GPU).forEach(([k,g])=>{
+    s+=`<g class="gpu" id="${prefix}${k}"><rect x="${g.x-GW/2}" y="${g.y-GH/2}" width="${GW}" height="${GH}" rx="7"/><text x="${g.x}" y="${g.y+5}" text-anchor="middle">${g.label}</text></g>`;
+  });
+  if(labels){
+    s+=`<text class="wlabel" x="236" y="150" style="fill:var(--fwd)">activations →</text>`;
+    s+=`<text class="wlabel" x="226" y="298" style="fill:var(--bwd)">← gradients</text>`;
+    s+=`<text class="wlabel" x="${GPU.G1a.x+GW/2+30}" y="219" style="fill:var(--ds)">DeepSpeed</text>`;
+    s+=`<text class="wlabel" x="520" y="64" style="fill:var(--ray)">Ray calls</text>`;
+    s+=`<text class="ssub" x="58" y="296">address book lives here</text>`;
+  }
+  return s+`</svg>`;
+}
+
+/* static wiring diagram: everything lit */
+document.getElementById('wiresSvg').innerHTML = topology('w', true);
+document.querySelectorAll('#wiresSvg .wire').forEach(w=>w.classList.add('on'));
+
+/* ---------------- the schedule (same rule as schedule.py) ---------------- */
+const N=3, M=4, FDUR=1, BDUR=2, PRE=3.2;
+function ops1f1b(s){
+  const w=Math.min(N-1-s,M), o=[];
+  for(let k=0;k<w;k++) o.push(['F',k]);
+  for(let k=0;k<M-w;k++){ o.push(['F',w+k]); o.push(['B',k]); }
+  for(let k=M-w;k<M;k++) o.push(['B',k]);
+  return o;
+}
+const OPS=[0,1,2].map(ops1f1b);
+document.getElementById('opLists').innerHTML = OPS.map((o,s)=>
+  `<div><b>${['Stage 0 (GPU 0)','Stage 1 (GPUs 1a, 1b)','Stage 2 (GPU 2)'][s]}</b>${o.map(([k,m])=>k+m).join(' ')} ready</div>`).join('');
+
+// simulate start/end times with the real dependencies
+const end={}, free=[PRE,PRE,PRE], idx=[0,0,0], sched=[];
+let left=OPS.reduce((a,o)=>a+o.length,0), guard=0;
+while(left>0 && guard++<500){
+  for(let s=0;s<N;s++){
+    while(idx[s]<OPS[s].length){
+      const [kind,k]=OPS[s][idx[s]];
+      let dep;
+      if(kind==='F') dep = s===0 ? PRE : end[`${s-1}F${k}`];
+      else dep = s===N-1 ? end[`${s}F${k}`] : end[`${s+1}B${k}`];
+      if(dep===undefined) break;
+      const t0=Math.max(free[s],dep), t1=t0+(kind==='F'?FDUR:BDUR);
+      end[`${s}${kind}${k}`]=t1; free[s]=t1;
+      sched.push({s,kind,k,t0,t1}); idx[s]++; left--;
+    }
+  }
+}
+const TEND=Math.max(...free);
+const LANES=['Driver','G0','G1a','G1b','G2'];
+const STAGE_GPUS=[['G0'],['G1a','G1b'],['G2']];
+const code = s=>`<span class="mono">${s}</span>`;
+
+/* ---------------- narration ---------------- */
+function fwdEvent(o){
+  const {s,k}=o, first=k===0;
+  if(s===0) return {lanes:['G0'], wires:['f-G0-G1a','f-G0-G1b'],
+    title:`GPU 0 · forward, microbatch ${k}`,
+    body:`GPU 0 runs the embedding and its layers on microbatch ${k}'s 4 rows through its DeepSpeed engine, and keeps the input and output for the backward later. It then queues its whole 4-row output to <b>both</b> stage-1 GPUs on the forward line. The send is asynchronous, so GPU 0 moves straight on to its next op. Each receiver will keep only the rows it owns.${first?' This is the first message to each receiver this step, so a small shape header goes first and the receiver can allocate the right buffer.':''}`,
+    code:'run_step() → adapter.forward() → engine(x) → PipelineP2P.send("fwd")'};
+  if(s===1) return {lanes:['G1a','G1b'], wires:['f-G0-G1a','f-G0-G1b','f-G1a-G2','f-G1b-G2'],
+    title:`GPUs 1a and 1b · forward, microbatch ${k}`,
+    body:`Each waits (a blocking receive) until microbatch ${k} arrives from GPU 0, then cuts out its own rows: 1a keeps rows 0–1, 1b rows 2–3. Each detaches its input and marks it as needing a gradient: this is the cut between stages, where one stage's autograd graph ends and the next begins. Each runs the middle layers, keeps input and output, and sends its 2-row result to GPU 2.`,
+    code:'PipelineP2P.recv("fwd") → boundary.assemble() → adapter.forward() → send("fwd")'};
+  return {lanes:['G2'], wires:['f-G1a-G2','f-G1b-G2'],
+    title:`GPU 2 · forward, microbatch ${k}, and the loss`,
+    body:`GPU 2 receives 2 rows from 1a and 2 rows from 1b and stitches them back into the full 4-row microbatch. It runs its layers, the final norm and the output head, then your <code>loss_fn(logits, labels)</code>. The labels came from the driver at the start of the step. It keeps the loss with its graph for the backward, and records the number for the step's reported loss.`,
+    code:'recv("fwd") ×2 → boundary.assemble() → adapter.forward() → loss_fn()'};
+}
+function bwdEvent(o){
+  const {s,k}=o, last=k===M-1;
+  if(s===2) return {lanes:['G2'], wires:['b-G2-G1a','b-G2-G1b'],
+    title:`GPU 2 · backward, microbatch ${k}`,
+    body:`<code>engine.backward(loss / ${M})</code>. Dividing by the ${M} microbatches makes the four backwards add up to one full-batch gradient, which accumulates in GPU 2's weights. GPU 2 then sends the gradient of its 4-row input to 1a and 1b on the backward line, and each keeps its own rows.${last?' This is the last backward, so DeepSpeed treats it as the accumulation boundary. GPU 2 is alone in its stage, so there is nobody to average with.':''}`,
+    code:'adapter.backward() → engine.backward() → PipelineP2P.send("bwd")'};
+  if(s===1) return {lanes:['G1a','G1b'], wires:['b-G2-G1a','b-G2-G1b','b-G1a-G0','b-G1b-G0'].concat(last?['ds']:[]),
+    title:`GPUs 1a and 1b · backward, microbatch ${k}${last?' · DeepSpeed averages':''}`,
+    body:`Each receives the gradient for microbatch ${k}, keeps its rows, and <b>multiplies by 2</b>. Stage 1 has 2 data-parallel GPUs and DeepSpeed will average their gradients, so each half is doubled first to keep the math identical to one GPU. Then <code>engine.backward((output × gradient).sum())</code> pushes that outside gradient through DeepSpeed's normal backward. Each sends the gradient of its 2-row input to GPU 0.${last?' <b>Last microbatch:</b> this backward is DeepSpeed\'s accumulation boundary, so inside it DeepSpeed averages 1a\'s and 1b\'s weight gradients over the stage world. It is the only time the two GPUs talk to each other this step.':''}`,
+    code:'recv("bwd") → assemble() → ×2 → adapter.backward() → engine.backward() → send("bwd")'};
+  return {lanes:['G0'], wires:['b-G1a-G0','b-G1b-G0'],
+    title:`GPU 0 · backward, microbatch ${k}`,
+    body:`GPU 0 receives 2 rows from 1a and 2 from 1b, stitches them, and <b>multiplies by ½</b>, going from 2 data-parallel GPUs back to 1. Backward runs through its layers and the embedding. It has nothing to send, since it is the first stage.${last?' This last backward is the accumulation boundary.':''}`,
+    code:'recv("bwd") ×2 → assemble() → ×½ → adapter.backward() → engine.backward()'};
+}
+
+const EV=[];
+EV.push({t0:0,t1:.8,lanes:['Driver'],wires:[],who:['drv'],
+  title:'train_batch() is called: take exactly 4 microbatches',
+  body:'Before sending anything, the driver pulls exactly 4 microbatches from your data iterator, each an (inputs, labels) pair of 4 rows. If the iterator runs out partway, the step fails with zero work done and nothing sent.',
+  code:'RayPipelineEngine.train_batch() → coordinator._run() → data.take_microbatch_entries()'});
+EV.push({t0:.8,t1:1.6,lanes:['Driver'],wires:[],who:['drv'],
+  title:'Plan this step: generation 1, one op list per stage',
+  body:'The generation counter goes up. Every message this step is tagged with it, so leftovers from a failed attempt can be recognised and discarded. <code>generate_commands()</code> writes each stage\'s op list (shown above the controls): stage 0 does 2 forwards before its first backward, stage 1 one, and stage 2 none.',
+  code:'coordinator._run() → schedule.generate_commands()'});
+EV.push({t0:1.6,t1:2.4,lanes:['Driver'],wires:['ray-G0','ray-G1a','ray-G1b','ray-G2'],who:['drv','ray'],
+  title:'One Ray call per GPU, then the driver waits',
+  body:'Ray delivers <code>run_step(generation, ops, …)</code> to each of the 4 workers. GPU 0 also receives its input rows for all 4 microbatches, and GPU 2 receives the labels. Stage 1 gets no data from the driver: everything it needs will arrive from GPU 0 over NCCL. This is the last time the driver sends anything until the replies come back.',
+  code:'coordinator._run_stage_local() → StageGroupClient._submit_step() → actor.run_step.remote()'});
+EV.push({t0:2.4,t1:PRE,lanes:['G0','G1a','G1b','G2'],wires:[],who:['rd'],kind:'prep',
+  title:'Every GPU starts the step cleanly',
+  body:'<code>begin_generation()</code> throws away anything an earlier failed attempt left behind (cached activations, half-summed gradients) and snapshots the random-number state, so a retry would draw the same dropout masks. <code>p2p.begin_step()</code> resets the per-step shape records.',
+  code:'run_step() → DeepSpeedStageAdapter.begin_generation() · PipelineP2P.begin_step()'});
+sched.slice().sort((a,b)=>a.t0-b.t0 || a.s-b.s).forEach(o=>{
+  const e = o.kind==='F' ? fwdEvent(o) : bwdEvent(o);
+  EV.push(Object.assign({t0:o.t0,t1:o.t1,who:o.kind==='B'&&o.s===1&&o.k===M-1?['rd','ds']:['rd','ds'],op:o}, e));
+});
+EV.push({t0:TEND,t1:TEND+.6,lanes:['G0','G1a','G1b','G2'],wires:['ray-G0','ray-G1a','ray-G1b','ray-G2'],who:['rd','ray'],kind:'prep',
+  title:'Each GPU checks it is ready and replies',
+  body:'Each GPU confirms it ran all 4 backwards and holds no cached activations (<code>adapter.ready()</code>). It waits until its queued sends have been delivered (<code>p2p.end_step()</code>), so nothing spills into the next step. Its reply goes back through Ray: <code>{losses, ready: true}</code>. Only GPU 2 has losses.',
+  code:'run_step() → adapter.ready() → PipelineP2P.end_step() → return'});
+EV.push({t0:TEND+.6,t1:TEND+1.4,lanes:['Driver'],wires:[],who:['drv'],
+  title:'The ready barrier',
+  body:'The driver collects every GPU\'s reply (<code>ray.get</code>). If any GPU failed, the step stops here, before any weight has changed, so a retry is safe. Otherwise the step\'s loss is the average of GPU 2\'s four microbatch losses.',
+  code:'coordinator._run_stage_local() → _resolve() for every stage'});
+EV.push({t0:TEND+1.4,t1:TEND+2.4,lanes:['G0','G1a','G1b','G2'],wires:['ray-G0','ray-G1a','ray-G1b','ray-G2'],who:['drv','ray','ds'],kind:'apply',
+  title:'Apply: every GPU updates its weights, once',
+  body:'The driver sends "apply" to every GPU. Each runs <code>engine.step()</code>: DeepSpeed\'s optimizer update, exactly once per step. Stage 1\'s gradients were already averaged at the last backward, so 1a and 1b make identical updates and stay in sync. If an apply failed here, some stages would have updated and others not, and the pipeline would be locked until a checkpoint is restored.',
+  code:'coordinator._finish() → adapter.apply() → engine.step()'});
+EV.push({t0:TEND+2.4,t1:TEND+3,lanes:['Driver'],wires:[],who:['drv'],
+  title:'Done: global_steps + 1, loss returned',
+  body:'The step counter goes up by one and <code>train_batch()</code> returns the mean loss as a plain CPU number. The next call starts again at the top with generation 2.',
+  code:'coordinator._finish() → RayPipelineEngine.train_batch()'});
+
+/* ---------------- drawing ---------------- */
+document.getElementById('topoSvg').innerHTML = topology('t', false);
+const TMAX=TEND+3, PX=36, GL=70, GWID=GL+TMAX*PX+20, LH=34, GTOP=26;
+function laneY(l){ return GTOP+LANES.indexOf(l)*LH; }
+function blockFill(e,l){
+  if(l==='Driver') return ['var(--drv-soft)','var(--drv)'];
+  if(e.kind==='prep') return ['var(--sunk)','var(--muted)'];
+  if(e.kind==='apply') return ['var(--ds-soft)','var(--ds)'];
+  if(e.op && e.op.kind==='F') return ['var(--fwd-soft)','var(--fwd)'];
+  return ['var(--bwd-soft)','var(--bwd)'];
+}
+function drawGantt(cur){
+  let s=`<svg width="${GWID}" height="${GTOP+LANES.length*LH+26}" viewBox="0 0 ${GWID} ${GTOP+LANES.length*LH+26}" role="img" aria-label="Timeline of the step: the driver lane and one lane per GPU, forward and backward blocks in 1F1B order">`;
+  for(let t=0;t<=TMAX;t+=2){ const x=GL+t*PX; s+=`<line x1="${x}" y1="${GTOP-6}" x2="${x}" y2="${GTOP+LANES.length*LH}" stroke="var(--line)"/><text class="axis" x="${x}" y="${GTOP-10}" text-anchor="middle">${t}</text>`; }
+  LANES.forEach(l=>{ s+=`<text class="lanelabel" x="4" y="${laneY(l)+LH/2+4}">${l==='Driver'?'Driver':GPU[l].label}</text>`; });
+  EV.forEach((e,i)=>{
+    e.lanes.forEach(l=>{
+      const [fill,edge]=blockFill(e,l); const x=GL+e.t0*PX, w=Math.max(4,(e.t1-e.t0)*PX-2), y=laneY(l)+4;
+      const op = i<cur ? 1 : i===cur ? 1 : .32;
+      s+=`<rect class="blk${i===cur?' cur':''}" x="${x}" y="${y}" width="${w}" height="${LH-8}" rx="4" style="fill:${fill}; opacity:${op}" data-i="${i}"><title>${e.title}</title></rect>`;
+      s+=`<rect x="${x}" y="${y}" width="3" height="${LH-8}" style="fill:${edge}; opacity:${op}"/>`;
+      if(e.op && w>18) s+=`<text class="blabel" x="${x+w/2+1}" y="${y+(LH-8)/2+4}" text-anchor="middle" style="opacity:${op}">${e.op.kind}${e.op.k}</text>`;
+    });
+  });
+  const cx=GL+EV[cur].t0*PX;
+  s+=`<line x1="${cx}" y1="${GTOP-4}" x2="${cx}" y2="${GTOP+LANES.length*LH+4}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  s+=`<text class="axis" x="${GL}" y="${GTOP+LANES.length*LH+20}">time (a forward = 1 unit, a backward = 2)</text>`;
+  document.getElementById('ganttSvg').innerHTML=s+`</svg>`;
+  document.querySelectorAll('#ganttSvg rect[data-i]').forEach(r=>r.addEventListener('click',()=>go(+r.dataset.i)));
+}
+const WHO = {drv:['l-drv','driver'],ray:['l-ray','Ray'],ds:['l-ds','DeepSpeed'],rd:['l-rd','rdsp worker']};
+let cur=0, timer=null;
+function go(i){
+  cur=Math.max(0,Math.min(EV.length-1,i));
+  const e=EV[cur];
+  WIRES.forEach(id=>document.getElementById('t'+id).classList.toggle('on', e.wires.includes(id)));
+  Object.keys(GPU).forEach(k=>document.getElementById('t'+k).classList.toggle('on', e.lanes.includes(k)));
+  document.getElementById('tdrv').classList.toggle('on', e.lanes.includes('Driver') || e.wires.some(w=>w.startsWith('ray')));
+  const who = e.op ? (e.op.kind==='B'&&e.op.s===1&&e.op.k===M-1 ? ['rd','ds'] : ['rd','ds']) : e.who;
+  document.getElementById('nWho').innerHTML = who.map(w=>`<span class="lane ${WHO[w][0]}">${WHO[w][1]}</span>`).join('') +
+    (e.wires.some(w=>w.startsWith('f-'))?'<span class="lane l-rd">forward line</span>':'') +
+    (e.wires.some(w=>w.startsWith('b-'))?'<span class="lane l-bwd">backward line</span>':'');
+  document.getElementById('nTitle').textContent=e.title;
+  document.getElementById('nBody').innerHTML=e.body;
+  document.getElementById('nCode').textContent=e.code;
+  document.getElementById('counter').textContent=`${cur+1} / ${EV.length}`;
+  document.getElementById('scrub').value=cur;
+  drawGantt(cur);
+}
+const scrub=document.getElementById('scrub'); scrub.max=EV.length-1;
+scrub.addEventListener('input',()=>{ stop(); go(+scrub.value); });
+document.getElementById('bPrev').onclick=()=>{ stop(); go(cur-1); };
+document.getElementById('bNext').onclick=()=>{ stop(); go(cur+1); };
+const bPlay=document.getElementById('bPlay');
+function stop(){ if(timer){ clearInterval(timer); timer=null; bPlay.textContent='Play'; } }
+bPlay.onclick=()=>{
+  if(timer){ stop(); return; }
+  if(cur>=EV.length-1) go(0);
+  bPlay.textContent='Pause';
+  timer=setInterval(()=>{ if(cur>=EV.length-1){ stop(); return; } go(cur+1); }, 2600);
+};
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,select,textarea')) return;
+  const r=document.getElementById('step').getBoundingClientRect();
+  if(r.top>innerHeight||r.bottom<0) return;
+  if(e.key==='ArrowRight'){ stop(); go(cur+1); } if(e.key==='ArrowLeft'){ stop(); go(cur-1); }
+});
+go(0);
+
+/* ---------------- boundary explorer (boundary.py rules, dp + tp) ---------------- */
+const R=8;
+let dir='fwd';
+function ranks(dp,tp){ const out=[]; for(let r=0;r<dp*tp;r++){ const t=r%tp, d=Math.floor(r/tp); out.push({r,d,t,lo:d*R/dp,hi:(d+1)*R/dp}); } return out; }
+function overlap(a,b){ return a.lo<b.hi && b.lo<a.hi; }
+function rng(x){ return x.hi-x.lo===1 ? `row ${x.lo}` : `rows ${x.lo}–${x.hi-1}`; }
+function drawBx(){
+  const aDp=+aDpEl.value, aTp=+aTpEl.value, bDp=+bDpEl.value, bTp=+bTpEl.value;
+  const A=ranks(aDp,aTp), B=ranks(bDp,bTp);
+  const fwd = dir==='fwd';
+  const src = fwd? A : B, dst = fwd? B : A;
+  const srcName = fwd? 'A':'B', dstName = fwd? 'B':'A';
+  // senders: tp index 0 of the sending stage; every rank of the receiving stage receives
+  const msgs=[];
+  dst.forEach(d=>{ src.filter(s=>s.t===0 && overlap(s,d)).forEach(s=>msgs.push([s,d])); });
+  const BH=46, GAP=12, W=720;
+  const h = Math.max(A.length,B.length)*(BH+GAP)+40;
+  const colA=40, colB=W-40-230;
+  function ys(list){ const tot=list.length*(BH+GAP)-GAP; const top=(h-tot)/2+10; return list.map((_,i)=>top+i*(BH+GAP)); }
+  const yA=ys(A), yB=ys(B);
+  let s=`<svg width="${W}" height="${h}" viewBox="0 0 ${W} ${h}" role="img" aria-label="Which GPUs of stage ${srcName} send to which GPUs of stage ${dstName}">`;
+  s+=`<defs><marker id="bxah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:${fwd?'var(--fwd)':'var(--bwd)'}"/></marker></defs>`;
+  s+=`<text class="slabel" x="${colA}" y="16">Stage A · ${aDp} data × ${aTp} tensor</text>`;
+  s+=`<text class="slabel" x="${colB}" y="16">Stage B · ${bDp} data × ${bTp} tensor</text>`;
+  const posA=(r)=>yA[r], posB=(r)=>yB[r];
+  msgs.forEach(([sr,dr])=>{
+    const sx = fwd? colA+230 : colB, sy = (fwd? posA(sr.r):posB(sr.r))+BH/2;
+    const ex = fwd? colB-6 : colA+236, ey = (fwd? posB(dr.r):posA(dr.r))+BH/2;
+    const mx=(sx+ex)/2;
+    s+=`<path d="M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}" fill="none" stroke-width="2" style="stroke:${fwd?'var(--fwd)':'var(--bwd)'}" marker-end="url(#bxah)"/>`;
+  });
+  function box(x,y,g,name,isSender,isSrc){
+    const silent = isSrc && !isSender;
+    s+=`<rect x="${x}" y="${y}" width="230" height="${BH}" rx="7" style="fill:var(--surface); stroke:${silent?'var(--line)':'var(--ink)'}; stroke-width:${silent?1:1.5}; ${silent?'stroke-dasharray:4 3':''}"/>`;
+    s+=`<text class="lanelabel" x="${x+12}" y="${y+19}" style="font-weight:600">GPU ${name}${g.r}</text>`;
+    const role = isSrc ? (isSender ? 'sends' : 'silent · identical TP copy') : 'receives';
+    s+=`<text class="ssub" x="${x+12}" y="${y+36}">${rng(g)}${(name==='A'?aTp:bTp)>1?` · TP ${g.t}`:''} · ${role}</text>`;
+  }
+  A.forEach(g=>box(colA,posA(g.r),g,'A', g.t===0, fwd));
+  B.forEach(g=>box(colB,posB(g.r),g,'B', g.t===0, !fwd));
+  document.getElementById('bxSvg').innerHTML=s+'</svg>';
+
+  const rowsSent = msgs.reduce((a,[sr])=>a+(sr.hi-sr.lo),0);
+  const rowsNeeded = dst.reduce((a,d)=>a+(d.hi-d.lo),0);
+  const scale = aDp/bDp;
+  const scaleTxt = scale===1 ? '×1 (no change)' : scale>1 ? `×${scale}` : `×1/${1/scale}`;
+  document.getElementById('bxStats').innerHTML =
+    `<div class="stat"><b>${msgs.length}</b>messages per microbatch</div>`+
+    `<div class="stat"><b>${rowsSent} rows sent</b>for ${rowsNeeded} rows kept: every message is the sender's whole block</div>`+
+    `<div class="stat"><b>${scaleTxt}</b>gradient scale applied by stage A on the way back (A's data-parallel ÷ B's)</div>`;
+  const lines = dst.map(d=>{
+    const from = msgs.filter(([,x])=>x===d).map(([sr])=>`${srcName}${sr.r} (${rng(sr)})`);
+    const keep = rng(d);
+    return `<li>GPU ${dstName}${d.r} needs ${keep}: receives from ${from.join(' and ')}${from.length>1?' and stitches them':''}${from.length===1 && (msgs.find(([,x])=>x===d)[0].hi-msgs.find(([,x])=>x===d)[0].lo)>(d.hi-d.lo)?', keeping only its part':''}.</li>`;
+  });
+  const silent = src.filter(s=>s.t!==0).length;
+  if(silent) lines.push(`<li>${silent} GPU${silent>1?'s':''} of stage ${srcName} send${silent>1?'':'s'} nothing: tensor-parallel GPUs finish each layer with identical results, so one copy is enough.</li>`);
+  if(!fwd) lines.push(`<li>On arrival, stage A multiplies each gradient by ${scaleTxt.replace('×','')}. DeepSpeed averages gradients over a stage's data-parallel GPUs, so this keeps every update identical to one-GPU training.</li>`);
+  if(aDp===bDp && aTp===1 && bTp===1) lines.push('<li>Same shape on both sides: each GPU talks to exactly one partner and nothing is re-cut ("identity" boundary).</li>');
+  document.getElementById('bxText').innerHTML=lines.join('');
+}
+const aDpEl=document.getElementById('aDp'), aTpEl=document.getElementById('aTp'), bDpEl=document.getElementById('bDp'), bTpEl=document.getElementById('bTp');
+[aDpEl,aTpEl,bDpEl,bTpEl].forEach(el=>el.addEventListener('change',drawBx));
+const dF=document.getElementById('dFwd'), dB=document.getElementById('dBwd');
+dF.onclick=()=>{dir='fwd'; dF.setAttribute('aria-pressed','true'); dB.setAttribute('aria-pressed','false'); drawBx();};
+dB.onclick=()=>{dir='bwd'; dB.setAttribute('aria-pressed','true'); dF.setAttribute('aria-pressed','false'); drawBx();};
+drawBx();
+})();
+</script>

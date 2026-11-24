@@ -1,0 +1,159 @@
+
+====================
+== NeMo Framework ==
+====================
+
+NVIDIA Release  (build 443194436)
+Container image Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright (c) 2014-2024 Facebook Inc.
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
+Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
+Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
+Copyright (c) 2015      Google Inc.
+Copyright (c) 2015      Yangqing Jia
+Copyright (c) 2013-2016 The Caffe contributors
+All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
+and the Product-Specific Terms for NVIDIA AI Products
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 13.3 driver version 610.43.02 with kernel driver version 595.112.07.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
+
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+[rank0]:W1121 15:31:12.689000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank0]:W1121 15:31:12.715000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[WARNING] Field "span" in type "ir.TupleType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.FuncType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.TensorMapType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "binding_blocks" in type "script.ir_builder.relax.FunctionFrame" duplicates an ancestor field in "script.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.
+[WARNING] Field "output" in type "script.ir_builder.relax.FunctionFrame" duplicates an ancestor field in "script.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+[WARNING] Field "policy_type" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "m_warp" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "n_warp" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+ERROR 11-21 15:31:26 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+130.2 synchronizing operations per image
+
+  54.0 per image
+    transformer_engine/pytorch/cpp_extensions/fused_attn.py:307 output_tensors = tex.fused_attn_fwd(
+      <- transformer_engine/pytorch/attention/dot_product_attention/backends.py:1513 out_, aux_ctx_tensors, *max_logit = fused_attn_fwd(
+      <- transformer_engine/pytorch/attention/dot_product_attention/backends.py:2214 output = FusedAttnFunc.apply(
+      <- transformer_engine/pytorch/jit.py:67 return disabled_f(*args, **kwargs)
+
+  53.0 per image
+    transformer_engine/pytorch/attention/dot_product_attention/utils.py:320 if sf != of:
+      <- transformer_engine/pytorch/attention/dot_product_attention/dot_product_attention.py:1647 or attention_params != _attention_backends["attention_params"]
+      <- transformer_engine/pytorch/jit.py:67 return disabled_f(*args, **kwargs)
+      <- /opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/extensions/transformer_engine.py:2050 core_attn_out = super().forward(query, key, value, attention_mask, **_fa_kwargs)
+
+   3.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:282 pos_embed.view(t, h // merge_size, merge_size, w // merge_size, merge_size, -1)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   2.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:211 row_idx = row_idx.expand(merged_h, merged_w, merge_size, merge_size).reshape(-1)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   2.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:212 col_idx = col_idx.expand(merged_h, merged_w, merge_size, merge_size).reshape(-1)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   2.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:382 seqlens = torch.repeat_interleave(grid_thw[:, 1] * grid_thw[:, 2], grid_thw[:, 0])
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:108 packed_seq_params = build_packed_seq_params(grid_thw)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:346 packed_seq_params, attention_mask = _vision_forward_packed_attention_setup(
+
+   2.0 per image
+    transformer_engine/pytorch/attention/dot_product_attention/utils.py:1378 fused_attention_backend = tex.get_fused_attn_backend(
+      <- transformer_engine/pytorch/attention/dot_product_attention/dot_product_attention.py:1659 ) = dpa_utils.get_attention_backend(attention_params)
+      <- transformer_engine/pytorch/jit.py:67 return disabled_f(*args, **kwargs)
+      <- /opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/extensions/transformer_engine.py:2050 core_attn_out = super().forward(query, key, value, attention_mask, **_fa_kwargs)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:234 h_idxs = torch.linspace(0, self.num_grid_per_side - 1, h)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:235 w_idxs = torch.linspace(0, self.num_grid_per_side - 1, w)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:266 idx_tensor = torch.tensor(idx_list, dtype=torch.long, device=self.pos_embed.weight.device)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:267 weight_tensor = torch.tensor(
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:275 patch_pos_embeds = patch_pos_embeds.split([h * w for h, w in zip(grid_hs, grid_ws)])
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:280 pos_embed = pos_embed.repeat(t, 1)
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:329 pos_embeds = self.fast_pos_embed_interpolate(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:191 max_hw = int(grid_thw[:, 1:].max().item())
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:195 total_tokens = int(torch.prod(grid_thw, dim=1).sum().item())
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:202 block_rows = torch.arange(merged_h, device=device)  # block row indices
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:203 block_cols = torch.arange(merged_w, device=device)  # block col indices
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:216 if num_frames > 1:
+      <- /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:334 rotary_pos_emb = self.rot_pos_emb(grid_thw)
+
+   1.0 per image
+    /opt/Megatron-Bridge/src/megatron/bridge/models/qwen_vl/modelling_qwen3_vl/vision_model.py:372 split_sizes = (grid_thw.prod(-1) // self.spatial_merge_size**2).tolist()
+
+   0.2 per image
+    
+
+[rank0]:[W1121 15:31:33.259399913 ProcessGroupNCCL.cpp:1647] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())

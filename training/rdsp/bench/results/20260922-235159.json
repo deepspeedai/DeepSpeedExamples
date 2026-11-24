@@ -1,0 +1,35 @@
+[
+ {
+  "cell": {
+   "system": "M-defaults",
+   "variant": "defaults",
+   "pp": 8,
+   "m": 16,
+   "seq": 512,
+   "layout": "Et*4|t*4|t*4|t*4|t*3|t*3|t*3|t*3,L",
+   "rep": 0
+  },
+  "rc": 1,
+  "wall_s": 67.45453119277954,
+  "nvml_peak_bytes": {
+   "0": 2109734912,
+   "1": 2109734912,
+   "2": 2109734912,
+   "3": 2109734912,
+   "4": 2109734912,
+   "5": 2109734912,
+   "6": 2109734912,
+   "7": 2109734912
+  },
+  "result": {
+   "step_s": [],
+   "loss": []
+  },
+  "tail": "  error_injection_rate ............................ 0\n  error_injection_type ............................ transient_error\n  logits_load_ignore_errors ....................... False\n[rank0]: Traceback (most recent call last):\n[rank0]:     raise InductorError(e, currentframe()).with_traceback(\n[rank0]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank7]: Traceback (most recent call last):\n[rank7]:     raise InductorError(e, currentframe()).with_traceback(\n[rank7]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank5]: Traceback (most recent call last):\n[rank5]:     raise InductorError(e, currentframe()).with_traceback(\n[rank5]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank3]: Traceback (most recent call last):\n[rank3]:     raise InductorError(e, currentframe()).with_traceback(\n[rank3]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank4]: Traceback (most recent call last):\n[rank4]:     raise InductorError(e, currentframe()).with_traceback(\n[rank4]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank2]: Traceback (most recent call last):\n[rank2]:     raise InductorError(e, currentframe()).with_traceback(\n[rank2]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank6]: Traceback (most recent call last):\n[rank6]:     raise InductorError(e, currentframe()).with_traceback(\n[rank6]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\n[rank1]: Traceback (most recent call last):\n[rank1]:     raise InductorError(e, currentframe()).with_traceback(\n[rank1]: torch._inductor.exc.InductorError: AttributeError: 'KernelMetadata' object has no attribute 'cluster_dims'\nTraceback (most recent call last):\n  File \"/usr/local/lib/python3.12/dist-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py\", line 357, in wrapper\n    raise ChildFailedError(\ntorch.distributed.elastic.multiprocessing.errors.ChildFailedError: \n  error_file: <N/A>\n  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html\n  error_file: <N/A>\n  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html\n...\nurn f(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py\", line 936, in main\n    run(args)\n  File \"/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py\", line 927, in run\n    elastic_launch(\n  File \"/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py\", line 156, in __call__\n    return launch_agent(self._config, self._entrypoint, list(args))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py\", line 293, in launch_agent\n    raise ChildFailedError(\ntorch.distributed.elastic.multiprocessing.errors.ChildFailedError: \n============================================================\npretrain_gpt.py FAILED\n------------------------------------------------------------\nFailures:\n[1]:\n  time      : 2026-09-23_03:51:58\n  host      : localhost\n  rank      : 5 (local_rank: 5)\n  exitcode  : 1 (pid: 349)\n  error_file: <N/A>\n  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html\n------------------------------------------------------------\nRoot Cause (first observed failure):\n[0]:\n  time      : 2026-09-23_03:51:58\n  host      : localhost\n  rank      : 3 (local_rank: 3)\n  exitcode  : 1 (pid: 347)\n  error_file: <N/A>\n  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html\n============================================================\n",
+  "env": {
+   "gpus": "NVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05\nNVIDIA H100 80GB HBM3, 580.95.05",
+   "topo": "\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nFailed to run topology matrix",
+   "versions": "2.9.0a0+145a3a7bda.nv25.10 0.19.3+53a2ac44 2.58.0 2.8.0+40c69e75 0.19.2+4b4acac"
+  }
+ }
+]

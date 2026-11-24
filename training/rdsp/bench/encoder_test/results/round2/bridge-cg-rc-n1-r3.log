@@ -1,0 +1,78 @@
+
+====================
+== NeMo Framework ==
+====================
+
+NVIDIA Release  (build 443194436)
+Container image Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright (c) 2014-2024 Facebook Inc.
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
+Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
+Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
+Copyright (c) 2015      Google Inc.
+Copyright (c) 2015      Yangqing Jia
+Copyright (c) 2013-2016 The Caffe contributors
+All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
+and the Product-Specific Terms for NVIDIA AI Products
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 13.3 driver version 610.43.02 with kernel driver version 595.112.07.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
+
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+[rank0]:W1121 16:48:25.101000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank0]:W1121 16:48:25.129000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[WARNING] Field "span" in type "ir.TupleType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.FuncType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.TensorMapType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "binding_blocks" in type "script.ir_builder.relax.FunctionFrame" duplicates an ancestor field in "script.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.
+[WARNING] Field "output" in type "script.ir_builder.relax.FunctionFrame" duplicates an ancestor field in "script.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+[WARNING] Field "policy_type" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "m_warp" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "n_warp" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+ERROR 11-21 16:48:39 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+{"torch": "2.13.0a0+8145d630e8.nv26.06", "transformers": "5.12.1", "python": "3.12.3", "gpu": "NVIDIA H100 80GB HBM3", "params": 460730096, "transformer_engine": "2.18.0+15288857"}
+/usr/local/lib/python3.12/dist-packages/torch/autograd/graph.py:913: UserWarning: The AccumulateGrad node's stream does not match the stream of the node that produced the incoming gradient. This may incur unnecessary synchronization and break CUDA graph capture if the AccumulateGrad node's stream is the default stream. This mismatch is caused by an AccumulateGrad node created prior to the current iteration being kept alive. This can happen if the autograd graph is still being kept alive by tensors such as the loss, or if you are using DDP, which will stash a reference to the node. To resolve the mismatch, delete all references to the autograd graph or ensure that DDP initialization is performed under the same stream as subsequent forwards. If the mismatch is intentional, you can use torch.autograd.graph.set_warn_on_accumulate_grad_stream_mismatch(False) to suppress this warning. (Triggered internally at /opt/pytorch/pytorch/torch/csrc/autograd/input_buffer.cpp:310.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+captured vision CUDA graphs, length 4096, in 2.9 s
+{"label": "bridge-cg-rc-n1-r3", "impl": "bridge", "images_per_call": 1, "mode": "fwdbwd", "recompute": true, "cuda_graph_len": 4096, "images_timed": 64, "ms_per_image_passes": [78.57878767187287, 78.32403335937244, 78.33990471875296], "ms_per_image": 78.34}
+=== DONE bridge-cg-rc-n1-r3
+[rank0]:[W1121 16:49:12.743629661 ProcessGroupNCCL.cpp:1647] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())

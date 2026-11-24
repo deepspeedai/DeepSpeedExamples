@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 624" width="1000" height="624" role="img" aria-labelledby="title desc">
+  <title id="title">rdsp architecture</title>
+  <desc id="desc">The driver plans where the model is cut and sends every GPU its schedule. Each stage runs on its own group of GPUs, with one Ray actor running a DeepSpeed engine per GPU. Activations and gradients move directly between the stages' GPUs.</desc>
+  <!-- Source of architecture.png. After editing: rsvg-convert -w 2000 architecture.svg -o architecture.png -->
+  <style>
+    text { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #1F2328; }
+    .h1 { font-size: 18px; font-weight: 700; }
+    .h2 { font-size: 16px; font-weight: 700; }
+    .b { font-size: 14px; }
+    .bb { font-size: 14px; font-weight: 700; }
+    .m { font-size: 14px; fill: #59636E; }
+    .s { font-size: 13px; fill: #59636E; }
+    .chip { font-size: 13px; font-weight: 700; fill: #FFFFFF; letter-spacing: 0.5px; }
+    .mid { text-anchor: middle; }
+    .end { text-anchor: end; }
+    .card { fill: #FFFFFF; stroke: #D1D9E0; }
+    .outline { fill: none; stroke: #D1D9E0; }
+    .vision { fill: #F3E8FF; }
+    .language { fill: #DDF4FF; }
+    .fwd { stroke: #1A7F37; stroke-width: 2.5; fill: none; }
+    .bwd { stroke: #BC4C00; stroke-width: 2.5; fill: none; }
+    .ctl { stroke: #59636E; stroke-width: 1.75; stroke-dasharray: 5 4; fill: none; }
+  </style>
+  <defs>
+    <marker id="head-fwd" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 0.5 L10 5 L0 9.5 Z" fill="#1A7F37"/>
+    </marker>
+    <marker id="head-bwd" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto">
+      <path d="M0 0.5 L10 5 L0 9.5 Z" fill="#BC4C00"/>
+    </marker>
+    <marker id="head-ctl" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M0 0.5 L10 5 L0 9.5 Z" fill="#59636E"/>
+    </marker>
+    <!-- one GPU: a 50 x 50 chip, origin at its top-left corner -->
+    <g id="gpu">
+      <g fill="#6E7781">
+        <rect x="9" y="-4" width="6" height="5"/>
+        <rect x="22" y="-4" width="6" height="5"/>
+        <rect x="35" y="-4" width="6" height="5"/>
+        <rect x="9" y="49" width="6" height="5"/>
+        <rect x="22" y="49" width="6" height="5"/>
+        <rect x="35" y="49" width="6" height="5"/>
+      </g>
+      <rect width="50" height="50" rx="8" fill="#24292F"/>
+      <text x="25" y="30" class="chip mid">GPU</text>
+    </g>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="999" height="623" rx="16" fill="#FFFFFF" stroke="#D1D9E0"/>
+
+  <!-- driver: holds the plan, shown as the model cut into stages -->
+  <rect x="28" y="28" width="944" height="114" rx="12" fill="#F6F8FA" stroke="#D1D9E0"/>
+  <text x="48" y="61" class="h1">Driver</text>
+  <text x="116" y="61" class="m">your training script. It cuts the model into stages, hands every GPU its schedule, and holds no weights.</text>
+  <rect x="48" y="80" width="300" height="40" rx="8" class="vision" stroke="#8250DF" stroke-width="1.25"/>
+  <text x="198" y="105" class="b mid">vision encoder</text>
+  <rect x="352" y="80" width="264" height="40" rx="8" class="language" stroke="#0969DA" stroke-width="1.25"/>
+  <text x="484" y="105" class="b mid">decoder layers</text>
+  <rect x="620" y="80" width="132" height="40" rx="8" class="language" stroke="#0969DA" stroke-width="1.25"/>
+  <text x="686" y="105" class="b mid">· · ·</text>
+  <rect x="756" y="80" width="196" height="40" rx="8" class="language" stroke="#0969DA" stroke-width="1.25"/>
+  <text x="854" y="105" class="b mid">decoder layers + loss</text>
+
+  <!-- driver to stages: the schedule and the batch down, the loss back from the last stage -->
+  <line x1="164" y1="142" x2="164" y2="211" class="ctl" marker-end="url(#head-ctl)"/>
+  <text x="174" y="182" class="s">schedule, batch</text>
+  <line x1="498" y1="142" x2="498" y2="211" class="ctl" marker-end="url(#head-ctl)"/>
+  <text x="508" y="182" class="s">schedule, batch</text>
+  <line x1="846" y1="142" x2="846" y2="211" class="ctl" marker-end="url(#head-ctl)"/>
+  <text x="836" y="182" class="s end">schedule, batch</text>
+  <line x1="902" y1="214" x2="902" y2="145" class="ctl" marker-end="url(#head-ctl)"/>
+  <text x="912" y="182" class="s">loss</text>
+
+  <!-- stage 0 -->
+  <rect x="28" y="214" width="272" height="178" rx="12" class="vision"/>
+  <path d="M28 268 H300 V380 Q300 392 288 392 H40 Q28 392 28 380 Z" fill="#FFFFFF"/>
+  <rect x="28" y="214" width="272" height="178" rx="12" class="outline"/>
+  <text x="46" y="238" class="h2">Stage 0</text>
+  <text x="46" y="257" class="m">vision encoder</text>
+  <use href="#gpu" x="52" y="288"/>
+  <use href="#gpu" x="110" y="288"/>
+  <use href="#gpu" x="168" y="288"/>
+  <use href="#gpu" x="226" y="288"/>
+  <text x="164" y="372" class="bb mid">4 GPUs</text>
+
+  <!-- stage 1 -->
+  <rect x="400" y="214" width="196" height="178" rx="12" class="language"/>
+  <path d="M400 268 H596 V380 Q596 392 584 392 H412 Q400 392 400 380 Z" fill="#FFFFFF"/>
+  <rect x="400" y="214" width="196" height="178" rx="12" class="outline"/>
+  <text x="418" y="238" class="h2">Stage 1</text>
+  <text x="418" y="257" class="m">decoder layers</text>
+  <use href="#gpu" x="444" y="288"/>
+  <use href="#gpu" x="502" y="288"/>
+  <text x="498" y="372" class="bb mid">2 GPUs</text>
+
+  <!-- the stages in between -->
+  <rect x="640" y="268" width="92" height="90" rx="10" fill="#FFFFFF" stroke="#AFB8C1" stroke-dasharray="5 4"/>
+  <text x="686" y="309" class="h2 mid" style="fill:#59636E">· · ·</text>
+  <text x="686" y="333" class="s mid">more stages</text>
+
+  <!-- last stage -->
+  <rect x="776" y="214" width="196" height="178" rx="12" class="language"/>
+  <path d="M776 268 H972 V380 Q972 392 960 392 H788 Q776 392 776 380 Z" fill="#FFFFFF"/>
+  <rect x="776" y="214" width="196" height="178" rx="12" class="outline"/>
+  <text x="794" y="238" class="h2">Last stage</text>
+  <text x="794" y="257" class="m">decoder layers + loss</text>
+  <use href="#gpu" x="820" y="288"/>
+  <use href="#gpu" x="878" y="288"/>
+  <text x="874" y="372" class="bb mid">2 GPUs</text>
+
+  <!-- between stages: activations forward, gradients back -->
+  <text x="350" y="293" class="s mid" style="fill:#1A7F37">activations</text>
+  <line x1="306" y1="302" x2="394" y2="302" class="fwd" marker-end="url(#head-fwd)"/>
+  <line x1="394" y1="324" x2="306" y2="324" class="bwd" marker-end="url(#head-bwd)"/>
+  <text x="350" y="344" class="s mid" style="fill:#BC4C00">gradients</text>
+  <line x1="602" y1="302" x2="634" y2="302" class="fwd" marker-end="url(#head-fwd)"/>
+  <line x1="634" y1="324" x2="602" y2="324" class="bwd" marker-end="url(#head-bwd)"/>
+  <line x1="738" y1="302" x2="770" y2="302" class="fwd" marker-end="url(#head-fwd)"/>
+  <line x1="770" y1="324" x2="738" y2="324" class="bwd" marker-end="url(#head-bwd)"/>
+
+  <line x1="28" y1="414" x2="972" y2="414" stroke="#D1D9E0"/>
+
+  <!-- key, left: what runs on each GPU -->
+  <use href="#gpu" x="28" y="489"/>
+  <text x="100" y="522" class="mid" style="font-size:22px; fill:#59636E">=</text>
+  <rect x="122" y="432" width="350" height="164" rx="12" fill="#F6F8FA" stroke="#D1D9E0"/>
+  <text x="140" y="456" class="bb">Ray actor</text>
+  <text x="212" y="456" class="m">one per GPU</text>
+  <rect x="138" y="468" width="318" height="116" rx="10" class="card"/>
+  <text x="156" y="492" class="bb">DeepSpeed engine</text>
+  <text x="292" y="492" class="m">unmodified</text>
+  <rect x="154" y="504" width="286" height="68" rx="8" fill="#EAEEF2" stroke="#8C959F"/>
+  <text x="170" y="531" class="bb">This stage's layers and optimizer</text>
+  <text x="170" y="553" class="s">weights from the Hugging Face checkpoint</text>
+
+  <!-- key, right: what the arrows mean -->
+  <line x1="520" y1="452" x2="578" y2="452" class="fwd" marker-end="url(#head-fwd)"/>
+  <text x="594" y="457" class="b">Activations go forward, GPU to GPU</text>
+  <line x1="578" y1="486" x2="520" y2="486" class="bwd" marker-end="url(#head-bwd)"/>
+  <text x="594" y="491" class="b">Gradients come back the same way</text>
+  <line x1="520" y1="520" x2="578" y2="520" class="ctl" marker-end="url(#head-ctl)"/>
+  <text x="594" y="525" class="b">Schedule and batch from the driver, loss back to it</text>
+  <rect x="520" y="546" width="452" height="38" rx="8" fill="#F6F8FA"/>
+  <text x="536" y="570" class="bb">Activations and gradients never pass through the driver.</text>
+</svg>

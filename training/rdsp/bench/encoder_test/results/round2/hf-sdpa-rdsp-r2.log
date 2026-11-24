@@ -1,0 +1,12 @@
+{"torch": "2.13.0+cu130", "transformers": "5.17.0", "python": "3.12.16", "gpu": "NVIDIA H100 80GB HBM3", "params": 460730096}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 1, "mode": "fwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [31.553496125003022, 26.79216595312539, 26.71663321875073], "ms_per_image": 26.792}
+/home/ubuntu/venv/lib/python3.12/site-packages/torch/autograd/graph.py:979: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /__w/pytorch/pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:408.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 1, "mode": "fwdbwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [75.9290192656259, 70.04127664062665, 70.03030182812253], "ms_per_image": 70.041}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 2, "mode": "fwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [19.993952906247614, 20.001757875000692, 19.997291562500408], "ms_per_image": 19.997}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 2, "mode": "fwdbwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [57.95327790625038, 57.19533934374965, 57.23090582812773], "ms_per_image": 57.231}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 4, "mode": "fwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [17.454509937500973, 17.522887078126104, 17.46728729687419], "ms_per_image": 17.467}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 4, "mode": "fwdbwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [52.651919078122944, 52.38694099999819, 52.4651190781249], "ms_per_image": 52.465}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 8, "mode": "fwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [16.489692062499728, 16.51501131249944, 16.492576906252054], "ms_per_image": 16.493}
+{"label": "hf-sdpa-rdsp-r2", "impl": "hf", "images_per_call": 8, "mode": "fwdbwd", "recompute": false, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [50.38930470312408, 50.3740890312514, 50.47221298437421], "ms_per_image": 50.389}
+=== DONE hf-sdpa-rdsp-r2

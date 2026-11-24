@@ -1,0 +1,148 @@
+{
+ "env": {
+  "torch": "2.13.0a0+8145d630e8.nv26.06",
+  "transformers": "5.12.1",
+  "python": "3.12.3",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 460730096,
+  "transformer_engine": "2.18.0+15288857"
+ },
+ "args": {
+  "impl": "bridge",
+  "hf_attn": "sdpa",
+  "config": "Qwen/Qwen3.5-27B",
+  "grids": "results/grids.json",
+  "images": "1,2,4,8",
+  "modes": "fwd,fwdbwd",
+  "passes": 3,
+  "profile_images": 0,
+  "device": "cuda",
+  "trace_dir": "results/traces",
+  "recompute": false,
+  "cuda_graphs": false,
+  "label": "bridge-r2",
+  "out": "results/bridge-r2.json"
+ },
+ "results": [
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 1,
+   "mode": "fwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    65.96488078124807,
+    63.73606657812658,
+    63.89836962500084
+   ],
+   "ms_per_image": 63.89836962500084
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 1,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    119.570595578125,
+    116.8067109374995,
+    115.9309802343742
+   ],
+   "ms_per_image": 116.8067109374995
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 2,
+   "mode": "fwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    33.358369578124325,
+    33.218524156250595,
+    33.20745837499928
+   ],
+   "ms_per_image": 33.218524156250595
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 2,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    75.80493615625272,
+    74.78528735937573,
+    77.85433267187258
+   ],
+   "ms_per_image": 75.80493615625272
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 4,
+   "mode": "fwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    23.72569017187587,
+    23.732762765625637,
+    23.81090506250061
+   ],
+   "ms_per_image": 23.732762765625637
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 4,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    60.72207349999914,
+    60.332517984374334,
+    60.36375951562434
+   ],
+   "ms_per_image": 60.36375951562434
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 8,
+   "mode": "fwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    21.924431781247478,
+    21.97031223437307,
+    21.915738999997103
+   ],
+   "ms_per_image": 21.924431781247478
+  },
+  {
+   "label": "bridge-r2",
+   "impl": "bridge",
+   "images_per_call": 8,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    57.17559954687346,
+    57.362363921875215,
+    57.13114843749878
+   ],
+   "ms_per_image": 57.17559954687346
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+Fetching 21 files:   0%|          | 0/21 [00:00<?, ?it/s]Fetching 21 files: 100%|██████████| 21/21 [00:00<00:00, 1828.08it/s]
+2026-11-21 18:23:12,820	WARNING authentication_token_setup.py:85 -- Token authentication is enabled for this Ray cluster. Set RAY_AUTH_MODE=disabled to opt out. For more information, see https://docs.ray.io/en/latest/ray-security/token-auth.html
+2026-11-21 18:23:15,964	INFO worker.py:2038 -- Started a local Ray instance.
+[36m(StageWorkerActor pid=149920)[0m [rank0]:[W1121 18:23:31.583850239 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[36m(StageWorkerActor pid=149924)[0m [2026-11-21 18:23:29,464] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
+stages (blocks): [(0, 6), (6, 15), (15, 24), (24, 33), (33, 42), (42, 51), (51, 59), (59, 64)]
+[36m(StageWorkerActor pid=150030)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 21045.3, "forward": 2482.4, "backward": 15468.5, "wait_sends": 0.4, "mem_gb": 12.01, "peak_gb": 40.18}
+[36m(StageWorkerActor pid=149925)[0m [2026-11-21 18:23:29,715] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(StageWorkerActor pid=149977)[0m {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "step"}, "wait_fwd": 19644.0, "forward": 2173.0, "wait_bwd": 12847.8, "backward": 4598.1, "wait_sends": 0.7, "mem_gb": 11.72, "peak_gb": 19.85}
+[36m(StageWorkerActor pid=149920)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 12643.0, "wait_bwd": 20363.6, "backward": 7664.2, "wait_sends": 0.6, "mem_gb": 15.2, "peak_gb": 29.66}
+[36m(StageWorkerActor pid=150030)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "apply"}, "apply": 473.0, "mem_gb": 35.44, "peak_gb": 41.59}
+[36m(StageWorkerActor pid=150030)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 3585.1, "forward": 1874.8, "backward": 4003.0, "wait_sends": 0.4, "mem_gb": 41.5, "peak_gb": 69.67}
+[36m(StageWorkerActor pid=149921)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 13071.7, "forward": 2419.3, "wait_bwd": 20135.3, "backward": 5132.4, "wait_sends": 166.7, "mem_gb": 13.15, "peak_gb": 22.79}[32m [repeated 5x across cluster][0m
+[36m(StageWorkerActor pid=149925)[0m {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "apply"}, "apply": 2575.2, "mem_gb": 38.37, "peak_gb": 44.5}[32m [repeated 7x across cluster][0m
+[36m(StageWorkerActor pid=149920)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 2468.7, "wait_bwd": 1996.3, "backward": 6621.3, "wait_sends": 0.5, "mem_gb": 52.65, "peak_gb": 67.87}
+[36m(StageWorkerActor pid=150030)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 3889.1, "forward": 1614.8, "backward": 3775.5, "wait_sends": 0.4, "mem_gb": 41.5, "peak_gb": 69.67}
+[36m(StageWorkerActor pid=149921)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 2467.6, "forward": 1651.1, "wait_bwd": 2409.4, "backward": 4724.6, "wait_sends": 76.5, "mem_gb": 45.07, "peak_gb": 54.71}[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=149925)[0m {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "apply"}, "apply": 223.9, "mem_gb": 38.37, "peak_gb": 45.66}[32m [repeated 8x across cluster][0m
+[36m(StageWorkerActor pid=149920)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 2804.1, "wait_bwd": 1340.5, "backward": 6966.0, "wait_sends": 0.6, "mem_gb": 52.65, "peak_gb": 68.34}
+measured: MeasuredStages(cuts=(6, 15, 24, 33, 42, 51, 59), seconds=(9.43005, 6.41085, 6.285100000000001, 6.3988, 6.390200000000001, 6.46765, 5.68435, 5.63405), peak_gib=(68.34, 54.71, 53.86, 53.86, 53.86, 53.86, 48.21, 69.67), bytes_per_param=(14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0, 14.0), limit_gib=74.1806640625)
+[36m(StageWorkerActor pid=151451)[0m [rank0]:[W1121 18:25:02.033088898 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())[32m [repeated 16x across cluster][0m
+[36m(StageWorkerActor pid=151451)[0m [2026-11-21 18:24:59,706] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
+[36m(StageWorkerActor pid=149921)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 2990.5, "forward": 1663.9, "wait_bwd": 1665.7, "backward": 4782.1, "wait_sends": 334.9, "mem_gb": 45.07, "peak_gb": 54.71}[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=149920)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "apply"}, "apply": 285.3, "mem_gb": 45.0, "peak_gb": 65.51}[32m [repeated 8x across cluster][0m
+stages (blocks): [(0, 2), (2, 12), (12, 22), (22, 31), (31, 41), (41, 50), (50, 59), (59, 64)]
+step 0 loss 0.7168 24246 ms 2588 real tok/s 5406 padded tok/s real 62758 supervised 12716
+step 1 loss 0.3490 11315 ms 5716 real tok/s 11584 padded tok/s real 64678 supervised 12306
+step 2 loss 0.2760 11512 ms 5836 real tok/s 11386 padded tok/s real 67178 supervised 12077
+step 3 loss 0.1462 17886 ms 3675 real tok/s 7328 padded tok/s real 65735 supervised 13341
+step 4 loss 0.0951 17250 ms 3826 real tok/s 7598 padded tok/s real 66005 supervised 14074
+step 5 loss 0.0807 17520 ms 3877 real tok/s 7481 padded tok/s real 67916 supervised 13226
+step 6 loss 0.0599 11241 ms 5787 real tok/s 11660 padded tok/s real 65054 supervised 13273
+step 7 loss 0.0686 11714 ms 5538 real tok/s 11190 padded tok/s real 64875 supervised 11475
+step 8 loss 0.0550 11137 ms 5815 real tok/s 11769 padded tok/s real 64765 supervised 13068
+step 9 loss 0.0367 11210 ms 5923 real tok/s 11692 padded tok/s real 66397 supervised 12054
+step 10 loss 0.0468 10943 ms 5845 real tok/s 11978 padded tok/s real 63955 supervised 12301
+step 11 loss 0.0456 11236 ms 5442 real tok/s 11665 padded tok/s real 61145 supervised 14656
+step 12 loss 0.0302 11354 ms 5783 real tok/s 11544 padded tok/s real 65662 supervised 13386
+step 13 loss 0.0253 11486 ms 5316 real tok/s 11411 padded tok/s real 61063 supervised 11616
+step 14 loss 0.0272 11473 ms 5736 real tok/s 11424 padded tok/s real 65810 supervised 12363
+step 15 loss 0.0268 11330 ms 5822 real tok/s 11569 padded tok/s real 65959 supervised 12782
+step 16 loss 0.0258 11375 ms 5800 real tok/s 11522 padded tok/s real 65979 supervised 13546
+step 17 loss 0.0212 11230 ms 6120 real tok/s 11671 padded tok/s real 68728 supervised 13276
+step 18 loss 0.0175 11236 ms 5639 real tok/s 11666 padded tok/s real 63353 supervised 13362
+step 19 loss 0.0205 11098 ms 6017 real tok/s 11811 padded tok/s real 66778 supervised 12869
+step 20 loss 0.0207 11676 ms 5687 real tok/s 11225 padded tok/s real 66409 supervised 11187
+step 21 loss 0.0204 11273 ms 5634 real tok/s 11628 padded tok/s real 63513 supervised 13209
+step 22 loss 0.0172 11051 ms 5843 real tok/s 11861 padded tok/s real 64572 supervised 12025
+step 23 loss 0.0191 11116 ms 5831 real tok/s 11791 padded tok/s real 64820 supervised 13737
+step 24 loss 0.0228 11245 ms 5512 real tok/s 11656 padded tok/s real 61975 supervised 13653
+step 25 loss 0.0086 11291 ms 5558 real tok/s 11609 padded tok/s real 62758 supervised 12716
+step 26 loss 0.0093 11410 ms 5669 real tok/s 11487 padded tok/s real 64678 supervised 12306
+step 27 loss 0.0141 11665 ms 5759 real tok/s 11236 padded tok/s real 67178 supervised 12077
+step 28 loss 0.0131 11393 ms 5770 real tok/s 11504 padded tok/s real 65735 supervised 13341
+step 29 loss 0.0131 11031 ms 5984 real tok/s 11882 padded tok/s real 66005 supervised 14074
+step 30 loss 0.0083 11383 ms 5966 real tok/s 11514 padded tok/s real 67916 supervised 13226
+step 31 loss 0.0072 11062 ms 5881 real tok/s 11849 padded tok/s real 65054 supervised 13273
+step 32 loss 0.0145 11277 ms 5753 real tok/s 11623 padded tok/s real 64875 supervised 11475
+step 33 loss 0.0089 11465 ms 5649 real tok/s 11432 padded tok/s real 64765 supervised 13068
+step 34 loss 0.0087 11234 ms 5911 real tok/s 11668 padded tok/s real 66397 supervised 12054
+step 35 loss 0.0110 11256 ms 5682 real tok/s 11645 padded tok/s real 63955 supervised 12301
+step 36 loss 0.0114 10921 ms 5599 real tok/s 12002 padded tok/s real 61145 supervised 14656
+step 37 loss 0.0091 11331 ms 5795 real tok/s 11568 padded tok/s real 65662 supervised 13386
+step 38 loss 0.0075 11135 ms 5484 real tok/s 11771 padded tok/s real 61063 supervised 11616
+step 39 loss 0.0061 11664 ms 5642 real tok/s 11237 padded tok/s real 65810 supervised 12363
+step 40 loss 0.0055 11512 ms 5730 real tok/s 11386 padded tok/s real 65959 supervised 12782
+step 41 loss 0.0084 11044 ms 5974 real tok/s 11868 padded tok/s real 65979 supervised 13546
+step 42 loss 0.0047 11079 ms 6203 real tok/s 11831 padded tok/s real 68728 supervised 13276
+step 43 loss 0.0043 11173 ms 5670 real tok/s 11731 padded tok/s real 63353 supervised 13362
+step 44 loss 0.0058 11459 ms 5828 real tok/s 11439 padded tok/s real 66778 supervised 12869
+step 45 loss 0.0061 11239 ms 5909 real tok/s 11663 padded tok/s real 66409 supervised 11187
+step 46 loss 0.0065 11012 ms 5767 real tok/s 11902 padded tok/s real 63513 supervised 13209
+step 47 loss 0.0036 10967 ms 5888 real tok/s 11951 padded tok/s real 64572 supervised 12025
+step 48 loss 0.0061 11056 ms 5863 real tok/s 11855 padded tok/s real 64820 supervised 13737
+step 49 loss 0.0090 11024 ms 5622 real tok/s 11890 padded tok/s real 61975 supervised 13653
+[36m(StageWorkerActor pid=151451)[0m [rank0]:[W1121 18:25:05.341970201 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())[32m [repeated 15x across cluster][0m
+[36m(StageWorkerActor pid=151456)[0m [2026-11-21 18:25:01,362] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****[32m [repeated 7x across cluster][0m

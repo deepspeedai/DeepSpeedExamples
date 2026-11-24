@@ -1,0 +1,94 @@
+Fetching 24 files:   0%|          | 0/24 [00:00<?, ?it/s]Fetching 24 files: 100%|██████████| 24/24 [00:00<00:00, 1948.91it/s]
+2026-10-18 14:56:18,535	INFO worker.py:1686 -- Using address auto set in the environment variable RAY_ADDRESS
+2026-10-18 14:56:18,725	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: node1:6379...
+2026-10-18 14:56:18,829	INFO worker.py:2033 -- Connected to Ray cluster.
+[36m(StageWorkerActor pid=35085, ip=node2)[0m [rank1]:[W1018 14:56:34.453028116 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[36m(StageWorkerActor pid=86079)[0m [rank0]:[W1018 14:56:39.851778859 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())[32m [repeated 30x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(StageWorkerActor pid=35084, ip=node2)[0m [2026-10-18 14:56:31,319] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
+stages (blocks): [(0, 4), (4, 9), (9, 14), (14, 20), (20, 25), (25, 30), (30, 35), (35, 40)]
+[36m(StageWorkerActor pid=86079)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+[36m(StageWorkerActor pid=86079)[0m   return func(*args, **kwargs)
+[36m(StageWorkerActor pid=86080)[0m [rank1]:[W1018 14:56:40.958443405 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[36m(StageWorkerActor pid=35091, ip=node2)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 16372.7, "forward": 2486.3, "backward": 4381.3, "wait_sends": 0.6, "mem_gb": 17.53, "peak_gb": 27.78}
+[36m(StageWorkerActor pid=35091, ip=node2)[0m [2026-10-18 14:56:34,238] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****[32m [repeated 7x across cluster][0m
+[36m(StageWorkerActor pid=35089, ip=node2)[0m {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "step"}, "wait_fwd": 16061.6, "forward": 2063.7, "wait_bwd": 2596.7, "backward": 2693.5, "wait_sends": 2.4, "mem_gb": 15.68, "peak_gb": 24.56}
+[36m(StageWorkerActor pid=86080)[0m {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "step"}, "forward": 5488.0, "wait_bwd": 10292.5, "backward": 8071.8, "wait_sends": 1.7, "mem_gb": 15.7, "peak_gb": 33.72}
+[36m(StageWorkerActor pid=86080)[0m {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "apply"}, "apply": 245.6, "mem_gb": 28.22, "peak_gb": 36.03}
+[36m(StageWorkerActor pid=35091, ip=node2)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 7400.5, "forward": 1679.2, "backward": 2874.2, "wait_sends": 0.6, "mem_gb": 39.46, "peak_gb": 49.71}[32m [repeated 2x across cluster][0m
+[36m(StageWorkerActor pid=86085)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 8871.9, "forward": 2197.9, "wait_bwd": 10410.1, "backward": 2743.7, "wait_sends": 2.8, "mem_gb": 15.68, "peak_gb": 33.48}[32m [repeated 11x across cluster][0m
+[36m(StageWorkerActor pid=86079)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 6193.5, "wait_bwd": 10537.8, "backward": 8262.2, "wait_sends": 1.7, "mem_gb": 15.69, "peak_gb": 34.02}
+[36m(StageWorkerActor pid=35090, ip=node2)[0m {"rdsp_profile": {"stage": 7, "rank": 1, "kind": "apply"}, "apply": 528.6, "mem_gb": 30.76, "peak_gb": 39.71}[32m [repeated 15x across cluster][0m
+[36m(StageWorkerActor pid=86080)[0m {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "step"}, "forward": 3869.8, "wait_bwd": 1362.0, "backward": 7217.9, "wait_sends": 1.6, "mem_gb": 35.81, "peak_gb": 53.98}
+[36m(StageWorkerActor pid=35091, ip=node2)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 7939.8, "forward": 1543.8, "backward": 2800.0, "wait_sends": 0.5, "mem_gb": 39.46, "peak_gb": 49.71}[32m [repeated 2x across cluster][0m
+[36m(StageWorkerActor pid=86085)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 7994.0, "forward": 1264.8, "wait_bwd": 1325.7, "backward": 2321.9, "wait_sends": 2.9, "mem_gb": 35.27, "peak_gb": 53.07}[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=86091)[0m {"rdsp_profile": {"stage": 3, "rank": 0, "kind": "apply"}, "apply": 183.3, "mem_gb": 32.94, "peak_gb": 44.97}[32m [repeated 16x across cluster][0m
+[36m(StageWorkerActor pid=86079)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 4029.1, "wait_bwd": 1035.9, "backward": 7377.8, "wait_sends": 1.7, "mem_gb": 35.8, "peak_gb": 54.2}
+[36m(StageWorkerActor pid=86080)[0m {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "step"}, "forward": 4077.2, "wait_bwd": 1505.0, "backward": 6919.2, "wait_sends": 1.6, "mem_gb": 35.81, "peak_gb": 54.1}
+measured: MeasuredStages(cuts=(4, 9, 14, 20, 25, 30, 35), seconds=(11.94475, 3.48705, 3.531, 4.03955, 3.3688500000000006, 3.37, 3.4206999999999996, 5.4), peak_gib=(54.2, 53.07, 50.84, 57.55, 46.37, 44.15, 44.15, 49.73), bytes_per_param=(9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0), limit_gib=74.1806640625)
+[36m(StageWorkerActor pid=87341)[0m [rank1]:[W1018 14:57:54.133162998 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[36m(StageWorkerActor pid=35090, ip=node2)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.[32m [repeated 15x across cluster][0m
+[36m(StageWorkerActor pid=35090, ip=node2)[0m   return func(*args, **kwargs)[32m [repeated 15x across cluster][0m
+[36m(StageWorkerActor pid=87340)[0m [2026-10-18 14:57:50,586] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
+[36m(StageWorkerActor pid=35090, ip=node2)[0m {"rdsp_profile": {"stage": 7, "rank": 1, "kind": "step"}, "wait_fwd": 6386.1, "forward": 1541.3, "backward": 4356.7, "wait_sends": 0.8, "mem_gb": 39.48, "peak_gb": 49.73}
+[36m(StageWorkerActor pid=86085)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 9015.9, "forward": 1167.9, "wait_bwd": 422.7, "backward": 2134.6, "wait_sends": 2.7, "mem_gb": 35.27, "peak_gb": 53.07}[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=86091)[0m {"rdsp_profile": {"stage": 3, "rank": 0, "kind": "apply"}, "apply": 183.3, "mem_gb": 32.94, "peak_gb": 44.97}[32m [repeated 16x across cluster][0m
+[36m(StageWorkerActor pid=86079)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 4608.1, "wait_bwd": 12.8, "backward": 7874.5, "wait_sends": 1.7, "mem_gb": 35.8, "peak_gb": 54.08}
+stages (blocks): [(0, 1), (1, 7), (7, 13), (13, 19), (19, 25), (25, 31), (31, 37), (37, 40)]
+[36m(StageWorkerActor pid=87341)[0m [rank1]:[W1018 14:57:57.747056821 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())[32m [repeated 31x across cluster][0m
+[36m(StageWorkerActor pid=87341)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+[36m(StageWorkerActor pid=87341)[0m   return func(*args, **kwargs)
+[36m(StageWorkerActor pid=87340)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.
+[36m(StageWorkerActor pid=87340)[0m   return func(*args, **kwargs)
+step 0 loss 0.7320 25137 ms 5070 real tok/s 10428 padded tok/s real 127436 supervised 25022
+step 1 loss 0.4035 11362 ms 11698 real tok/s 23072 padded tok/s real 132913 supervised 25418
+step 2 loss 0.1759 10085 ms 13279 real tok/s 25994 padded tok/s real 133921 supervised 27300
+step 3 loss 0.1460 10059 ms 12917 real tok/s 26061 padded tok/s real 129929 supervised 24748
+step 4 loss 0.0840 9967 ms 13160 real tok/s 26302 padded tok/s real 131162 supervised 25122
+step 5 loss 0.0747 9628 ms 12994 real tok/s 27228 padded tok/s real 125100 supervised 26957
+step 6 loss 0.0434 9940 ms 12749 real tok/s 26373 padded tok/s real 126725 supervised 25002
+step 7 loss 0.0350 9357 ms 14082 real tok/s 28016 padded tok/s real 131769 supervised 25145
+step 8 loss 0.0314 9603 ms 14027 real tok/s 27298 padded tok/s real 134707 supervised 26822
+step 9 loss 0.0270 9586 ms 13575 real tok/s 27345 padded tok/s real 130131 supervised 26231
+step 10 loss 0.0263 9672 ms 13433 real tok/s 27104 padded tok/s real 129922 supervised 24396
+step 11 loss 0.0252 9466 ms 13669 real tok/s 27693 padded tok/s real 129392 supervised 25762
+step 12 loss 0.0217 9582 ms 13018 real tok/s 27359 padded tok/s real 124733 supervised 26369
+step 13 loss 0.0164 9723 ms 13561 real tok/s 26961 padded tok/s real 131856 supervised 24383
+step 14 loss 0.0166 9401 ms 14014 real tok/s 27885 padded tok/s real 131740 supervised 27415
+step 15 loss 0.0131 9642 ms 13791 real tok/s 27188 padded tok/s real 132970 supervised 26499
+step 16 loss 0.0161 9909 ms 13083 real tok/s 26455 padded tok/s real 129640 supervised 24543
+step 17 loss 0.0122 9572 ms 13618 real tok/s 27386 padded tok/s real 130352 supervised 24355
+step 18 loss 0.0114 9592 ms 13220 real tok/s 27329 padded tok/s real 126807 supervised 28042
+step 19 loss 0.0065 9718 ms 13055 real tok/s 26974 padded tok/s real 126873 supervised 23979
+step 20 loss 0.0103 9457 ms 13951 real tok/s 27719 padded tok/s real 131938 supervised 26328
+step 21 loss 0.0079 9603 ms 13754 real tok/s 27299 padded tok/s real 132081 supervised 26638
+step 22 loss 0.0085 9732 ms 13685 real tok/s 26936 padded tok/s real 133187 supervised 24056
+step 23 loss 0.0068 9363 ms 13680 real tok/s 27998 padded tok/s real 128085 supervised 25234
+step 24 loss 0.0084 9464 ms 13397 real tok/s 27698 padded tok/s real 126795 supervised 27390
+step 25 loss 0.0039 9636 ms 13225 real tok/s 27204 padded tok/s real 127436 supervised 25022
+step 26 loss 0.0051 9439 ms 14082 real tok/s 27774 padded tok/s real 132913 supervised 25418
+step 27 loss 0.0049 9598 ms 13954 real tok/s 27313 padded tok/s real 133921 supervised 27300
+step 28 loss 0.0037 9880 ms 13151 real tok/s 26533 padded tok/s real 129929 supervised 24748
+step 29 loss 0.0030 9700 ms 13522 real tok/s 27025 padded tok/s real 131162 supervised 25122
+step 30 loss 0.0037 9594 ms 13039 real tok/s 27324 padded tok/s real 125100 supervised 26957
+step 31 loss 0.0034 9903 ms 12797 real tok/s 26472 padded tok/s real 126725 supervised 25002
+step 32 loss 0.0019 9742 ms 13525 real tok/s 26908 padded tok/s real 131769 supervised 25145
+step 33 loss 0.0031 9527 ms 14140 real tok/s 27517 padded tok/s real 134707 supervised 26822
+step 34 loss 0.0023 9702 ms 13413 real tok/s 27019 padded tok/s real 130131 supervised 26231
+step 35 loss 0.0017 9708 ms 13384 real tok/s 27004 padded tok/s real 129922 supervised 24396
+step 36 loss 0.0020 9400 ms 13766 real tok/s 27889 padded tok/s real 129392 supervised 25762
+step 37 loss 0.0030 9570 ms 13034 real tok/s 27392 padded tok/s real 124733 supervised 26369
+step 38 loss 0.0030 9686 ms 13612 real tok/s 27063 padded tok/s real 131856 supervised 24383
+step 39 loss 0.0020 9464 ms 13920 real tok/s 27700 padded tok/s real 131740 supervised 27415
+step 40 loss 0.0029 9578 ms 13883 real tok/s 27370 padded tok/s real 132970 supervised 26499
+step 41 loss 0.0030 9575 ms 13539 real tok/s 27378 padded tok/s real 129640 supervised 24543
+step 42 loss 0.0018 9434 ms 13817 real tok/s 27786 padded tok/s real 130352 supervised 24355
+step 43 loss 0.0025 9421 ms 13460 real tok/s 27825 padded tok/s real 126807 supervised 28042
+step 44 loss 0.0016 9633 ms 13170 real tok/s 27212 padded tok/s real 126873 supervised 23979
+step 45 loss 0.0033 9679 ms 13632 real tok/s 27085 padded tok/s real 131938 supervised 26328
+step 46 loss 0.0021 9640 ms 13702 real tok/s 27195 padded tok/s real 132081 supervised 26638
+step 47 loss 0.0016 9716 ms 13708 real tok/s 26980 padded tok/s real 133187 supervised 24056
+step 48 loss 0.0017 9634 ms 13296 real tok/s 27211 padded tok/s real 128085 supervised 25234
+step 49 loss 0.0030 9298 ms 13637 real tok/s 28193 padded tok/s real 126795 supervised 27390
+[36m(StageWorkerActor pid=36217, ip=node2)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: FutureWarning: `torch.distributed.all_gather_into_tensor` is deprecated. Please use `torch.distributed.all_gather_single` instead.[32m [repeated 14x across cluster][0m
+[36m(StageWorkerActor pid=36217, ip=node2)[0m   return func(*args, **kwargs)[32m [repeated 14x across cluster][0m
+[36m(StageWorkerActor pid=36217, ip=node2)[0m [2026-10-18 14:57:54,083] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****[32m [repeated 7x across cluster][0m

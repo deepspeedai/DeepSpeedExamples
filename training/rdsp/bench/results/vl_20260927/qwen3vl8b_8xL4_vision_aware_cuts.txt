@@ -1,0 +1,51 @@
+===== VB8: --model Qwen/Qwen3-VL-8B-Instruct --stages 8 --steps 6 --zero 1 --stage 0:offload=1,recompute=1 --stage 1:offload=1 --stage 2:offload=1 --stage 3:offload=1 --stage 4:offload=1 --stage 5:offload=1 --stage 6:offload=1 --stage 7:offload=1
+stages (blocks): [(0, 3), (3, 9), (9, 14), (14, 19), (19, 24), (24, 29), (29, 34), (34, 36)]
+step 0 loss 1.6703 22295 ms 367 tok/s
+step 1 loss 0.2548 12462 ms 657 tok/s
+step 2 loss 0.0980 13104 ms 625 tok/s
+step 3 loss 0.0304 12028 ms 681 tok/s
+step 4 loss 0.0014 13049 ms 628 tok/s
+step 5 loss 0.0108 13394 ms 612 tok/s
+exit 0  wall 138s
+peak GPU MiB: {0: 20843, 1: 16226, 2: 12735, 3: 11586, 4: 10434, 5: 9277, 6: 8531, 7: 18223}
+===== VC8: --model Qwen/Qwen3-VL-8B-Instruct --stages 7 --steps 6 --zero 1 --stage 0:gpus=2,offload=1,recompute=1 --stage 1:offload=1 --stage 2:offload=1 --stage 3:offload=1 --stage 4:offload=1 --stage 5:offload=1 --stage 6:offload=1
+stages (blocks): [(0, 3), (3, 9), (9, 15), (15, 21), (21, 27), (27, 33), (33, 36)]
+step 0 loss 1.6585 20223 ms 405 tok/s
+step 1 loss 0.2554 11799 ms 694 tok/s
+step 2 loss 0.0996 12278 ms 667 tok/s
+step 3 loss 0.0307 12390 ms 661 tok/s
+step 4 loss 0.0009 12759 ms 642 tok/s
+step 5 loss 0.0019 12444 ms 658 tok/s
+exit 0  wall 130s
+peak GPU MiB: {0: 19164, 1: 19147, 2: 14878, 3: 13465, 4: 12085, 5: 10708, 6: 9735, 7: 16619}
+===== VC8P: --model Qwen/Qwen3-VL-8B-Instruct --stages 7 --steps 3 --profile --zero 1 --stage 0:gpus=2,offload=1,recompute=1 --stage 1:offload=1 --stage 2:offload=1 --stage 3:offload=1 --stage 4:offload=1 --stage 5:offload=1 --stage 6:offload=1
+stages (blocks): [(0, 3), (3, 9), (9, 15), (15, 21), (21, 27), (27, 33), (33, 36)]
+(StageWorkerActor pid=83246) {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "step"}, "wait_fwd": 4548.7, "forward": 1095.6, "backward": 1805.6, "wait_sends": 1.3}
+(StageWorkerActor pid=83262) {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "step"}, "wait_fwd": 3840.5, "forward": 1051.9, "wait_bwd": 1636.3, "backward": 1750.8, "wait_sends": 1.2}
+(StageWorkerActor pid=83241) {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 1923.5, "wait_bwd": 8228.0, "backward": 3665.6, "wait_sends": 0.5}
+(StageWorkerActor pid=83265) {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 1136.1, "forward": 1021.7, "wait_bwd": 7679.5, "backward": 1778.7, "wait_sends": 2.8} [repeated 4x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)
+(StageWorkerActor pid=83245) {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "apply"}, "apply": 5313.6}
+(StageWorkerActor pid=83245) {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "step"}, "forward": 1919.0, "wait_bwd": 8080.3, "backward": 3714.7, "wait_sends": 0.5}
+step 0 loss 1.6585 20496 ms 400 tok/s
+(StageWorkerActor pid=83246) {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "step"}, "wait_fwd": 411.2, "forward": 442.0, "backward": 1773.7, "wait_sends": 1.4}
+(StageWorkerActor pid=83262) {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "step"}, "wait_fwd": 381.3, "forward": 382.1, "wait_bwd": 963.0, "backward": 1700.1, "wait_sends": 1.3}
+(StageWorkerActor pid=83246) {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "apply"}, "apply": 6343.1} [repeated 7x across cluster]
+(StageWorkerActor pid=83245) {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "step"}, "forward": 575.8, "wait_bwd": 4508.8, "backward": 3662.3, "wait_sends": 0.8}
+(StageWorkerActor pid=83265) {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 302.3, "forward": 363.1, "wait_bwd": 4277.8, "backward": 1709.0, "wait_sends": 2.9} [repeated 4x across cluster]
+(StageWorkerActor pid=83262) {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "apply"}, "apply": 1858.1}
+(StageWorkerActor pid=83246) {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "apply"}, "apply": 1978.2}
+step 1 loss 0.2553 11979 ms 684 tok/s
+(StageWorkerActor pid=83246) {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "step"}, "wait_fwd": 387.2, "forward": 443.0, "backward": 1775.1, "wait_sends": 1.4}
+(StageWorkerActor pid=83241) {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 584.3, "wait_bwd": 4592.9, "backward": 3619.8, "wait_sends": 1.0}
+(StageWorkerActor pid=83262) {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "step"}, "wait_fwd": 367.1, "forward": 377.1, "wait_bwd": 970.9, "backward": 1688.6, "wait_sends": 1.3}
+(StageWorkerActor pid=83265) {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "apply"}, "apply": 2762.8} [repeated 6x across cluster]
+(StageWorkerActor pid=83241) {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 660.6, "wait_bwd": 4504.6, "backward": 3620.5, "wait_sends": 0.4}
+(StageWorkerActor pid=83265) {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 296.3, "forward": 360.9, "wait_bwd": 4258.0, "backward": 1709.4, "wait_sends": 2.9} [repeated 4x across cluster]
+(StageWorkerActor pid=83246) {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "apply"}, "apply": 2623.1}
+(StageWorkerActor pid=83262) {"rdsp_profile": {"stage": 5, "rank": 0, "kind": "apply"}, "apply": 2582.8}
+step 2 loss 0.1025 12434 ms 659 tok/s
+(StageWorkerActor pid=83245) {"rdsp_profile": {"stage": 0, "rank": 1, "kind": "step"}, "forward": 585.0, "wait_bwd": 4480.8, "backward": 3671.4, "wait_sends": 0.3}
+(StageWorkerActor pid=83241) {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "apply"}, "apply": 3258.7} [repeated 6x across cluster]
+exit 0  wall 100s
+peak GPU MiB: {0: 19164, 1: 19147, 2: 14879, 3: 13465, 4: 12085, 5: 10708, 6: 9735, 7: 16619}
+ALL_RUNS_DONE

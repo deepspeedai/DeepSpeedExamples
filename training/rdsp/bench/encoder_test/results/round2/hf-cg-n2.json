@@ -1,0 +1,56 @@
+{
+ "env": {
+  "torch": "2.13.0+cu130",
+  "transformers": "5.17.0",
+  "python": "3.12.16",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 460730096
+ },
+ "args": {
+  "impl": "hf",
+  "hf_attn": "varlen",
+  "config": "Qwen/Qwen3.5-27B",
+  "grids": "/home/ubuntu/rdsp/bench/encoder_test/results/grids.json",
+  "images": "2",
+  "modes": "fwdbwd",
+  "passes": 3,
+  "profile_images": 16,
+  "device": "cuda",
+  "trace_dir": "/home/ubuntu/rdsp/bench/encoder_test/results/traces",
+  "recompute": false,
+  "cuda_graphs": false,
+  "hf_cuda_graphs": true,
+  "label": "hf-cg-n2",
+  "out": "/home/ubuntu/rdsp/bench/encoder_test/results/hf-cg-n2.json"
+ },
+ "results": [
+  {
+   "label": "hf-cg-n2",
+   "impl": "hf",
+   "images_per_call": 2,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 7936,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    75.62627362500507,
+    75.58221771876106,
+    75.54941242187851
+   ],
+   "ms_per_image": 75.58221771876106,
+   "profiled_images": 16,
+   "traced_ms_per_image": 78.66500975001145,
+   "kernels_per_image": 1311.0,
+   "gpu_busy_ms_per_image": 76.59944506249965,
+   "syncs_per_image": 7.0625,
+   "d2h_copies_per_image": 5.5,
+   "kernels_by_part_per_image": {
+    "backward": 1311.0
+   },
+   "gpu_ms_by_part_per_image": {
+    "backward": 76.59944506249965
+   },
+   "cpu_ms_by_part_per_image": {}
+  }
+ ]
+}

@@ -1,0 +1,38 @@
+CPU data-path check, 2026-10-12 (TorchTitan 3c36a77, PyTorch 2.16.0.dev20261012 CPU, attn-gym
+not installed so its kernels are TorchTitan's placeholders; nothing GPU-side ran).
+
+Fake export: checks/make_fake_export.py, 2 steps x 64 rows, real Qwen3.5 HF processor
+(Qwen/Qwen3.5-27B snapshot fc05dae), random images 48-200 px, rows padded to 2048.
+
+checks/tt_data_check.py (TorchTitan's GrainDataLoader + MultiModalCollator via cord_data.py):
+OK: 128 microbatches = 128 exported rows, in order; inputs, shifted labels, patches, grids,
+loss-token counts all equal. mrope_positions shape (2048, 3), image_id 248056, pad_id 248044
+
+checks/compare_mrope.py (Hugging Face Qwen3_5Model.get_rope_index, transformers 5.17.0):
+row 0: 99 real tokens, image grid [[1, 18, 16]], max |HF - TorchTitan| position difference 0
+row 1: 99 real tokens, image grid [[1, 18, 16]], max |HF - TorchTitan| position difference 0
+row 2: 108 real tokens, image grid [[1, 20, 16]], max |HF - TorchTitan| position difference 0
+row 3: 100 real tokens, image grid [[1, 16, 18]], max |HF - TorchTitan| position difference 0
+row 4: 103 real tokens, image grid [[1, 10, 30]], max |HF - TorchTitan| position difference 0
+row 5: 98 real tokens, image grid [[1, 14, 20]], max |HF - TorchTitan| position difference 0
+row 6: 98 real tokens, image grid [[1, 10, 28]], max |HF - TorchTitan| position difference 0
+row 7: 100 real tokens, image grid [[1, 16, 18]], max |HF - TorchTitan| position difference 0
+OK: M-RoPE positions identical on every real token
+
+Recipe config (cord_qwen35.qwen35_27b_cord_tp4pp2) builds on CPU:
+parallelism: TP 4 PP 2 dp_shard 1 1F1B microbatches 64 SP True
+optim: max_norm inf lr 1e-05 betas (0.9, 0.95) eps 1e-08 wd 0.0 fused True moments parameter | warmup 0 decay_ratio 0.0
+training: tokens/microbatch 2048 ctx 2048 steps 50 float32 bfloat16 float32 cuda graphs off True
+recompute None | loader shuffle False repeat False | ckpt hf True load_only True
+model Config | vocab 248320
+(warning "initial_load_model_only=True has no effect without an initial_load_path" is harmless:
+with no initial_load_path the HF weights load from hf_assets_path, checkpointer/base.py:282-296)
+
+Not checked on CPU: model build, HF weight loading, pipeline split, any GPU kernel.
+
+Layout C3 (data parallel 2), checks/tt_dp_check.py, 2026-10-16:
+rank 0: microbatches 0-63 = exported rows 0, 2, ..., 126
+rank 1: microbatches 0-63 = exported rows 1, 3, ..., 127
+qwen35_27b_cord_tp4dp2: dp_shard 2 TP 4 PP 1 SP True | tokens/microbatch 2048 tokens/step 131072 -> accumulation 32 | recompute None | loader repeat True shuffle False
+qwen35_27b_cord_tp4dp2_rc: dp_shard 2 TP 4 PP 1 SP True | tokens/microbatch 2048 tokens/step 131072 -> accumulation 32 | recompute Config | loader repeat True shuffle False
+OK

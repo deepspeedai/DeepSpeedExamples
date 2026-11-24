@@ -1,0 +1,531 @@
+rdsp_tune: ROWS=8 RC_BLOCKS=all RC_PER= COMPILE=0 liger=--liger
+Fetching 21 files:   0%|          | 0/21 [00:00<?, ?it/s]Fetching 21 files: 100%|██████████| 21/21 [00:00<00:00, 1842.69it/s]
+2026-11-21 22:46:36,830	WARNING authentication_token_setup.py:85 -- Token authentication is enabled for this Ray cluster. Set RAY_AUTH_MODE=disabled to opt out. For more information, see https://docs.ray.io/en/latest/ray-security/token-auth.html
+2026-11-21 22:46:39,977	INFO worker.py:2038 -- Started a local Ray instance.
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[W1121 22:46:54.727515489 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[36m(StageWorkerActor pid=276210)[0m [2026-11-21 22:46:51,163] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****
+stages (blocks): [(0, 6), (6, 15), (15, 24), (24, 33), (33, 42), (42, 51), (51, 59), (59, 64)]
+[36m(StageWorkerActor pid=276320)[0m [rank0]:[W1121 22:47:48.953265823 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 14811136, total: 85019590656).
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[W1121 22:46:56.067251985 ProcessGroupNCCL.cpp:4173] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 0.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())[32m [repeated 15x across cluster][0m
+[36m(StageWorkerActor pid=276320)[0m [rank0]:[W1121 22:47:49.631377833 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 16908288, total: 85019590656).
+[36m(StageWorkerActor pid=276320)[0m [rank0]:[W1121 22:47:49.667619087 CUDACachingAllocator.cpp:508] expandable_segments: memory mapping failed with OOM on device 0 while trying to map 20971520 bytes (free: 16908288, total: 85019590656).
+[36m(StageWorkerActor pid=276320)[0m Traceback (most recent call last):
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py", line 452, in _run_step
+[36m(StageWorkerActor pid=276320)[0m     input_grad = adapter.backward(mb, grad=grad)
+[36m(StageWorkerActor pid=276320)[0m                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/deepspeed_adapter.py", line 596, in backward
+[36m(StageWorkerActor pid=276320)[0m     self.engine.backward(loss / self.n_mb)  # summed grads = full-step mean
+[36m(StageWorkerActor pid=276320)[0m     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/venv/lib/python3.12/site-packages/deepspeed/utils/nvtx.py", line 33, in wrapped_fn
+[36m(StageWorkerActor pid=276320)[0m     ret_val = func(*args, **kwargs)
+[36m(StageWorkerActor pid=276320)[0m               ^^^^^^^^^^^^^^^^^^^^^
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/venv/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 3098, in backward
+[36m(StageWorkerActor pid=276320)[0m     loss.backward(**backward_kwargs)
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/venv/lib/python3.12/site-packages/torch/_tensor.py", line 623, in backward
+[36m(StageWorkerActor pid=276320)[0m     torch.autograd.backward(
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 395, in backward
+[36m(StageWorkerActor pid=276320)[0m     _engine_run_backward(
+[36m(StageWorkerActor pid=276320)[0m   File "/home/ubuntu/venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 979, in _engine_run_backward
+[36m(StageWorkerActor pid=276320)[0m     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[36m(StageWorkerActor pid=276320)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(StageWorkerActor pid=276320)[0m torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 15.15 GiB. GPU 0 has a total capacity of 79.18 GiB of which 2.18 GiB is free. Including non-PyTorch memory, this process has 76.99 GiB memory in use. Of the allocated memory 74.42 GiB is allocated by PyTorch, and 162.01 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.900013485 ProcessGroupNCCL.cpp:730] [Rank 6] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=23, OpType=RECV, NumelIn=10, NumelOut=10, Timeout(ms)=300000) ran for 300014 milliseconds before timing out.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.900159049 ProcessGroupNCCL.cpp:2372] [PG ID 3 PG GUID  Rank 6]  failure detected by watchdog at work sequence id: 23 PG status: last enqueued work: 23, last started work: -1 (), last completed work: 22
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.901064128 ProcessGroupNCCL.cpp:774] Stack trace of the failed collective: 
+[36m(StageWorkerActor pid=276292)[0m #0 recv from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/p2p.py:156
+[36m(StageWorkerActor pid=276292)[0m #1 _run_step from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py:446
+[36m(StageWorkerActor pid=276292)[0m #2 _resume_span from /home/ubuntu/venv/lib/python3.12/site-packages/ray/util/tracing/tracing_helper.py:487
+[36m(StageWorkerActor pid=276292)[0m #3 run_step from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py:351
+[36m(StageWorkerActor pid=276292)[0m #4 _resume_span from /home/ubuntu/venv/lib/python3.12/site-packages/ray/util/tracing/tracing_helper.py:487
+[36m(StageWorkerActor pid=276292)[0m #5 actor_method_executor from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/function_manager.py:740
+[36m(StageWorkerActor pid=276292)[0m #6 main_loop from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/worker.py:1069
+[36m(StageWorkerActor pid=276292)[0m #7 <module> from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/workers/default_worker.py:323
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.901133020 ProcessGroupNCCL.cpp:2714] [PG ID 3 PG GUID  Rank 6] First PG on this rank to signal dumping.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.911765480 ProcessGroupNCCL.cpp:730] [Rank 6] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=105, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300026 milliseconds before timing out.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.911852782 ProcessGroupNCCL.cpp:2372] [PG ID 2 PG GUID  Rank 6]  failure detected by watchdog at work sequence id: 105 PG status: last enqueued work: 108, last started work: -1 (), last completed work: 104
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.912116718 ProcessGroupNCCL.cpp:774] Stack trace of the failed collective: 
+[36m(StageWorkerActor pid=276292)[0m #0 send from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/p2p.py:149
+[36m(StageWorkerActor pid=276292)[0m #1 send_boundary from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/p2p.py:193
+[36m(StageWorkerActor pid=276292)[0m #2 _run_step from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py:438
+[36m(StageWorkerActor pid=276292)[0m #3 _resume_span from /home/ubuntu/venv/lib/python3.12/site-packages/ray/util/tracing/tracing_helper.py:487
+[36m(StageWorkerActor pid=276292)[0m #4 run_step from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py:351
+[36m(StageWorkerActor pid=276292)[0m #5 _resume_span from /home/ubuntu/venv/lib/python3.12/site-packages/ray/util/tracing/tracing_helper.py:487
+[36m(StageWorkerActor pid=276292)[0m #6 actor_method_executor from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/function_manager.py:740
+[36m(StageWorkerActor pid=276292)[0m #7 main_loop from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/worker.py:1069
+[36m(StageWorkerActor pid=276292)[0m #8 <module> from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/workers/default_worker.py:323
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.176376056 ProcessGroupNCCL.cpp:1964] [PG ID 0 PG GUID 0 Rank 0] Received a dump signal due to a collective timeout from this local rank and we will try our best to dump the debug info. Last enqueued NCCL work: -1, last completed NCCL work: -1.This is most likely caused by incorrect usages of collectives, e.g., wrong sizes used across ranks, the order of collectives is not same for all ranks or the scheduled collective, for some reason, didn't run. Additionally, this can be caused by GIL deadlock or other reasons such as network errors or bugs in the communications library (e.g. NCCL), etc. 
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:52:48.176555310 ProcessGroupNCCL.cpp:1677] [PG ID 0 PG GUID 0 Rank 0] ProcessGroupNCCL preparing to dump debug info. Include stack trace: 1, only active collectives: 0
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:53:48.901240186 ProcessGroupNCCL.cpp:791] [Rank 6] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:53:48.901295867 ProcessGroupNCCL.cpp:805] [Rank 6] To avoid data inconsistency, we are taking the entire process down.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:53:48.902171546 ProcessGroupNCCL.cpp:2174] [PG ID 3 PG GUID  Rank 6] Process group watchdog thread terminated with exception: [Rank 6] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=23, OpType=RECV, NumelIn=10, NumelOut=10, Timeout(ms)=300000) ran for 300014 milliseconds before timing out.
+[36m(StageWorkerActor pid=276292)[0m Exception raised from checkTimeout at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:733 (most recent call first):
+[36m(StageWorkerActor pid=276292)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x772778363bfd in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #1: c10::DistError::DistError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364bd2 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #3: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b1 (0x76f776f50b41 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #4: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x1541 (0x76f776f5c931 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #5: c10d::ProcessGroupNCCL::Watchdog::run() + 0x157 (0x76f776f5dd47 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #6: <unknown function> + 0xdc253 (0x7727950dc253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #7: <unknown function> + 0x949e3 (0x772797c949e3 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #8: <unknown function> + 0x126860 (0x772797d26860 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:53:48.912265276 ProcessGroupNCCL.cpp:791] [Rank 6] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:53:48.912307077 ProcessGroupNCCL.cpp:805] [Rank 6] To avoid data inconsistency, we are taking the entire process down.
+[36m(StageWorkerActor pid=276292)[0m [rank0]:[E1121 22:53:48.913090494 ProcessGroupNCCL.cpp:2174] [PG ID 2 PG GUID  Rank 6] Process group watchdog thread terminated with exception: [Rank 6] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=105, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300026 milliseconds before timing out.
+[36m(StageWorkerActor pid=276292)[0m Exception raised from checkTimeout at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:733 (most recent call first):
+[36m(StageWorkerActor pid=276292)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x772778363bfd in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #1: c10::DistError::DistError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364bd2 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #3: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b1 (0x76f776f50b41 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #4: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x1541 (0x76f776f5c931 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #5: c10d::ProcessGroupNCCL::Watchdog::run() + 0x157 (0x76f776f5dd47 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #6: <unknown function> + 0xdc253 (0x7727950dc253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #7: <unknown function> + 0x949e3 (0x772797c949e3 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #8: <unknown function> + 0x126860 (0x772797d26860 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m [2026-11-21 22:53:48,564 E 276292 277273] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 3 PG GUID  Rank 6] Process group watchdog thread terminated with exception: [Rank 6] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=23, OpType=RECV, NumelIn=10, NumelOut=10, Timeout(ms)=300000) ran for 300014 milliseconds before timing out.
+[36m(StageWorkerActor pid=276292)[0m Exception raised from checkTimeout at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:733 (most recent call first):
+[36m(StageWorkerActor pid=276292)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x772778363bfd in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #1: c10::DistError::DistError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364bd2 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #3: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b1 (0x76f776f50b41 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #4: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x1541 (0x76f776f5c931 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #5: c10d::ProcessGroupNCCL::Watchdog::run() + 0x157 (0x76f776f5dd47 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #6: <unknown function> + 0xdc253 (0x7727950dc253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #7: <unknown function> + 0x949e3 (0x772797c949e3 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #8: <unknown function> + 0x126860 (0x772797d26860 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m Exception raised from run at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2180 (most recent call first):
+[36m(StageWorkerActor pid=276292)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x772778363bfd in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #1: c10::DistError::DistError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364bd2 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #3: <unknown function> + 0x697922 (0x76f776697922 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #4: <unknown function> + 0xdc253 (0x7727950dc253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #5: <unknown function> + 0x949e3 (0x772797c949e3 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #6: <unknown function> + 0x126860 (0x772797d26860 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m  /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183910a) [0x772796c3910a] ray::operator<<()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x1839bbc) [0x772796c39bbc] ray::RayLog::operator<< <>()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x9006db) [0x772795d006db] ray::TerminateHandler()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x7727950ae20c]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x7727950ae277]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x7727950ae1fe]
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x76f7766979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7727950dc253]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x772797c949e3]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x772797d26860]
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:52:49.691354659 ProcessGroupNCCL.cpp:730] [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=12, OpType=RECV, NumelIn=10, NumelOut=10, Timeout(ms)=300000) ran for 300036 milliseconds before timing out.[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:52:49.699512696 ProcessGroupNCCL.cpp:2372] [PG ID 2 PG GUID  Rank 0]  failure detected by watchdog at work sequence id: 58 PG status: last enqueued work: 60, last started work: -1 (), last completed work: 57[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:52:49.699724161 ProcessGroupNCCL.cpp:774] Stack trace of the failed collective: [32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #0 recv from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/p2p.py:156[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #2 _run_step from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py:438[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #5 _resume_span from /home/ubuntu/venv/lib/python3.12/site-packages/ray/util/tracing/tracing_helper.py:487[32m [repeated 24x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #4 run_step from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_worker.py:351[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #6 actor_method_executor from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/function_manager.py:740[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #7 main_loop from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/worker.py:1069[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #8 <module> from /home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/workers/default_worker.py:323[32m [repeated 12x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:52:49.692177127 ProcessGroupNCCL.cpp:2714] [PG ID 3 PG GUID  Rank 0] First PG on this rank to signal dumping.[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:52:49.699453795 ProcessGroupNCCL.cpp:730] [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=58, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300044 milliseconds before timing out.[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #0 send from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/p2p.py:149[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m #1 send_boundary from /home/ubuntu/rdsp/src/ray_deepspeed_pipeline/p2p.py:193[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276215)[0m [rank0]:[E1121 22:52:49.141274912 ProcessGroupNCCL.cpp:1964] [PG ID 0 PG GUID 0 Rank 0] Received a dump signal due to a collective timeout from this local rank and we will try our best to dump the debug info. Last enqueued NCCL work: -1, last completed NCCL work: -1.This is most likely caused by incorrect usages of collectives, e.g., wrong sizes used across ranks, the order of collectives is not same for all ranks or the scheduled collective, for some reason, didn't run. Additionally, this can be caused by GIL deadlock or other reasons such as network errors or bugs in the communications library (e.g. NCCL), etc. [32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276215)[0m [rank0]:[E1121 22:52:49.141526877 ProcessGroupNCCL.cpp:1677] [PG ID 0 PG GUID 0 Rank 0] ProcessGroupNCCL preparing to dump debug info. Include stack trace: 1, only active collectives: 0[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276292)[0m [2026-11-21 22:53:48,570 E 276292 277273] logging.cc:125: Stack trace: 
+[36m(StageWorkerActor pid=276292)[0m  /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183910a) [0x772796c3910a] ray::operator<<()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x1839bbc) [0x772796c39bbc] ray::RayLog::operator<< <>()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183c178) [0x772796c3c178] ray::TerminateHandler()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x7727950ae20c]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x7727950ae277]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x7727950ae1fe]
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x76f7766979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7727950dc253]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x772797c949e3]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x772797d26860]
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m *** SIGABRT received at time=1795301628 on cpu 164 ***
+[36m(StageWorkerActor pid=276292)[0m PC: @     0x772797c9691c  (unknown)  pthread_kill
+[36m(StageWorkerActor pid=276292)[0m     @     0x772797c424b0  (unknown)  (unknown)
+[36m(StageWorkerActor pid=276292)[0m [2026-11-21 22:53:48,570 E 276292 277273] logging.cc:474: *** SIGABRT received at time=1795301628 on cpu 164 ***
+[36m(StageWorkerActor pid=276292)[0m [2026-11-21 22:53:48,570 E 276292 277273] logging.cc:474: PC: @     0x772797c9691c  (unknown)  pthread_kill
+[36m(StageWorkerActor pid=276292)[0m [2026-11-21 22:53:48,570 E 276292 277273] logging.cc:474:     @     0x772797c424b0  (unknown)  (unknown)
+[36m(StageWorkerActor pid=276292)[0m Fatal Python error: Aborted
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd
+[36m(StageWorkerActor pid=276292)[0m , yaml._yaml, ray._raylet, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._internal.utils, cuda.bindings._internal.driver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._internal.runtime_ptds, cuda.bindings._internal.runtime, cuda.bindings.cyruntime, cuda.bindings.runtime, pyarrow.lib, pyarrow._json, regex._regex, markupsafe._speedups, PIL._imaging[2026-11-21 22:53:48,575 E 276292 277271] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 6] Process group watchdog thread terminated with exception: [Rank 6] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=105, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300026 milliseconds before timing out.
+[36m(StageWorkerActor pid=276292)[0m Exception raised from checkTimeout at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:733 (most recent call first):
+[36m(StageWorkerActor pid=276292)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x772778363bfd in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #1: c10::DistError::DistError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364bd2 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #3: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b1 (0x76f776f50b41 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #4: c10d::ProcessGroupNCCL::Watchdog::runLoop() + 0x1541 (0x76f776f5c931 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #5: c10d::ProcessGroupNCCL::Watchdog::run() + 0x157 (0x76f776f5dd47 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #6: <unknown function> + 0xdc253 (0x7727950dc253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #7: <unknown function> + 0x949e3 (0x772797c949e3 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #8: <unknown function> + 0x126860 (0x772797d26860 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m Exception raised from run at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2180 (most recent call first):
+[36m(StageWorkerActor pid=276292)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x9d (0x772778363bfd in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #1: c10::DistError::DistError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364bd2 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x772778364d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+[36m(StageWorkerActor pid=276292)[0m frame #3: <unknown function> + 0x697922 (0x76f776697922 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+[36m(StageWorkerActor pid=276292)[0m frame #4: <unknown function> + 0xdc253 (0x7727950dc253 in /lib/x86_64-linux-gnu/libstdc++.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #5: <unknown function> + 0x949e3 (0x772797c949e3 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m frame #6: <unknown function> + 0x126860 (0x772797d26860 in /lib/x86_64-linux-gnu/libc.so.6)
+[36m(StageWorkerActor pid=276292)[0m  /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183910a) [0x772796c3910a] ray::operator<<()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x1839bbc) [0x772796c39bbc] ray::RayLog::operator<< <>()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x9006db) [0x772795d006db] ray::TerminateHandler()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x7727950ae20c]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x7727950ae277]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x7727950ae1fe]
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x76f7766979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7727950dc253]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x772797c949e3]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x772797d26860]
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276292)[0m , numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._pcg64, numpy.random._generator, numpy.random._mt19937, numpy.random._philox, numpy.random._sfc64, numpy.random.mtrand, PIL._imagingft, cuda_utils[2026-11-21 22:53:48,578 E 276292 277271] logging.cc:125: Stack trace: 
+[36m(StageWorkerActor pid=276292)[0m  /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183910a) [0x772796c3910a] ray::operator<<()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x1839bbc) [0x772796c39bbc] ray::RayLog::operator<< <>()
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183c178) [0x772796c3c178] ray::TerminateHandler()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x7727950ae20c]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x7727950ae277]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x7727950ae1fe]
+[36m(StageWorkerActor pid=276292)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x76f7766979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x7727950dc253]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x772797c949e3]
+[36m(StageWorkerActor pid=276292)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x772797d26860]
+[36m(StageWorkerActor pid=276292)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x775673cae20c]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x775673cae277]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x775673cae1fe]
+[36m(StageWorkerActor pid=276240)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x772653e979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x775673cdc253]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7756766949e3]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x775676726860]
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x775673cae20c]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x775673cae277]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x775673cae1fe]
+[36m(StageWorkerActor pid=276240)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x772653e979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x775673cdc253]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7756766949e3]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x775676726860]
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet, numpy._core._multiarray_umath, numpy.linalg._umath_linalg[2026-11-21 22:53:48,767 E 276240 277266] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 5] Process group watchdog thread terminated with exception: [Rank 5] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=113, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300083 milliseconds before timing out.
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x775673cae20c]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x775673cae277]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x775673cae1fe]
+[36m(StageWorkerActor pid=276240)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x772653e979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x775673cdc253]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7756766949e3]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x775676726860]
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m , torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._internal.utils, cuda.bindings._internal.driver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._internal.runtime_ptds, cuda.bindings._internal.runtime, cuda.bindings.cyruntime, cuda.bindings.runtime, pyarrow.lib, pyarrow._json, regex._regex[2026-11-21 22:53:48,769 E 276240 277266] logging.cc:125: Stack trace: 
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x775673cae20c]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x775673cae277]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x775673cae1fe]
+[36m(StageWorkerActor pid=276240)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x772653e979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x775673cdc253]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7756766949e3]
+[36m(StageWorkerActor pid=276240)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x775676726860]
+[36m(StageWorkerActor pid=276240)[0m 
+[36m(StageWorkerActor pid=276240)[0m , markupsafe._speedups, PIL._imaging
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x71863c2ae20c]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x71863c2ae277]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x71863c2ae1fe]
+[36m(StageWorkerActor pid=276215)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x71561cc979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x71863c2dc253]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x71863ec949e3]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x71863ed26860]
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m [2026-11-21 22:53:48,867 E 276215 277263] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 4] Process group watchdog thread terminated with exception: [Rank 4] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=121, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300086 milliseconds before timing out.
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x71863c2ae20c]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x71863c2ae277]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x71863c2ae1fe]
+[36m(StageWorkerActor pid=276215)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x71561cc979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x71863c2dc253]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x71863ec949e3]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x71863ed26860]
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x71863c2ae20c]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x71863c2ae277]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x71863c2ae1fe]
+[36m(StageWorkerActor pid=276215)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x71561cc979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x71863c2dc253]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x71863ec949e3]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x71863ed26860]
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276215)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet[2026-11-21 22:53:48,875 E 276215 277264] logging.cc:125: Stack trace: 
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x71863c2ae20c]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x71863c2ae277]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x71863c2ae1fe]
+[36m(StageWorkerActor pid=276215)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x71561cc979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x71863c2dc253]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x71863ec949e3]
+[36m(StageWorkerActor pid=276215)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x71863ed26860]
+[36m(StageWorkerActor pid=276215)[0m 
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x740dc90ae20c]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x740dc90ae277]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x740dc90ae1fe]
+[36m(StageWorkerActor pid=276213)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x73ddaa6979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x740dc90dc253]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x740dcba949e3]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x740dcbb26860]
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x740dc90ae20c]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x740dc90ae277]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x740dc90ae1fe]
+[36m(StageWorkerActor pid=276213)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x73ddaa6979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x740dc90dc253]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x740dcba949e3]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x740dcbb26860]
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet[2026-11-21 22:53:48,965 E 276213 277247] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 3] Process group watchdog thread terminated with exception: [Rank 3] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=129, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300049 milliseconds before timing out.
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x740dc90ae20c]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x740dc90ae277]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x740dc90ae1fe]
+[36m(StageWorkerActor pid=276213)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x73ddaa6979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x740dc90dc253]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x740dcba949e3]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x740dcbb26860]
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276213)[0m , numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._internal.utils, cuda.bindings._internal.driver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._internal.runtime_ptds, cuda.bindings._internal.runtime, cuda.bindings.cyruntime, cuda.bindings.runtime, pyarrow.lib, pyarrow._json, regex._regex, markupsafe._speedups, PIL._imaging[2026-11-21 22:53:48,967 E 276213 277247] logging.cc:125: Stack trace: 
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x740dc90ae20c]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x740dc90ae277]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x740dc90ae1fe]
+[36m(StageWorkerActor pid=276213)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x73ddaa6979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x740dc90dc253]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x740dcba949e3]
+[36m(StageWorkerActor pid=276213)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x740dcbb26860]
+[36m(StageWorkerActor pid=276213)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x749d756ae20c]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x749d756ae277]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x749d756ae1fe]
+[36m(StageWorkerActor pid=276212)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x746d566979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x749d756dc253]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x749d782949e3]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x749d78326860]
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x749d756ae20c]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x749d756ae277]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x749d756ae1fe]
+[36m(StageWorkerActor pid=276212)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x746d566979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x749d756dc253]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x749d782949e3]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x749d78326860]
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x749d756ae20c]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x749d756ae277]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x749d756ae1fe]
+[36m(StageWorkerActor pid=276212)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x746d566979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x749d756dc253]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x749d782949e3]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x749d78326860]
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x749d756ae20c]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x749d756ae277]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x749d756ae1fe]
+[36m(StageWorkerActor pid=276212)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x746d566979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x749d756dc253]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x749d782949e3]
+[36m(StageWorkerActor pid=276212)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x749d78326860]
+[36m(StageWorkerActor pid=276212)[0m 
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x79a9fe2ae20c]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x79a9fe2ae277]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x79a9fe2ae1fe]
+[36m(StageWorkerActor pid=276211)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x7979de6979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x79a9fe2dc253]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x79aa00c949e3]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x79aa00d26860]
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x79a9fe2ae20c]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x79a9fe2ae277]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x79a9fe2ae1fe]
+[36m(StageWorkerActor pid=276211)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x7979de6979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x79a9fe2dc253]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x79aa00c949e3]
+[36m(StageWorkerActor pid=276211)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x79aa00d26860]
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m 
+[36m(StageWorkerActor pid=276211)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._internal.utils, cuda.bindings._internal.driver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._internal.runtime_ptds, cuda.bindings._internal.runtime, cuda.bindings.cyruntime, cuda.bindings.runtime, pyarrow.lib, pyarrow._json, regex._regex, markupsafe._speedups, PIL._imaging, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._pcg64, numpy.random._generator, numpy.random._mt19937, numpy.random._philox, numpy.random._sfc64, numpy.random.mtrand, PIL._imagingft, cuda_utils (total: 48)
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x78645d6ae20c]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x78645d6ae277]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x78645d6ae1fe]
+[36m(StageWorkerActor pid=276210)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x78343de979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x78645d6dc253]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7864602949e3]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x786460326860]
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x78645d6ae20c]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x78645d6ae277]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x78645d6ae1fe]
+[36m(StageWorkerActor pid=276210)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x78343de979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x78645d6dc253]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7864602949e3]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x786460326860]
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._internal.utils, cuda.bindings._internal.driver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._internal.runtime_ptds, cuda.bindings._internal.runtime, cuda.bindings.cyruntime, cuda.bindings.runtime[2026-11-21 22:53:49,363 E 276210 277245] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 0] Process group watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=58, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300044 milliseconds before timing out.
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x78645d6ae20c]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x78645d6ae277]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x78645d6ae1fe]
+[36m(StageWorkerActor pid=276210)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x78343de979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x78645d6dc253]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7864602949e3]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x786460326860]
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276210)[0m , pyarrow.lib, pyarrow._json, regex._regex, markupsafe._speedups, PIL._imaging[2026-11-21 22:53:49,365 E 276210 277245] logging.cc:125: Stack trace: 
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0x78645d6ae20c]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0x78645d6ae277]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae1fe) [0x78645d6ae1fe]
+[36m(StageWorkerActor pid=276210)[0m /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so(+0x6979ca) [0x78343de979ca] c10d::ProcessGroupNCCL::Watchdog::run()
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libstdc++.so.6(+0xdc253) [0x78645d6dc253]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x949e3) [0x7864602949e3]
+[36m(StageWorkerActor pid=276210)[0m /lib/x86_64-linux-gnu/libc.so.6(+0x126860) [0x786460326860]
+[36m(StageWorkerActor pid=276210)[0m 
+[36m(StageWorkerActor pid=276320)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 18877.3, "forward": 2791.7, "backward": 15531.4, "wait_sends": 0.6, "mem_gb": 12.17, "peak_gb": 67.17}
+[36m(StageWorkerActor pid=276320)[0m [2026-11-21 22:46:53,022] [WARNING] [engine.py:1865:_do_optimizer_sanity_check] **** You are using ZeRO with an untested optimizer, proceed with caution *****[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(StageWorkerActor pid=276292)[0m {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "step"}, "wait_fwd": 17499.4, "forward": 2139.8, "wait_bwd": 13549.3, "backward": 4531.3, "wait_sends": 0.6, "mem_gb": 12.03, "peak_gb": 21.96}
+[36m(StageWorkerActor pid=276210)[0m {"rdsp_profile": {"stage": 0, "rank": 0, "kind": "step"}, "forward": 12273.6, "wait_bwd": 22294.0, "backward": 7387.4, "wait_sends": 0.6, "mem_gb": 15.36, "peak_gb": 40.36}
+[36m(StageWorkerActor pid=276320)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "apply"}, "apply": 347.9, "mem_gb": 35.44, "peak_gb": 41.59}
+[36m(StageWorkerActor pid=276211)[0m {"rdsp_profile": {"stage": 1, "rank": 0, "kind": "step"}, "wait_fwd": 10707.8, "forward": 2460.1, "wait_bwd": 22011.2, "backward": 5524.2, "wait_sends": 1170.3, "mem_gb": 13.46, "peak_gb": 29.95}[32m [repeated 5x across cluster][0m
+[36m(StageWorkerActor pid=276320)[0m {"rdsp_profile": {"stage": 7, "rank": 0, "kind": "step"}, "wait_fwd": 2757.0, "forward": 997.9, "backward": 79.4, "mem_gb": 59.27, "peak_gb": 74.42}
+[36m(StageWorkerActor pid=276292)[0m {"rdsp_profile": {"stage": 6, "rank": 0, "kind": "apply"}, "apply": 1888.8, "mem_gb": 34.08, "peak_gb": 39.51}[32m [repeated 7x across cluster][0m
+[33m(raylet)[0m A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. Lease ID: 06000000d7ab2733f3dda4092a855b749f59e1e0216243509fe189eed7a4bc7d Worker ID: 4d3827527e1c82b9fb67213526c88ee176dd9d27d150f491d2bac7b0 Node ID: c40c9c2759862a776aa52b130f991defaf03bdbe23baf82d73b8d909 Worker IP address: node1 Worker port: 41595 Worker PID: 276292 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.
+Traceback (most recent call last):
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/coordinator.py", line 438, in _resolve
+    return resolve(handle)
+           ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/protocols.py", line 70, in resolve
+    return result.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/stage_group.py", line 52, in result
+    return self.reduce(ray.get(self.refs))
+                       ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/worker.py", line 3009, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/ray/_private/worker.py", line 1055, in get_objects
+    raise value
+ray.exceptions.ActorDiedError: The actor died unexpectedly before finishing this task.
+	class_name: StageWorkerActor
+	actor_id: 71efd63a2bfad6935eed909901000000
+	pid: 276210
+	namespace: eeacf377-97a6-42ca-a611-57fc57b01eb4
+	ip: node1
+The actor is dead because its worker process has died. Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/rdsp/train_vl.py", line 751, in <module>
+    main()
+  File "/home/ubuntu/rdsp/train_vl.py", line 707, in main
+    partition = calibrated_policy(
+                ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/train_vl.py", line 268, in calibrated_policy
+    measured = engine.measure_stages(batches(), steps=steps, skip=1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/engine.py", line 148, in measure_stages
+    self.train_batch(data_iter)
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/engine.py", line 74, in train_batch
+    return _public_loss(resolve(self._coordinator.train_batch(source)))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/coordinator.py", line 97, in train_batch
+    return self._run(data_iter, train=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/coordinator.py", line 271, in _run
+    losses = self._run_step(sequences, inputs, labels, train, prepared, ahead)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/coordinator.py", line 353, in _run_step
+    raise errors[0]
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/coordinator.py", line 345, in _run_step
+    results[s] = self._resolve(handle, cmds[s])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/src/ray_deepspeed_pipeline/coordinator.py", line 443, in _resolve
+    raise StepFailed(f"worker failure {where}: {type(e).__name__}: {e}") from e
+ray_deepspeed_pipeline.errors.StepFailed: worker failure on g2.t1.s0.step: ActorDiedError: The actor died unexpectedly before finishing this task.
+	class_name: StageWorkerActor
+	actor_id: 71efd63a2bfad6935eed909901000000
+	pid: 276210
+	namespace: eeacf377-97a6-42ca-a611-57fc57b01eb4
+	ip: node1
+The actor is dead because its worker process has died. Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:53:49.699871881 ProcessGroupNCCL.cpp:791] [Rank 0] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.[32m [repeated 11x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:53:49.699902191 ProcessGroupNCCL.cpp:805] [Rank 0] To avoid data inconsistency, we are taking the entire process down.[32m [repeated 11x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:53:49.693018681 ProcessGroupNCCL.cpp:2174] [PG ID 3 PG GUID  Rank 0] Process group watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=12, OpType=RECV, NumelIn=10, NumelOut=10, Timeout(ms)=300000) ran for 300036 milliseconds before timing out.[32m [repeated 5x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m Exception raised from checkTimeout at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:733 (most recent call first):[32m [repeated 22x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m frame #2: c10::DistBackendError::DistBackendError(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x72 (0x786438164d02 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libc10.so)[32m [repeated 99x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m frame #3: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x2b1 (0x78343e750b41 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)[32m [repeated 22x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m frame #5: c10d::ProcessGroupNCCL::Watchdog::run() + 0x157 (0x78343e75dd47 in /home/ubuntu/venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)[32m [repeated 44x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m frame #6: <unknown function> + 0x126860 (0x786460326860 in /lib/x86_64-linux-gnu/libc.so.6)[32m [repeated 110x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [rank0]:[E1121 22:53:49.700590966 ProcessGroupNCCL.cpp:2174] [PG ID 2 PG GUID  Rank 0] Process group watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=58, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300044 milliseconds before timing out.[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [2026-11-21 22:53:49,355 E 276210 277246] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 3 PG GUID  Rank 0] Process group watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=12, OpType=RECV, NumelIn=10, NumelOut=10, Timeout(ms)=300000) ran for 300036 milliseconds before timing out.[32m [repeated 5x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m Exception raised from run at /__w/pytorch/pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:2180 (most recent call first):[32m [repeated 11x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m  /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183910a) [0x78645f23910a] ray::operator<<()[32m [repeated 22x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x1839bbc) [0x78645f239bbc] ray::RayLog::operator<< <>()[32m [repeated 22x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m /home/ubuntu/venv/lib/python3.12/site-packages/ray/_raylet.so(+0x183c178) [0x78645f23c178] ray::TerminateHandler()[32m [repeated 22x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [2026-11-21 22:53:49,361 E 276210 277246] logging.cc:125: Stack trace: [32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m *** SIGABRT received at time=1795301629 on cpu 109 ***[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m PC: @     0x78646029691c  (unknown)  pthread_kill[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m     @     0x7864602424b0  (unknown)  (unknown)[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [2026-11-21 22:53:49,361 E 276210 277246] logging.cc:474: *** SIGABRT received at time=1795301629 on cpu 109 ***[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [2026-11-21 22:53:49,361 E 276210 277246] logging.cc:474: PC: @     0x78646029691c  (unknown)  pthread_kill[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m [2026-11-21 22:53:49,361 E 276210 277246] logging.cc:474:     @     0x7864602424b0  (unknown)  (unknown)[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276210)[0m Fatal Python error: Aborted[32m [repeated 6x across cluster][0m
+[36m(StageWorkerActor pid=276211)[0m [2026-11-21 22:53:49,168 E 276211 277253] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 1] Process group watchdog thread terminated with exception: [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=128, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300003 milliseconds before timing out.
+[36m(StageWorkerActor pid=276212)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, ray._raylet[2026-11-21 22:53:49,061 E 276212 277258] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 2 PG GUID  Rank 2] Process group watchdog thread terminated with exception: [Rank 2] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=137, OpType=SEND, NumelIn=83886080, NumelOut=83886080, Timeout(ms)=300000) ran for 300052 milliseconds before timing out.
+[36m(StageWorkerActor pid=276212)[0m , numpy._core._multiarray_umath, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._internal.utils, cuda.bindings._internal.driver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._internal.runtime_ptds, cuda.bindings._internal.runtime, cuda.bindings.cyruntime, cuda.bindings.runtime, pyarrow.lib, pyarrow._json, regex._regex, markupsafe._speedups, PIL._imaging[2026-11-21 22:53:49,064 E 276212 277258] logging.cc:125: Stack trace: 
+[33m(raylet)[0m A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. Lease ID: 00000000282b9cc6b1f046e8a7eddb1df21a58a11603528356a88ef82f65e922 Worker ID: 5684262ceb16e661570ee14965d869eba9e23bef71192d0416890fc2 Node ID: c40c9c2759862a776aa52b130f991defaf03bdbe23baf82d73b8d909 Worker IP address: node1 Worker port: 36083 Worker PID: 276210 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.[32m [repeated 6x across cluster][0m

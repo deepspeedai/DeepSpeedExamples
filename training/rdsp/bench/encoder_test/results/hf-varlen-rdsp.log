@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/rdsp/bench/encoder_test/enc_bench.py", line 416, in <module>
+    main()
+  File "/home/ubuntu/rdsp/bench/encoder_test/enc_bench.py", line 340, in main
+    enc, hf_vision = build_hf(args.config, args.hf_attn, device)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rdsp/bench/encoder_test/enc_bench.py", line 106, in build_hf
+    enc = modeling_qwen3_5.Qwen3_5VisionModel(hf_vision)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/transformers/models/qwen3_5/modeling_qwen3_5.py", line 1134, in __init__
+    super().__init__(config, *inputs, **kwargs)
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1263, in __init__
+    self.config._attn_implementation_internal = self._check_and_adjust_attn_implementation(
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 1827, in _check_and_adjust_attn_implementation
+    lazy_import_flash_attention(applicable_attn_implementation)
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 265, in lazy_import_flash_attention
+    _flash_fn, _flash_varlen_fn, _flash_with_kvcache_fn, _pad_fn, _unpad_fn = _lazy_imports(
+                                                                              ^^^^^^^^^^^^^^
+  File "/home/ubuntu/venv/lib/python3.12/site-packages/transformers/modeling_flash_attention_utils.py", line 204, in _lazy_imports
+    raise ValueError(
+ValueError: Could not find the currently requested flash attention implementation at `rdsp_flash_varlen`.Make sure that you request a valid kernel from the hub, e.g. `kernels-community/flash-attn2`.

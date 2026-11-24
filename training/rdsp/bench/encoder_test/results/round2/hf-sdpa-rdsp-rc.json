@@ -1,0 +1,239 @@
+{
+ "env": {
+  "torch": "2.13.0+cu130",
+  "transformers": "5.17.0",
+  "python": "3.12.16",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 460730096
+ },
+ "args": {
+  "impl": "hf",
+  "hf_attn": "sdpa",
+  "config": "Qwen/Qwen3.5-27B",
+  "grids": "/home/ubuntu/rdsp/bench/encoder_test/results/grids.json",
+  "images": "1,2,4,8",
+  "modes": "fwdbwd",
+  "passes": 3,
+  "profile_images": 16,
+  "device": "cuda",
+  "trace_dir": "/home/ubuntu/rdsp/bench/encoder_test/results/traces",
+  "recompute": true,
+  "cuda_graphs": false,
+  "label": "hf-sdpa-rdsp-rc",
+  "out": "/home/ubuntu/rdsp/bench/encoder_test/results/hf-sdpa-rdsp-rc.json"
+ },
+ "results": [
+  {
+   "label": "hf-sdpa-rdsp-rc",
+   "impl": "hf",
+   "images_per_call": 1,
+   "mode": "fwdbwd",
+   "recompute": true,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    136.02546514062297,
+    110.54031889062443,
+    113.34867837500084
+   ],
+   "ms_per_image": 113.34867837500084,
+   "profiled_images": 16,
+   "traced_ms_per_image": 194.42813968750272,
+   "kernels_per_image": 3088.375,
+   "gpu_busy_ms_per_image": 62.40196518749943,
+   "syncs_per_image": 175.0625,
+   "d2h_copies_per_image": 173.0,
+   "kernels_by_part_per_image": {
+    "outside": 107.0,
+    "norm": 108.0,
+    "linear": 1900.375,
+    "rotary": 756.0,
+    "attn_other": 54.0,
+    "core_attn": 54.0,
+    "layer_other": 54.0,
+    "mlp_other": 54.0,
+    "outside_encoder": 1.0
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 1.285101375000001,
+    "norm": 1.1816351874999977,
+    "linear": 40.644335687499705,
+    "rotary": 9.161768187500005,
+    "attn_other": 0.07323862500000042,
+    "core_attn": 8.650241562500005,
+    "layer_other": 0.33523618749999984,
+    "mlp_other": 1.04211625,
+    "outside_encoder": 0.028292125
+   },
+   "cpu_ms_by_part_per_image": {
+    "norm": 12.160269897460937,
+    "attn_other": 23.03783526611328,
+    "linear": 175.19077795410155,
+    "rotary": 25.751461730957033,
+    "core_attn": 9.805493286132812,
+    "mlp_other": 4.869316284179687,
+    "outside": 9.249535705566407,
+    "layer_other": 6.965523010253906
+   }
+  },
+  {
+   "label": "hf-sdpa-rdsp-rc",
+   "impl": "hf",
+   "images_per_call": 2,
+   "mode": "fwdbwd",
+   "recompute": true,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    81.60977184374829,
+    80.89149743750212,
+    80.87760946875022
+   ],
+   "ms_per_image": 80.89149743750212,
+   "profiled_images": 16,
+   "traced_ms_per_image": 105.37781912499611,
+   "kernels_per_image": 1646.0,
+   "gpu_busy_ms_per_image": 60.43570281249997,
+   "syncs_per_image": 87.5625,
+   "d2h_copies_per_image": 86.5,
+   "kernels_by_part_per_image": {
+    "outside": 60.0,
+    "norm": 54.0,
+    "linear": 991.0,
+    "rotary": 378.0,
+    "attn_other": 54.0,
+    "core_attn": 54.0,
+    "layer_other": 27.0,
+    "mlp_other": 27.0,
+    "outside_encoder": 1.0
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 1.049603749999999,
+    "norm": 1.0295130000000008,
+    "linear": 38.950311124999885,
+    "rotary": 9.212157312499995,
+    "attn_other": 0.26151825000000006,
+    "core_attn": 8.597429812499986,
+    "layer_other": 0.32938137499999975,
+    "mlp_other": 0.9632979999999994,
+    "outside_encoder": 0.042490187500000005
+   },
+   "cpu_ms_by_part_per_image": {
+    "norm": 6.1531806640625,
+    "attn_other": 13.969387023925782,
+    "linear": 92.83390069580078,
+    "rotary": 13.052714233398438,
+    "core_attn": 9.496573913574219,
+    "mlp_other": 2.4879984741210937,
+    "outside": 2.52868017578125,
+    "layer_other": 3.7130191650390625
+   }
+  },
+  {
+   "label": "hf-sdpa-rdsp-rc",
+   "impl": "hf",
+   "images_per_call": 4,
+   "mode": "fwdbwd",
+   "recompute": true,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    68.8500945781243,
+    71.18360682812508,
+    68.39319251562515
+   ],
+   "ms_per_image": 68.8500945781243,
+   "profiled_images": 16,
+   "traced_ms_per_image": 72.65421056250432,
+   "kernels_per_image": 893.0,
+   "gpu_busy_ms_per_image": 58.69608231249973,
+   "syncs_per_image": 43.8125,
+   "d2h_copies_per_image": 43.25,
+   "kernels_by_part_per_image": {
+    "outside": 32.5,
+    "norm": 27.0,
+    "linear": 535.5,
+    "rotary": 189.0,
+    "attn_other": 27.0,
+    "core_attn": 54.0,
+    "layer_other": 13.5,
+    "mlp_other": 13.5,
+    "outside_encoder": 1.0
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 0.8748362499999986,
+    "norm": 0.9763361874999998,
+    "linear": 37.70854881250009,
+    "rotary": 9.001175249999989,
+    "attn_other": 0.2510904375000002,
+    "core_attn": 8.522741124999989,
+    "layer_other": 0.34886737500000026,
+    "mlp_other": 0.9473865624999999,
+    "outside_encoder": 0.06510031250000001
+   },
+   "cpu_ms_by_part_per_image": {
+    "norm": 3.0570460205078125,
+    "attn_other": 19.714181884765626,
+    "linear": 49.50263696289063,
+    "rotary": 6.517170471191406,
+    "core_attn": 9.021501892089844,
+    "mlp_other": 1.2390126953125,
+    "outside": 1.5085966186523438,
+    "layer_other": 1.8013018798828124
+   }
+  },
+  {
+   "label": "hf-sdpa-rdsp-rc",
+   "impl": "hf",
+   "images_per_call": 8,
+   "mode": "fwdbwd",
+   "recompute": true,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    64.58823867187391,
+    64.59004995312512,
+    64.58158264062774
+   ],
+   "ms_per_image": 64.58823867187391,
+   "profiled_images": 16,
+   "traced_ms_per_image": 84.06859275000045,
+   "kernels_per_image": 516.625,
+   "gpu_busy_ms_per_image": 57.54838093749985,
+   "syncs_per_image": 21.9375,
+   "d2h_copies_per_image": 21.625,
+   "kernels_by_part_per_image": {
+    "outside": 18.75,
+    "norm": 13.5,
+    "linear": 307.875,
+    "rotary": 94.5,
+    "attn_other": 13.5,
+    "core_attn": 54.0,
+    "layer_other": 6.75,
+    "mlp_other": 6.75,
+    "outside_encoder": 1.0
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 0.8190368750000002,
+    "norm": 0.9320231250000003,
+    "linear": 36.6371887499999,
+    "rotary": 9.003039749999992,
+    "attn_other": 0.24647081249999994,
+    "core_attn": 8.493000375000012,
+    "layer_other": 0.3563874375,
+    "mlp_other": 0.9292913124999997,
+    "outside_encoder": 0.1319425
+   },
+   "cpu_ms_by_part_per_image": {
+    "norm": 1.5787921142578125,
+    "attn_other": 29.480107727050783,
+    "linear": 27.953036376953126,
+    "rotary": 3.3394672241210936,
+    "core_attn": 9.534496032714843,
+    "mlp_other": 0.6421045532226562,
+    "outside": 1.0042044067382812,
+    "layer_other": 20.402742797851563
+   }
+  }
+ ]
+}

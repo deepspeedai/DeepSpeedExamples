@@ -1,0 +1,222 @@
+{
+ "env": {
+  "torch": "2.13.0a0+8145d630e8.nv26.06",
+  "transformers": "5.12.1",
+  "python": "3.12.3",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 460730096,
+  "transformer_engine": "2.18.0+15288857"
+ },
+ "args": {
+  "impl": "hf",
+  "hf_attn": "sdpa",
+  "config": "Qwen/Qwen3.5-27B",
+  "grids": "results/grids.json",
+  "images": "1,2,4,8",
+  "modes": "fwd",
+  "passes": 3,
+  "profile_images": 16,
+  "device": "cuda",
+  "trace_dir": "results/traces",
+  "label": "hf-sdpa-container",
+  "out": "results/hf-sdpa-container.json"
+ },
+ "results": [
+  {
+   "label": "hf-sdpa-container",
+   "impl": "hf",
+   "images_per_call": 1,
+   "mode": "fwd",
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    36.882370046875224,
+    25.921362390626257,
+    25.91669589062562
+   ],
+   "ms_per_image": 25.921362390626257,
+   "profiled_images": 16,
+   "traced_ms_per_image": 49.90801768749975,
+   "kernels_per_image": 798.0,
+   "gpu_busy_ms_per_image": 15.630056624999995,
+   "syncs_per_image": 88.0625,
+   "d2h_copies_per_image": 86.0,
+   "kernels_by_part_per_image": {
+    "outside": 69.0,
+    "norm": 54.0,
+    "linear": 108.0,
+    "rotary": 432.0,
+    "attn_other": 27.0,
+    "core_attn": 27.0,
+    "layer_other": 54.0,
+    "mlp_other": 27.0
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 1.2062383124999985,
+    "norm": 0.5791751874999982,
+    "linear": 3.802432125,
+    "rotary": 4.81559712499999,
+    "attn_other": 0.03704843750000002,
+    "core_attn": 4.330394125000003,
+    "layer_other": 0.33576662499999943,
+    "mlp_other": 0.5234046875000002
+   },
+   "cpu_ms_by_part_per_image": {
+    "outside": 3.5425320434570313,
+    "layer_other": 3.8612372436523437,
+    "norm": 3.7035469360351563,
+    "attn_other": 11.1731064453125,
+    "linear": 8.925277893066406,
+    "rotary": 12.567379577636718,
+    "core_attn": 3.517297668457031,
+    "mlp_other": 2.0218755493164062
+   }
+  },
+  {
+   "label": "hf-sdpa-container",
+   "impl": "hf",
+   "images_per_call": 2,
+   "mode": "fwd",
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    20.939911640624587,
+    20.93338370312381,
+    20.89564007812683
+   ],
+   "ms_per_image": 20.93338370312381,
+   "profiled_images": 16,
+   "traced_ms_per_image": 27.959700375006946,
+   "kernels_per_image": 453.5,
+   "gpu_busy_ms_per_image": 14.996354124999934,
+   "syncs_per_image": 44.0625,
+   "d2h_copies_per_image": 43.0,
+   "kernels_by_part_per_image": {
+    "outside": 62.0,
+    "norm": 27.0,
+    "linear": 54.0,
+    "rotary": 216.0,
+    "attn_other": 27.0,
+    "core_attn": 27.0,
+    "layer_other": 27.0,
+    "mlp_other": 13.5
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 1.042214624999998,
+    "norm": 0.5044806249999997,
+    "linear": 3.4847238125000057,
+    "rotary": 4.727506937500015,
+    "attn_other": 0.13130268749999996,
+    "core_attn": 4.286763625,
+    "layer_other": 0.33036331249999956,
+    "mlp_other": 0.4889985000000001
+   },
+   "cpu_ms_by_part_per_image": {
+    "outside": 2.459908142089844,
+    "layer_other": 1.9612042236328124,
+    "norm": 1.8609197387695313,
+    "attn_other": 6.004093139648438,
+    "linear": 4.542993774414063,
+    "rotary": 6.359868347167969,
+    "core_attn": 3.3836503295898437,
+    "mlp_other": 1.0315369873046876
+   }
+  },
+  {
+   "label": "hf-sdpa-container",
+   "impl": "hf",
+   "images_per_call": 4,
+   "mode": "fwd",
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    18.132854843749158,
+    18.166283234375413,
+    18.15858606249776
+   ],
+   "ms_per_image": 18.15858606249776,
+   "profiled_images": 16,
+   "traced_ms_per_image": 19.384232500001985,
+   "kernels_per_image": 261.25,
+   "gpu_busy_ms_per_image": 14.578562937499989,
+   "syncs_per_image": 22.0625,
+   "d2h_copies_per_image": 21.5,
+   "kernels_by_part_per_image": {
+    "outside": 52.0,
+    "norm": 13.5,
+    "linear": 27.0,
+    "rotary": 108.0,
+    "attn_other": 13.5,
+    "core_attn": 27.0,
+    "layer_other": 13.5,
+    "mlp_other": 6.75
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 0.8978699999999983,
+    "norm": 0.4858370625000001,
+    "linear": 3.412065874999999,
+    "rotary": 4.584763999999992,
+    "attn_other": 0.12527837500000005,
+    "core_attn": 4.250276125000003,
+    "layer_other": 0.3497549374999999,
+    "mlp_other": 0.4727165624999998
+   },
+   "cpu_ms_by_part_per_image": {
+    "outside": 1.9000118408203126,
+    "layer_other": 0.9928961791992188,
+    "norm": 0.9440714721679687,
+    "attn_other": 5.940522644042969,
+    "linear": 2.364585205078125,
+    "rotary": 3.206707092285156,
+    "core_attn": 3.306141845703125,
+    "mlp_other": 0.5180745239257812
+   }
+  },
+  {
+   "label": "hf-sdpa-container",
+   "impl": "hf",
+   "images_per_call": 8,
+   "mode": "fwd",
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    17.14812495312401,
+    17.138169468747577,
+    17.120906796872504
+   ],
+   "ms_per_image": 17.138169468747577,
+   "profiled_images": 16,
+   "traced_ms_per_image": 17.287973437504434,
+   "kernels_per_image": 165.125,
+   "gpu_busy_ms_per_image": 14.444259749999954,
+   "syncs_per_image": 11.0625,
+   "d2h_copies_per_image": 10.75,
+   "kernels_by_part_per_image": {
+    "outside": 47.0,
+    "norm": 6.75,
+    "linear": 13.5,
+    "rotary": 54.0,
+    "attn_other": 6.75,
+    "core_attn": 27.0,
+    "layer_other": 6.75,
+    "mlp_other": 3.375
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 0.8704202499999995,
+    "norm": 0.4682868124999999,
+    "linear": 3.3291693750000007,
+    "rotary": 4.581921062499997,
+    "attn_other": 0.12298799999999996,
+    "core_attn": 4.24573875,
+    "layer_other": 0.3569405625,
+    "mlp_other": 0.4687949374999999
+   },
+   "cpu_ms_by_part_per_image": {
+    "outside": 1.6324192504882813,
+    "layer_other": 0.5042540283203125,
+    "norm": 0.47286273193359374,
+    "attn_other": 8.190922729492188,
+    "linear": 1.2136227416992187,
+    "rotary": 1.5990573120117189,
+    "core_attn": 3.2153348388671876,
+    "mlp_other": 0.264060791015625
+   }
+  }
+ ]
+}

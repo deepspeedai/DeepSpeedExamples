@@ -1,0 +1,60 @@
+{
+ "env": {
+  "torch": "2.13.0a0+8145d630e8.nv26.06",
+  "transformers": "5.12.1",
+  "python": "3.12.3",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 460730096,
+  "transformer_engine": "2.18.0+15288857"
+ },
+ "args": {
+  "impl": "bridge",
+  "hf_attn": "sdpa",
+  "config": "Qwen/Qwen3.5-27B",
+  "grids": "results/grids.json",
+  "images": "4",
+  "modes": "fwdbwd",
+  "passes": 3,
+  "profile_images": 16,
+  "device": "cuda",
+  "trace_dir": "results/traces",
+  "recompute": false,
+  "cuda_graphs": true,
+  "label": "bridge-cg-n4",
+  "out": "results/bridge-cg-n4.json"
+ },
+ "results": [
+  {
+   "label": "bridge-cg-n4",
+   "impl": "bridge",
+   "images_per_call": 4,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 15616,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    114.04013267187452,
+    114.23689206250032,
+    113.81142668750499
+   ],
+   "ms_per_image": 114.04013267187452,
+   "profiled_images": 16,
+   "traced_ms_per_image": 113.8839292499938,
+   "kernels_per_image": 391.25,
+   "gpu_busy_ms_per_image": 108.41308049999948,
+   "syncs_per_image": 15.5625,
+   "d2h_copies_per_image": 14.75,
+   "kernels_by_part_per_image": {
+    "outside": 140.75,
+    "backward": 250.5
+   },
+   "gpu_ms_by_part_per_image": {
+    "outside": 33.817276624999934,
+    "backward": 74.5958038749996
+   },
+   "cpu_ms_by_part_per_image": {
+    "outside": 38.302896362304686
+   }
+  }
+ ]
+}

@@ -1,0 +1,93 @@
++ nvidia-smi
+Mon Oct  5 23:57:16 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 80GB HBM3          On  |   00000000:53:00.0 Off |                    0 |
+| N/A   31C    P0            117W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 80GB HBM3          On  |   00000000:64:00.0 Off |                    0 |
+| N/A   33C    P0            123W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 80GB HBM3          On  |   00000000:75:00.0 Off |                    0 |
+| N/A   31C    P0            122W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 80GB HBM3          On  |   00000000:86:00.0 Off |                    0 |
+| N/A   36C    P0            128W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   4  NVIDIA H100 80GB HBM3          On  |   00000000:97:00.0 Off |                    0 |
+| N/A   36C    P0            126W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   5  NVIDIA H100 80GB HBM3          On  |   00000000:A8:00.0 Off |                    0 |
+| N/A   31C    P0            117W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   6  NVIDIA H100 80GB HBM3          On  |   00000000:B9:00.0 Off |                    0 |
+| N/A   35C    P0            123W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   7  NVIDIA H100 80GB HBM3          On  |   00000000:CA:00.0 Off |                    0 |
+| N/A   32C    P0            123W /  700W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
++ nvidia-smi topo -m
+	[4mGPU0	GPU1	GPU2	GPU3	GPU4	GPU5	GPU6	GPU7	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	NV18	NV18	NV18	NV18	NV18	NV18	NV18	0-47,96-143	0		N/A
+GPU1	NV18	 X 	NV18	NV18	NV18	NV18	NV18	NV18	0-47,96-143	0		N/A
+GPU2	NV18	NV18	 X 	NV18	NV18	NV18	NV18	NV18	0-47,96-143	0		N/A
+GPU3	NV18	NV18	NV18	 X 	NV18	NV18	NV18	NV18	0-47,96-143	0		N/A
+GPU4	NV18	NV18	NV18	NV18	 X 	NV18	NV18	NV18	48-95,144-191	1		N/A
+GPU5	NV18	NV18	NV18	NV18	NV18	 X 	NV18	NV18	48-95,144-191	1		N/A
+GPU6	NV18	NV18	NV18	NV18	NV18	NV18	 X 	NV18	48-95,144-191	1		N/A
+GPU7	NV18	NV18	NV18	NV18	NV18	NV18	NV18	 X 	48-95,144-191	1		N/A
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
++ nvidia-smi nvlink -s
++ head -20
+GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-6522f0b6-35c5-019e-7d51-61d38a309763)
+	 Link 0: 26.562 GB/s
+	 Link 1: 26.562 GB/s
+	 Link 2: 26.562 GB/s
+	 Link 3: 26.562 GB/s
+	 Link 4: 26.562 GB/s
+	 Link 5: 26.562 GB/s
+	 Link 6: 26.562 GB/s
+	 Link 7: 26.562 GB/s
+	 Link 8: 26.562 GB/s
+	 Link 9: 26.562 GB/s
+	 Link 10: 26.562 GB/s
+	 Link 11: 26.562 GB/s
+	 Link 12: 26.562 GB/s
+	 Link 13: 26.562 GB/s
+	 Link 14: 26.562 GB/s
+	 Link 15: 26.562 GB/s
+	 Link 16: 26.562 GB/s
+	 Link 17: 26.562 GB/s
+GPU 1: NVIDIA H100 80GB HBM3 (UUID: GPU-10395618-1d1b-3515-8133-47d487b5afff)
++ /home/ubuntu/venv/bin/python -c 'import torch; print('\''torch'\'', torch.__version__, '\''nccl'\'', torch.cuda.nccl.version())'
+torch 2.13.0+cu130 nccl (2, 29, 7)

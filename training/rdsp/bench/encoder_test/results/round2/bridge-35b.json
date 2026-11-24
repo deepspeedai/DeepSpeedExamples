@@ -1,0 +1,88 @@
+{
+ "env": {
+  "torch": "2.13.0a0+8145d630e8.nv26.06",
+  "transformers": "5.12.1",
+  "python": "3.12.3",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 446571248,
+  "transformer_engine": "2.18.0+15288857"
+ },
+ "args": {
+  "impl": "bridge",
+  "hf_attn": "sdpa",
+  "config": "Qwen/Qwen3.5-35B-A3B",
+  "grids": "results/grids.json",
+  "images": "1,8",
+  "modes": "fwd,fwdbwd",
+  "passes": 3,
+  "profile_images": 0,
+  "device": "cuda",
+  "trace_dir": "results/traces",
+  "recompute": false,
+  "cuda_graphs": false,
+  "label": "bridge-35b",
+  "out": "results/bridge-35b.json"
+ },
+ "results": [
+  {
+   "label": "bridge-35b",
+   "impl": "bridge",
+   "images_per_call": 1,
+   "mode": "fwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    64.45068781250285,
+    64.25627192187733,
+    64.27378006249995
+   ],
+   "ms_per_image": 64.27378006249995
+  },
+  {
+   "label": "bridge-35b",
+   "impl": "bridge",
+   "images_per_call": 1,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    120.45728979687453,
+    117.96574139062699,
+    118.03433010937425
+   ],
+   "ms_per_image": 118.03433010937425
+  },
+  {
+   "label": "bridge-35b",
+   "impl": "bridge",
+   "images_per_call": 8,
+   "mode": "fwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    21.888809531247944,
+    21.845092093755625,
+    21.788485249999212
+   ],
+   "ms_per_image": 21.845092093755625
+  },
+  {
+   "label": "bridge-35b",
+   "impl": "bridge",
+   "images_per_call": 8,
+   "mode": "fwdbwd",
+   "recompute": false,
+   "cuda_graph_len": 0,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    57.100189218743935,
+    57.03032620312598,
+    57.00483039062476
+   ],
+   "ms_per_image": 57.03032620312598
+  }
+ ]
+}

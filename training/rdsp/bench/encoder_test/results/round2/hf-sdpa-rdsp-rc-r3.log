@@ -1,0 +1,8 @@
+{"torch": "2.13.0+cu130", "transformers": "5.17.0", "python": "3.12.16", "gpu": "NVIDIA H100 80GB HBM3", "params": 460730096}
+/home/ubuntu/venv/lib/python3.12/site-packages/torch/autograd/graph.py:979: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /__w/pytorch/pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:408.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+{"label": "hf-sdpa-rdsp-rc-r3", "impl": "hf", "images_per_call": 1, "mode": "fwdbwd", "recompute": true, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [131.86888678125186, 111.29704237499993, 114.18395467187636], "ms_per_image": 114.184}
+{"label": "hf-sdpa-rdsp-rc-r3", "impl": "hf", "images_per_call": 2, "mode": "fwdbwd", "recompute": true, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [81.60024517187026, 78.86847417187681, 79.55537400000168], "ms_per_image": 79.555}
+{"label": "hf-sdpa-rdsp-rc-r3", "impl": "hf", "images_per_call": 4, "mode": "fwdbwd", "recompute": true, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [68.54093773437597, 68.30263471874787, 71.67261378124579], "ms_per_image": 68.541}
+{"label": "hf-sdpa-rdsp-rc-r3", "impl": "hf", "images_per_call": 8, "mode": "fwdbwd", "recompute": true, "cuda_graph_len": 0, "images_timed": 64, "ms_per_image_passes": [64.75454267187786, 68.17319829687563, 64.90282387500201], "ms_per_image": 64.903}
+=== DONE hf-sdpa-rdsp-rc-r3

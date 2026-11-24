@@ -1,0 +1,43 @@
+{
+ "env": {
+  "torch": "2.13.0a0+8145d630e8.nv26.06",
+  "transformers": "5.12.1",
+  "python": "3.12.3",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "params": 460730096,
+  "transformer_engine": "2.18.0+15288857"
+ },
+ "args": {
+  "impl": "bridge",
+  "hf_attn": "sdpa",
+  "config": "Qwen/Qwen3.5-27B",
+  "grids": "results/grids.json",
+  "images": "1",
+  "modes": "fwdbwd",
+  "passes": 3,
+  "profile_images": 0,
+  "device": "cuda",
+  "trace_dir": "results/traces",
+  "recompute": true,
+  "cuda_graphs": true,
+  "label": "bridge-cg-rc-n1-r2",
+  "out": "results/bridge-cg-rc-n1-r2.json"
+ },
+ "results": [
+  {
+   "label": "bridge-cg-rc-n1-r2",
+   "impl": "bridge",
+   "images_per_call": 1,
+   "mode": "fwdbwd",
+   "recompute": true,
+   "cuda_graph_len": 4096,
+   "images_timed": 64,
+   "ms_per_image_passes": [
+    78.79770857812929,
+    78.43940050000242,
+    78.47293774999997
+   ],
+   "ms_per_image": 78.47293774999997
+  }
+ ]
+}

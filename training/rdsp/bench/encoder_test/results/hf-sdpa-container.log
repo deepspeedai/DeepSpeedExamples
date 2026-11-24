@@ -1,0 +1,49 @@
+
+====================
+== NeMo Framework ==
+====================
+
+NVIDIA Release  (build 443194436)
+Container image Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright (c) 2014-2024 Facebook Inc.
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
+Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
+Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
+Copyright (c) 2015      Google Inc.
+Copyright (c) 2015      Yangqing Jia
+Copyright (c) 2013-2016 The Caffe contributors
+All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
+and the Product-Specific Terms for NVIDIA AI Products
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 13.3 driver version 610.43.02 with kernel driver version 595.112.07.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
+
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+W1121 15:28:29.155000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1121 15:28:29.182000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+{"torch": "2.13.0a0+8145d630e8.nv26.06", "transformers": "5.12.1", "python": "3.12.3", "gpu": "NVIDIA H100 80GB HBM3", "params": 460730096, "transformer_engine": "2.18.0+15288857"}
+USDT:2026-11-21 15:28:49 1:1 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-11-21 15:28:50 1:1 SyncActivityProfilerHandler.cpp:59] profiler_stop
+{"label": "hf-sdpa-container", "impl": "hf", "images_per_call": 1, "mode": "fwd", "images_timed": 64, "ms_per_image_passes": [36.882370046875224, 25.921362390626257, 25.91669589062562], "ms_per_image": 25.921, "profiled_images": 16, "traced_ms_per_image": 49.908, "kernels_per_image": 798.0, "gpu_busy_ms_per_image": 15.63, "syncs_per_image": 88.062, "d2h_copies_per_image": 86.0}
+USDT:2026-11-21 15:29:02 1:1 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-11-21 15:29:02 1:1 SyncActivityProfilerHandler.cpp:59] profiler_stop
+{"label": "hf-sdpa-container", "impl": "hf", "images_per_call": 2, "mode": "fwd", "images_timed": 64, "ms_per_image_passes": [20.939911640624587, 20.93338370312381, 20.89564007812683], "ms_per_image": 20.933, "profiled_images": 16, "traced_ms_per_image": 27.96, "kernels_per_image": 453.5, "gpu_busy_ms_per_image": 14.996, "syncs_per_image": 44.062, "d2h_copies_per_image": 43.0}
+USDT:2026-11-21 15:29:12 1:1 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-11-21 15:29:13 1:1 SyncActivityProfilerHandler.cpp:59] profiler_stop
+{"label": "hf-sdpa-container", "impl": "hf", "images_per_call": 4, "mode": "fwd", "images_timed": 64, "ms_per_image_passes": [18.132854843749158, 18.166283234375413, 18.15858606249776], "ms_per_image": 18.159, "profiled_images": 16, "traced_ms_per_image": 19.384, "kernels_per_image": 261.25, "gpu_busy_ms_per_image": 14.579, "syncs_per_image": 22.062, "d2h_copies_per_image": 21.5}
+USDT:2026-11-21 15:29:22 1:1 SyncActivityProfilerHandler.cpp:52] profiler_start
+USDT:2026-11-21 15:29:22 1:1 SyncActivityProfilerHandler.cpp:59] profiler_stop
+{"label": "hf-sdpa-container", "impl": "hf", "images_per_call": 8, "mode": "fwd", "images_timed": 64, "ms_per_image_passes": [17.14812495312401, 17.138169468747577, 17.120906796872504], "ms_per_image": 17.138, "profiled_images": 16, "traced_ms_per_image": 17.288, "kernels_per_image": 165.125, "gpu_busy_ms_per_image": 14.444, "syncs_per_image": 11.062, "d2h_copies_per_image": 10.75}
+=== DONE hf-sdpa-container

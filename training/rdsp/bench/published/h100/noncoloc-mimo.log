@@ -1,0 +1,1403 @@
+
+====================
+== NeMo Framework ==
+====================
+
+NVIDIA Release  (build 443194436)
+Container image Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright (c) 2014-2024 Facebook Inc.
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
+Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
+Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
+Copyright (c) 2015      Google Inc.
+Copyright (c) 2015      Yangqing Jia
+Copyright (c) 2013-2016 The Caffe contributors
+All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
+and the Product-Specific Terms for NVIDIA AI Products
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 13.3 driver version 610.43.02 with kernel driver version 595.91.07.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
+
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/inference/contexts/kv_block_allocator.py:426: SyntaxWarning: invalid escape sequence '\-'
+  """Evict LRU cached blocks to free up space in the pool.
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/models/mimo/config/base_configs.py:12: UserWarning: MimoModelConfig is experimental and still under active development. The API may change without notice in future releases.
+  class MimoModelConfig:
+W1006 00:46:36.754000 1056 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.768000 1057 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.782000 1056 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.796000 1057 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.808000 1058 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.836000 1058 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.868000 1055 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.895000 1055 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.909000 1054 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1006 00:46:36.935000 1054 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[WARNING] Field "[WARNING] Field "[WARNING] Field "spanspan" in type "span" in type "ir.TupleType" in type "ir.TupleType" duplicates an ancestor field in "ir.TupleType" duplicates an ancestor field in "ir.Typeir.Type" duplicates an ancestor field in "". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.ir.Type
+". Child types should not re-register inherited fields.
+
+[WARNING] Field "[WARNING] Field "span[WARNING] Field "span" in type "span" in type "ir.FuncType" in type "ir.FuncType" duplicates an ancestor field in "ir.FuncType" duplicates an ancestor field in "" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.ir.Typeir.Type
+". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.
+[WARNING] Field "
+span[WARNING] Field "" in type "[WARNING] Field "spanspanir.TensorMapType" in type "" in type "" duplicates an ancestor field in "ir.TensorMapTypeir.TensorMapTypeir.Type" duplicates an ancestor field in "" duplicates an ancestor field in "". Child types should not re-register inherited fields.ir.Type[WARNING] Field "ir.Type
+". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.span
+
+" in type "ir.TupleType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.FuncType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.TensorMapType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.TupleType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.FuncType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "span" in type "ir.TensorMapType" duplicates an ancestor field in "ir.Type". Child types should not re-register inherited fields.
+[WARNING] Field "[WARNING] Field "[WARNING] Field "[WARNING] Field "[WARNING] Field "binding_blocksbinding_blocksbinding_blocksbinding_blocksbinding_blocks" in type "" in type "" in type "" in type "" in type "script.ir_builder.relax.FunctionFramescript.ir_builder.relax.FunctionFramescript.ir_builder.relax.FunctionFramescript.ir_builder.relax.FunctionFramescript.ir_builder.relax.FunctionFrame" duplicates an ancestor field in "" duplicates an ancestor field in "" duplicates an ancestor field in "" duplicates an ancestor field in "" duplicates an ancestor field in "script.ir_builder.relax.SeqExprFramescript.ir_builder.relax.SeqExprFramescript.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.script.ir_builder.relax.SeqExprFramescript.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.
+
+". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.
+[WARNING] Field "
+
+[WARNING] Field "outputoutput" in type "[WARNING] Field "[WARNING] Field "outputoutput[WARNING] Field "" in type "script.ir_builder.relax.FunctionFrame" in type "" in type "output" duplicates an ancestor field in "script.ir_builder.relax.FunctionFramescript.ir_builder.relax.FunctionFramescript.ir_builder.relax.FunctionFramescript.ir_builder.relax.SeqExprFrame" in type "" duplicates an ancestor field in "" duplicates an ancestor field in "" duplicates an ancestor field in "". Child types should not re-register inherited fields.script.ir_builder.relax.FunctionFramescript.ir_builder.relax.SeqExprFramescript.ir_builder.relax.SeqExprFramescript.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.
+" duplicates an ancestor field in "". Child types should not re-register inherited fields.script.ir_builder.relax.SeqExprFrame". Child types should not re-register inherited fields.
+
+". Child types should not re-register inherited fields.
+
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TupleType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.FuncType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'span' in 'ir.TensorMapType' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'name' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'tag' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'attrs' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'shape' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'dtype' in 'relax.TEPlaceholderOp' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+[WARNING] Field "policy_type" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "m_warp" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "n_warp" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "[WARNING] Field "policy_typepolicy_type" in type "" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmSPWarpPolicytl.GemmWarpPolicy" duplicates an ancestor field in "". Child types should not re-register inherited fields.tl.GemmWarpPolicy
+". Child types should not re-register inherited fields.
+[WARNING] Field "m_warp" in type "[WARNING] Field "tl.GemmSPWarpPolicym_warp" duplicates an ancestor field in "" in type "tl.GemmWarpPolicytl.GemmSPWarpPolicy". Child types should not re-register inherited fields.
+" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.[WARNING] Field "
+n_warp" in type "tl.GemmSPWarpPolicy[WARNING] Field "" duplicates an ancestor field in "n_warptl.GemmWarpPolicy" in type "". Child types should not re-register inherited fields.tl.GemmSPWarpPolicy
+" duplicates an ancestor field in "tl.GemmWarpPolicy". Child types should not re-register inherited fields.
+[WARNING] Field "[WARNING] Field "policy_typepolicy_type" in type "" in type "tl.GemmSPWarpPolicytl.GemmSPWarpPolicy" duplicates an ancestor field in "" duplicates an ancestor field in "tl.GemmWarpPolicytl.GemmWarpPolicy". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.
+
+[WARNING] Field "[WARNING] Field "m_warpm_warp" in type "" in type "tl.GemmSPWarpPolicytl.GemmSPWarpPolicy" duplicates an ancestor field in "" duplicates an ancestor field in "tl.GemmWarpPolicytl.GemmWarpPolicy". Child types should not re-register inherited fields.". Child types should not re-register inherited fields.
+
+[WARNING] Field "[WARNING] Field "n_warpn_warp" in type "" in type "tl.GemmSPWarpPolicy" duplicates an ancestor field in "tl.GemmSPWarpPolicytl.GemmWarpPolicy" duplicates an ancestor field in "". Child types should not re-register inherited fields.tl.GemmWarpPolicy
+". Child types should not re-register inherited fields.
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'policy_type' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'm_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+/opt/venv/lib/python3.12/site-packages/tvm_ffi/registry.py:85: UserWarning: Field 'n_warp' in 'tl.GemmSPWarpPolicy' duplicates an ancestor field. Child types should not re-register inherited fields.
+  info = core._register_object_by_index(type_index, cls)
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+Unable to import `torchao` Tensor objects. This may affect loading checkpoints serialized with `torchao`
+ERROR 10-06 00:46:52 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+ERROR 10-06 00:46:52 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+ERROR 10-06 00:46:52 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+ERROR 10-06 00:46:52 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+ERROR 10-06 00:46:52 [config.py:29] Failed to import Triton kernels. Please make sure your triton version is compatible. Error: No module named 'triton_kernels.matmul_ogs'
+[Rank 2] distributed initialized (world_size=5)
+[Rank 2] loading HF config from Qwen/Qwen3.5-4B
+[Rank 3] distributed initialized (world_size=5)
+[Rank 3] loading HF config from Qwen/Qwen3.5-4B
+[Rank 4] distributed initialized (world_size=5)
+[Rank 4] loading HF config from Qwen/Qwen3.5-4B
+[Rank 0] distributed initialized (world_size=5)
+[Rank 0] loading HF config from Qwen/Qwen3.5-4B
+[Rank 1] distributed initialized (world_size=5)
+[Rank 1] loading HF config from Qwen/Qwen3.5-4B
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 2] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 0] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 1] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 2] qwen constants: image_token_id=248056, vision_start_token_id=248053, spatial_merge_size=2
+[Rank 2] component layout: ['language=tp=2,pp=1,dp=2,rank_offset=0', 'images=tp=1,pp=1,dp=1,rank_offset=4']
+[Rank 2] batch contract: global_mbs=2, language: dp=2, local_mbs=1
+[Rank 2] batch contract: global_mbs=2, images: dp=1, local_mbs=2
+[Rank 2] building Qwen3.5-VL MegatronMIMO provider
+[Rank 0] qwen constants: image_token_id=248056, vision_start_token_id=248053, spatial_merge_size=2
+[Rank 0] component layout: ['language=tp=2,pp=1,dp=2,rank_offset=0', 'images=tp=1,pp=1,dp=1,rank_offset=4']
+[Rank 0] batch contract: global_mbs=2, language: dp=2, local_mbs=1
+[Rank 0] batch contract: global_mbs=2, images: dp=1, local_mbs=2
+[Rank 0] building Qwen3.5-VL MegatronMIMO provider
+[Rank 4] qwen constants: image_token_id=248056, vision_start_token_id=248053, spatial_merge_size=2
+[Rank 4] component layout: ['language=tp=2,pp=1,dp=2,rank_offset=0', 'images=tp=1,pp=1,dp=1,rank_offset=4']
+[Rank 4] batch contract: global_mbs=2, language: dp=2, local_mbs=1
+[Rank 4] batch contract: global_mbs=2, images: dp=1, local_mbs=2
+[Rank 4] building Qwen3.5-VL MegatronMIMO provider
+[Rank 1] qwen constants: image_token_id=248056, vision_start_token_id=248053, spatial_merge_size=2
+[Rank 1] component layout: ['language=tp=2,pp=1,dp=2,rank_offset=0', 'images=tp=1,pp=1,dp=1,rank_offset=4']
+[Rank 1] batch contract: global_mbs=2, language: dp=2, local_mbs=1
+[Rank 1] batch contract: global_mbs=2, images: dp=1, local_mbs=2
+[Rank 1] building Qwen3.5-VL MegatronMIMO provider
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+[Rank 2] building direct HF SFT data: preset=cord_v2
+[Rank 2] pretrained checkpoint: /workspace/Qwen3.5-4B-mimo
+[Rank 2] checkpoint dir: /workspace/runs/results/mimo/noncoloc
+[Rank 2] building training config
+[Rank 2] launching pretrain_megatron_mimo
+[Rank 2] megatron.bridge.training.pretrain_megatron_mimo: Starting MegatronMIMO pretraining
+[Rank 2] megatron.bridge.training.setup_megatron_mimo: Rank 2: Setting up MegatronMIMO training
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[Rank 2] megatron.bridge.models.megatron_mimo.build_model: Rank 2: Building MIMO infra
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+[Rank 0] building direct HF SFT data: preset=cord_v2
+[Rank 0] pretrained checkpoint: /workspace/Qwen3.5-4B-mimo
+[Rank 0] checkpoint dir: /workspace/runs/results/mimo/noncoloc
+[Rank 0] building training config
+[Rank 0] launching pretrain_megatron_mimo
+[Rank 0] megatron.bridge.training.pretrain_megatron_mimo: Starting MegatronMIMO pretraining
+[Rank 0] megatron.bridge.training.setup_megatron_mimo: Rank 0: Setting up MegatronMIMO training
+[Rank 0] megatron.core.num_microbatches_calculator: setting number of microbatches to constant 32
+[Rank 0] megatron.bridge.models.megatron_mimo.build_model: Rank 0: Building MIMO infra
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[Rank 3] qwen constants: image_token_id=248056, vision_start_token_id=248053, spatial_merge_size=2
+[Rank 3] component layout: ['language=tp=2,pp=1,dp=2,rank_offset=0', 'images=tp=1,pp=1,dp=1,rank_offset=4']
+[Rank 3] batch contract: global_mbs=2, language: dp=2, local_mbs=1
+[Rank 0] absl: Generated process group for tp with enumeration [[0, 1], [2, 3]]
+[Rank 3] batch contract: global_mbs=2, images: dp=1, local_mbs=2
+[Rank 3] building Qwen3.5-VL MegatronMIMO provider
+[Rank 0] absl: Generated process group for cp with enumeration [[0], [1], [2], [3]]
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+[Rank 4] building direct HF SFT data: preset=cord_v2
+[Rank 4] pretrained checkpoint: /workspace/Qwen3.5-4B-mimo
+[Rank 4] checkpoint dir: /workspace/runs/results/mimo/noncoloc
+[Rank 0] absl: Generated process group for pp with enumeration [[0], [1], [2], [3]]
+[Rank 4] building training config
+[Rank 4] launching pretrain_megatron_mimo
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[Rank 0] absl: Generated process group for dp with enumeration [[0, 2], [1, 3]]
+[Rank 4] megatron.bridge.training.pretrain_megatron_mimo: Starting MegatronMIMO pretraining
+[Rank 4] megatron.bridge.training.setup_megatron_mimo: Rank 4: Setting up MegatronMIMO training
+[Rank 4] megatron.bridge.models.megatron_mimo.build_model: Rank 4: Building MIMO infra
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[0, 1, 2, 3]]
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+[Rank 1] building direct HF SFT data: preset=cord_v2
+[Rank 1] pretrained checkpoint: /workspace/Qwen3.5-4B-mimo
+[Rank 1] checkpoint dir: /workspace/runs/results/mimo/noncoloc
+[Rank 1] building training config
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 1] launching pretrain_megatron_mimo
+[Rank 1] megatron.bridge.training.pretrain_megatron_mimo: Starting MegatronMIMO pretraining
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[0], [1], [2], [3]]
+[Rank 1] megatron.bridge.training.setup_megatron_mimo: Rank 1: Setting up MegatronMIMO training
+[Rank 1] megatron.bridge.models.megatron_mimo.build_model: Rank 1: Building MIMO infra
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp with enumeration [[4]]
+[Rank 2] megatron.bridge.models.megatron_mimo.build_model: Rank 2: Building distributed MIMO model
+[Rank 0] absl: Generated process group for pp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[4]]
+[Rank 4] megatron.bridge.models.megatron_mimo.build_model: Rank 4: Building distributed MIMO model
+[Rank 0] megatron.bridge.models.megatron_mimo.build_model: Rank 0: Building distributed MIMO model
+[Rank 0] absl: Generated process group for tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for cp with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for pp with enumeration [[0], [1], [2], [3]]
+[Rank 1] megatron.bridge.models.megatron_mimo.build_model: Rank 1: Building distributed MIMO model
+[Rank 0] absl: Generated process group for dp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for tp with enumeration [[4]]
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+[Rank 0] absl: Generated process group for cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[4]]
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/transformer/transformer_config.py:2415: UserWarning: full scope is deprecated. Use empty cuda_graph_modules to capture the whole layer.
+  warnings.warn(
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[4]]
+[Rank 3] building direct HF SFT data: preset=cord_v2
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[4]]
+[Rank 3] pretrained checkpoint: /workspace/Qwen3.5-4B-mimo
+[Rank 3] checkpoint dir: /workspace/runs/results/mimo/noncoloc
+[Rank 3] building training config
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[4]]
+[Rank 3] launching pretrain_megatron_mimo
+[Rank 3] megatron.bridge.training.pretrain_megatron_mimo: Starting MegatronMIMO pretraining
+[Rank 3] megatron.bridge.training.setup_megatron_mimo: Rank 3: Setting up MegatronMIMO training
+[Rank 3] megatron.bridge.models.megatron_mimo.build_model: Rank 3: Building MIMO infra
+[Rank 0] absl: Generated process group for tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for cp with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for pp with enumeration [[0], [1], [2], [3]]
+/opt/Megatron-Bridge/src/megatron/bridge/models/megatron_mimo/megatron_mimo_provider.py:454: UserWarning: MimoModel is experimental and still under active development. The API may change without notice in future releases.
+  megatron_mimo_model = MimoModel(mimo_model_config, **mimo_model_kwargs)
+[Rank 2] megatron.core.models.mimo.config.role: [RankRole._from_grid_map] Rank 2: module=language, pp_rank=0/1, is_first_stage=True, is_last_stage=True
+[Rank 0] absl: Generated process group for dp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[0, 1], [2, 3]]
+/opt/Megatron-Bridge/src/megatron/bridge/models/megatron_mimo/megatron_mimo_provider.py:454: UserWarning: MimoModel is experimental and still under active development. The API may change without notice in future releases.
+  megatron_mimo_model = MimoModel(mimo_model_config, **mimo_model_kwargs)
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 4] megatron.core.models.mimo.config.role: [RankRole._from_grid_map] Rank 4: module=images, pp_rank=0/1, is_first_stage=True, is_last_stage=True
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[4]]
+/opt/Megatron-Bridge/src/megatron/bridge/models/megatron_mimo/megatron_mimo_provider.py:454: UserWarning: MimoModel is experimental and still under active development. The API may change without notice in future releases.
+  megatron_mimo_model = MimoModel(mimo_model_config, **mimo_model_kwargs)
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[4]]
+[Rank 1] megatron.core.models.mimo.config.role: [RankRole._from_grid_map] Rank 1: module=language, pp_rank=0/1, is_first_stage=True, is_last_stage=True
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[4]]
+[Rank 3] megatron.bridge.models.megatron_mimo.build_model: Rank 3: Building distributed MIMO model
+/opt/Megatron-Bridge/src/megatron/bridge/models/megatron_mimo/megatron_mimo_provider.py:454: UserWarning: MimoModel is experimental and still under active development. The API may change without notice in future releases.
+  megatron_mimo_model = MimoModel(mimo_model_config, **mimo_model_kwargs)
+[Rank 0] megatron.core.models.mimo.config.role: [RankRole._from_grid_map] Rank 0: module=language, pp_rank=0/1, is_first_stage=True, is_last_stage=True
+[Rank 0] megatron.core.models.gpt.gpt_model: GPTModel IS DEPRECATED. GPTModel is only accepting critical bug fixes, no new features. Please reference the migration guide `docs/user-guide/hybrid-model-migration.md` for details on how to use `HybridModel`
+/opt/Megatron-Bridge/src/megatron/bridge/models/megatron_mimo/megatron_mimo_provider.py:454: UserWarning: MimoModel is experimental and still under active development. The API may change without notice in future releases.
+  megatron_mimo_model = MimoModel(mimo_model_config, **mimo_model_kwargs)
+[Rank 3] megatron.core.models.mimo.config.role: [RankRole._from_grid_map] Rank 3: module=language, pp_rank=0/1, is_first_stage=True, is_last_stage=True
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/models/mimo/submodules/vision.py:33: UserWarning: ModalitySubmodules is experimental and still under active development. The API may change without notice in future releases.
+  super().__init__(
+[Rank 4] loading converted MegatronMIMO checkpoint before DDP wrap: /workspace/Qwen3.5-4B-mimo (module=images)
+/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/module/base.py:1616: UserWarning: To guarantee overlapping TP and SP collectives with the backwardGEMMs, set environment variable CUDA_DEVICE_MAX_CONNECTIONS = 1
+  warnings.warn(
+/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/module/base.py:1616: UserWarning: To guarantee overlapping TP and SP collectives with the backwardGEMMs, set environment variable CUDA_DEVICE_MAX_CONNECTIONS = 1
+  warnings.warn(
+/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/module/base.py:1616: UserWarning: To guarantee overlapping TP and SP collectives with the backwardGEMMs, set environment variable CUDA_DEVICE_MAX_CONNECTIONS = 1
+  warnings.warn(
+/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/module/base.py:1616: UserWarning: To guarantee overlapping TP and SP collectives with the backwardGEMMs, set environment variable CUDA_DEVICE_MAX_CONNECTIONS = 1
+  warnings.warn(
+[Rank 1] loading converted MegatronMIMO checkpoint before DDP wrap: /workspace/Qwen3.5-4B-mimo (module=language)
+[Rank 0] absl: Generated process group for tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for cp with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for pp with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for dp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[0, 2], [1, 3]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[0, 1], [2, 3]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[0, 1, 2, 3]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[0], [1], [2], [3]]
+[Rank 0] absl: Generated process group for tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp with enumeration [[4]]
+[Rank 0] absl: Generated process group for cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for pp-dp-cp-tp with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_tp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['expt_dp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['ep', 'expt_tp'] with enumeration [[4]]
+[Rank 0] absl: Generated process group for view 'expert' ['pp', 'ep', 'expt_tp'] with enumeration [[4]]
+[Rank 0] loading converted MegatronMIMO checkpoint before DDP wrap: /workspace/Qwen3.5-4B-mimo (module=language)
+Broadcasting TrainState from rank 0 to all 5 ranks
+[Rank 3] loading converted MegatronMIMO checkpoint before DDP wrap: /workspace/Qwen3.5-4B-mimo (module=language)
+[Rank 2] loading converted MegatronMIMO checkpoint before DDP wrap: /workspace/Qwen3.5-4B-mimo (module=language)
+ Auto-detected checkpoint format as 'torch_dist' from /workspace/Qwen3.5-4B-mimo/iter_0000000.
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:485: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:485: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:485: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:485: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:485: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(*args, **kwargs)
+Broadcasting config from rank 0 to all 5 ranks
+sharded_state_dict metadata loaded from the checkpoint: {'singleton_local_shards': False, 'chained_optim_avoid_prefix': True}
+ Auto-detected checkpoint format as 'torch_dist' from /workspace/Qwen3.5-4B-mimo/iter_0000000.
+ loading distributed checkpoint from /workspace/Qwen3.5-4B-mimo at iteration 0
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/logger.py:90: UserWarning: The argument order of load has been changed. Please check the document to avoid future breakages.
+  result = func(*args, **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/utils.py:483: UserWarning: torch.distributed is disabled, unavailable or uninitialized, assuming the intent is to load in a single process.
+  return func(args[0], **kwargs)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/planner_helpers.py:489: FutureWarning: Please use DTensor instead and we are deprecating ShardedTensor.
+  device = getattr(value, "device", None)
+/usr/local/lib/python3.12/dist-packages/torch/distributed/checkpoint/default_planner.py:503: FutureWarning: Please use DTensor instead and we are deprecating ShardedTensor.
+  and md.size != obj.size()
+ checkpoint version 3.0
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+  successfully loaded checkpoint from /workspace/Qwen3.5-4B-mimo [ t 0/2, p 0/1 ] at iteration 0
+[Rank 4] converted MegatronMIMO checkpoint loaded before DDP wrap
+[Rank 1] converted MegatronMIMO checkpoint loaded before DDP wrap
+[Rank 2] converted MegatronMIMO checkpoint loaded before DDP wrap
+[Rank 3] converted MegatronMIMO checkpoint loaded before DDP wrap
+[Rank 0] converted MegatronMIMO checkpoint loaded before DDP wrap
+[Rank 0] megatron.core.distributed.distributed_data_parallel: Setting up DistributedDataParallel with config DistributedDataParallelConfig(grad_reduce_in_fp32=True, overlap_grad_reduce=False, overlap_param_gather=False, align_param_gather=False, use_distributed_optimizer=True, num_distributed_optimizer_instances=1, check_for_nan_in_grad=True, check_for_large_grads=False, bucket_size=None, num_buckets=None, pad_buckets_for_high_nccl_busbw=False, reduce_scatter_with_fp32_accumulation=False, param_name_patterns_for_fp32_local_accumulation=(), average_in_collective=True, fp8_param_gather=False, fp4_param_gather=False, reuse_grad_buf_for_mxfp8_param_ag=False, use_megatron_fsdp=False, use_custom_fsdp=False, data_parallel_sharding_strategy='optim_grads_params', gradient_reduce_div_fusion=True, suggested_communication_unit_size=None, keep_fp8_transpose_cache=False, nccl_ub=False, fsdp_double_buffer=False, fsdp_db_use_persist_buf_on_alloc_fail=False, fsdp_all_gather_in_start_param_sync=True, outer_dp_sharding_strategy='no_shard', disable_symmetric_registration=False, fsdp_manual_registration=False, delay_wgrad_compute=False, megatron_fsdp_main_params_dtype=torch.float32, megatron_fsdp_main_grads_dtype=None, megatron_fsdp_grad_comm_dtype=None, megatron_fsdp_use_decoupled_grad=False, megatron_fsdp_cuda_graph_mode=False, megatron_fsdp_enable_fine_grained_param_gather=False, megatron_fsdp_max_pool_double_buffer=False)
+[Rank 0] megatron.core.distributed.distributed_data_parallel: DistributedDataParallel: full_param_layout not provided with use_distributed_optimizer=True. Auto-computing layout inside DDP. Callers should pre-compute layouts via DistributedOptimizer.compute_full_param_layout() and pass them in.
+[Rank 1] megatron.bridge.models.megatron_mimo.build_model: Rank 1: bridged parallel_state globals from module 'language'
+[Rank 1] megatron.bridge.training.setup_megatron_mimo: Rank 1: Creating multimodule communicator
+[Rank 1] root: [Rank 1] srcLeader=None destLeader=0 srcBroadcastGrpRanks=[] destBroadcastGrpRanks=[0, 1]
+[Rank 0] megatron.core.distributed.param_and_grad_buffer: Number of buckets for gradient all-reduce / reduce-scatter: 1
+Params for bucket 1 (2102962432 elements, 2102964736 padded size, 0 param(s) with extra main_grads):
+	decoder.final_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.31.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.30.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.29.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.28.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.27.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.26.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.25.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.24.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.23.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.22.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.21.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.20.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.19.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.18.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.17.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.16.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.15.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.14.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.13.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.12.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.11.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.10.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.9.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.8.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.7.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.6.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.5.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.4.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.self_attention.k_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.self_attention.q_layernorm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.3.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.2.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.1.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.out_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.out_norm.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.conv1d.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.in_proj.weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.in_proj.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.A_log (param.main_grad.dtype=torch.float32)
+	decoder.layers.0.self_attention.dt_bias (param.main_grad.dtype=torch.float32)
+	embedding.word_embeddings.weight (param.main_grad.dtype=torch.float32)
+[Rank 0] megatron.core.distributed.param_and_grad_buffer: Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+[Rank 0] megatron.bridge.models.megatron_mimo.build_model: Rank 0: bridged parallel_state globals from module 'language'
+[Rank 0] megatron.bridge.training.setup_megatron_mimo: Rank 0: Creating multimodule communicator
+[Rank 0] root: [Rank 0] srcLeader=None destLeader=0 srcBroadcastGrpRanks=[] destBroadcastGrpRanks=[0, 1]
+[Rank 4] megatron.core.distributed.param_and_grad_buffer: Number of buckets for gradient all-reduce / reduce-scatter: 1
+Params for bucket 1 (333514240 elements, 333514240 padded size, 0 param(s) with extra main_grads):
+	encoders.qwen_visual.merger.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.merger.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.merger.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.merger.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.merger.patch_norm.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.merger.patch_norm.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.23.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.22.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.21.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.20.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.19.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.18.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.17.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.16.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.15.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.14.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.13.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.12.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.11.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.10.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.9.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.8.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.7.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.6.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.5.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.4.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.3.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.2.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.1.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.mlp.linear_fc2.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.mlp.linear_fc2.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.mlp.linear_fc1.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.mlp.linear_fc1.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.mlp.linear_fc1.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.mlp.linear_fc1.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.self_attention.linear_qkv.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.self_attention.linear_qkv.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.self_attention.linear_qkv.layer_norm_bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.self_attention.linear_qkv.layer_norm_weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.self_attention.linear_proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.decoder.layers.0.self_attention.linear_proj.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.pos_embed.weight (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.patch_embed.proj.bias (param.main_grad.dtype=torch.float32)
+	encoders.qwen_visual.patch_embed.proj.weight (param.main_grad.dtype=torch.float32)
+[Rank 4] megatron.bridge.models.megatron_mimo.build_model: Rank 4: bridged parallel_state globals from module 'images'
+[Rank 4] megatron.bridge.training.setup_megatron_mimo: Rank 4: Creating multimodule communicator
+[Rank 4] root: [Rank 4] srcLeader=4 destLeader=None srcBroadcastGrpRanks=[4] destBroadcastGrpRanks=[]
+[Rank 2] megatron.bridge.models.megatron_mimo.build_model: Rank 2: bridged parallel_state globals from module 'language'
+[Rank 2] megatron.bridge.training.setup_megatron_mimo: Rank 2: Creating multimodule communicator
+[Rank 2] root: [Rank 2] srcLeader=None destLeader=2 srcBroadcastGrpRanks=[] destBroadcastGrpRanks=[2, 3]
+[Rank 3] megatron.bridge.models.megatron_mimo.build_model: Rank 3: bridged parallel_state globals from module 'language'
+[Rank 3] megatron.bridge.training.setup_megatron_mimo: Rank 3: Creating multimodule communicator
+[Rank 3] root: [Rank 3] srcLeader=None destLeader=2 srcBroadcastGrpRanks=[] destBroadcastGrpRanks=[2, 3]
+[Rank 0] megatron.bridge.training.setup_megatron_mimo: Rank 0: Creating MimoOptimizer
+[Rank 1] megatron.bridge.training.setup_megatron_mimo: Rank 1: Creating MimoOptimizer
+[Rank 2] megatron.bridge.training.setup_megatron_mimo: Rank 2: Creating MimoOptimizer
+[Rank 3] megatron.bridge.training.setup_megatron_mimo: Rank 3: Creating MimoOptimizer
+[Rank 4] megatron.bridge.training.setup_megatron_mimo: Rank 4: Creating MimoOptimizer
+[Rank 0] megatron.core.optimizer: Setting up optimizer with config OptimizerConfig(lr=1e-05, min_lr=1e-05, decoupled_lr=None, decoupled_min_lr=None, weight_decay=0.0, apply_wd_to_qk_layernorm=False, fp8_recipe=None, fp16=False, bf16=True, reuse_grad_buf_for_mxfp8_param_ag=False, params_dtype=torch.float32, use_precision_aware_optimizer=False, store_param_remainders=True, main_grads_dtype=torch.float32, main_params_dtype=torch.float32, exp_avg_dtype=torch.float32, exp_avg_sq_dtype=torch.float32, optimizer='adam', loss_scale=None, initial_loss_scale=4294967296, min_loss_scale=1.0, loss_scale_window=1000, hysteresis=2, adam_beta1=0.9, adam_beta2=0.95, adam_eps=1e-08, decoupled_weight_decay=True, sgd_momentum=0.9, muon_momentum=0.95, muon_split_qkv=True, muon_nesterov=False, muon_scale_mode='spectral', muon_fp32_matmul_prec='medium', muon_coefficient_type='quintic', muon_num_ns_steps=5, muon_tp_mode='blockwise', muon_extra_scale_factor=1.0, muon_scalar_optimizer='adam', lion_beta1=0.95, lion_beta2=0.98, soap_shampoo_beta=0.95, soap_precondition_frequency=1, soap_use_kl_shampoo=True, adaptive_muon_moment2_method='adamuon', adaptive_muon_beta2=0.95, adaptive_muon_eps=1e-08, use_distributed_optimizer=True, use_layer_wise_distributed_optimizer=False, overlap_param_gather=False, overlap_param_gather_with_optimizer_step=False, optimizer_cpu_offload=False, optimizer_offload_fraction=0.0, use_torch_optimizer_for_cpu_offload=False, overlap_cpu_optimizer_d2h_h2d=False, pin_cpu_grads=True, pin_cpu_params=True, clip_grad=0.0, grad_norm_skip_threshold=inf, log_num_zeros_in_grad=False, barrier_with_L1_time=False, timers=None, config_logger_dir='', optimizer_cuda_graph=False)
+[Rank 0] megatron.core.distributed.param_and_grad_buffer: Using reduce-scatter for gradient reductions because self.ddp_config.use_distributed_optimizer=True
+[Rank 2] megatron.bridge.training.setup_megatron_mimo: Rank 2: Auto-created schedulers for modules: ['language']
+[Rank 3] megatron.bridge.training.setup_megatron_mimo: Rank 3: Auto-created schedulers for modules: ['language']
+[Rank 4] megatron.bridge.training.setup_megatron_mimo: Rank 4: Auto-created schedulers for modules: ['images']
+[Rank 0] megatron.core.optimizer_param_scheduler: > learning rate decay style: cosine
+[Rank 1] megatron.bridge.training.setup_megatron_mimo: Rank 1: Auto-created schedulers for modules: ['language']
+[Rank 0] megatron.bridge.training.setup_megatron_mimo: Rank 0: Auto-created schedulers for modules: ['language']
+[Rank 4] megatron.bridge.training.setup_megatron_mimo: Rank 4: Building data iterators
+[Rank 3] megatron.bridge.training.setup_megatron_mimo: Rank 3: Building data iterators
+[Rank 2] megatron.bridge.training.setup_megatron_mimo: Rank 2: Building data iterators
+[Rank 1] megatron.bridge.training.setup_megatron_mimo: Rank 1: Building data iterators
+[Rank 0] megatron.bridge.training.setup_megatron_mimo: Rank 0: Building data iterators
+[Rank 0] megatron.bridge.models.hf_pretrained.utils: `trust_remote_code=False`. Remote code may not be executed. Set `trust_remote_code=True` only if you fully trust the Hugging Face repository.
+[Rank 1] megatron.bridge.models.hf_pretrained.utils: `trust_remote_code=False`. Remote code may not be executed. Set `trust_remote_code=True` only if you fully trust the Hugging Face repository.
+[Rank 2] megatron.bridge.models.hf_pretrained.utils: `trust_remote_code=False`. Remote code may not be executed. Set `trust_remote_code=True` only if you fully trust the Hugging Face repository.
+[Rank 3] megatron.bridge.models.hf_pretrained.utils: `trust_remote_code=False`. Remote code may not be executed. Set `trust_remote_code=True` only if you fully trust the Hugging Face repository.
+[Rank 4] megatron.bridge.models.hf_pretrained.utils: `trust_remote_code=False`. Remote code may not be executed. Set `trust_remote_code=True` only if you fully trust the Hugging Face repository.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 3] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 4] huggingface_hub.utils._http: Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[Rank 4] mimo_batch_spec spec=input_ids,modality_inputs collate=visual
+[Rank 2] mimo_batch_spec spec=input_ids,position_ids,labels,loss_mask collate=metadata
+[Rank 4] megatron.bridge.training.setup_megatron_mimo: Rank 4: MegatronMIMO setup complete
+[Rank 4] megatron.bridge.training.pretrain_megatron_mimo: Rank 4: Starting training loop
+[Rank 1] mimo_batch_spec spec=input_ids,position_ids,labels,loss_mask collate=metadata
+[Rank 2] megatron.bridge.training.setup_megatron_mimo: Rank 2: MegatronMIMO setup complete
+[Rank 2] megatron.bridge.training.pretrain_megatron_mimo: Rank 2: Starting training loop
+[Rank 0] mimo_batch_spec spec=input_ids,position_ids,labels,loss_mask collate=metadata
+[Rank 3] mimo_batch_spec spec=input_ids,position_ids,labels,loss_mask collate=metadata
+[Rank 1] megatron.bridge.training.setup_megatron_mimo: Rank 1: MegatronMIMO setup complete
+[Rank 1] megatron.bridge.training.pretrain_megatron_mimo: Rank 1: Starting training loop
+[Rank 4] megatron.bridge.training.train_megatron_mimo: Rank 4: Starting MegatronMIMO training loop
+[Rank 3] megatron.bridge.training.setup_megatron_mimo: Rank 3: MegatronMIMO setup complete
+[Rank 3] megatron.bridge.training.pretrain_megatron_mimo: Rank 3: Starting training loop
+[Rank 0] megatron.bridge.training.setup_megatron_mimo: Rank 0: MegatronMIMO setup complete
+[Rank 0] megatron.bridge.training.pretrain_megatron_mimo: Rank 0: Starting training loop
+[Rank 2] megatron.bridge.training.train_megatron_mimo: Rank 2: Starting MegatronMIMO training loop
+[Rank 1] megatron.bridge.training.train_megatron_mimo: Rank 1: Starting MegatronMIMO training loop
+[Rank 3] megatron.bridge.training.train_megatron_mimo: Rank 3: Starting MegatronMIMO training loop
+[Rank 0] megatron.bridge.training.train_megatron_mimo: Rank 0: Starting MegatronMIMO training loop
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+[rank4]:[W1006 00:48:41.810594100 ProcessGroupNCCL.cpp:4215] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 3.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[rank0]:[W1006 00:48:41.810765364 ProcessGroupNCCL.cpp:4215] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 3.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[rank2]:[W1006 00:48:41.811756896 ProcessGroupNCCL.cpp:4215] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 3.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2496: UserWarning: Dynamo detected a call to a `functools.lru_cache`-wrapped function at '_common.py:76'. Dynamo ignores the cache wrapper and directly traces the wrapped function. Silent incorrectness is only a *potential* risk, not something we have observed. Enable TORCH_LOGS=+dynamo for a DEBUG stack trace.
+
+This call originates from:
+  File "/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/ops/_common.py", line 76, in maybe_autocast_dtype
+    if torch_version() >= (2, 4, 3):
+
+  torch._dynamo.utils.warn_once(msg)
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2348: UserWarning: Dynamo does not know how to trace the builtin `transformer_engine_torch.pybind11_detail_function_record_v1_system_libstdcpp_gxx_abi_1xxx_use_cxx11_abi_1.rmsnorm_fwd.` This function is either a Python builtin (e.g. _warnings.warn) or a third-party C/C++ Python extension (perhaps created with pybind).
+If it is a Python builtin, please file an issue on GitHub so the PyTorch team can add support for it and see the next case for a workaround.
+If it is a third-party C/C++ Python extension, please either wrap it into a PyTorch-understood custom operator (see https://pytorch.org/tutorials/advanced/custom_ops_landing_page.html for more details) or, if it is traceable, use `torch.compiler.allow_in_graph`.
+  torch._dynamo.utils.warn_once(explanation + "\n" + "\n".join(hints))
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2496: UserWarning: Dynamo detected a call to a `functools.lru_cache`-wrapped function at '_common.py:76'. Dynamo ignores the cache wrapper and directly traces the wrapped function. Silent incorrectness is only a *potential* risk, not something we have observed. Enable TORCH_LOGS=+dynamo for a DEBUG stack trace.
+
+This call originates from:
+  File "/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/ops/_common.py", line 76, in maybe_autocast_dtype
+    if torch_version() >= (2, 4, 3):
+
+  torch._dynamo.utils.warn_once(msg)
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2496: UserWarning: Dynamo detected a call to a `functools.lru_cache`-wrapped function at '_common.py:76'. Dynamo ignores the cache wrapper and directly traces the wrapped function. Silent incorrectness is only a *potential* risk, not something we have observed. Enable TORCH_LOGS=+dynamo for a DEBUG stack trace.
+
+This call originates from:
+  File "/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/ops/_common.py", line 76, in maybe_autocast_dtype
+    if torch_version() >= (2, 4, 3):
+
+  torch._dynamo.utils.warn_once(msg)
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2348: UserWarning: Dynamo does not know how to trace the builtin `transformer_engine_torch.pybind11_detail_function_record_v1_system_libstdcpp_gxx_abi_1xxx_use_cxx11_abi_1.rmsnorm_fwd.` This function is either a Python builtin (e.g. _warnings.warn) or a third-party C/C++ Python extension (perhaps created with pybind).
+If it is a Python builtin, please file an issue on GitHub so the PyTorch team can add support for it and see the next case for a workaround.
+If it is a third-party C/C++ Python extension, please either wrap it into a PyTorch-understood custom operator (see https://pytorch.org/tutorials/advanced/custom_ops_landing_page.html for more details) or, if it is traceable, use `torch.compiler.allow_in_graph`.
+  torch._dynamo.utils.warn_once(explanation + "\n" + "\n".join(hints))
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2348: UserWarning: Dynamo does not know how to trace the builtin `transformer_engine_torch.pybind11_detail_function_record_v1_system_libstdcpp_gxx_abi_1xxx_use_cxx11_abi_1.rmsnorm_fwd.` This function is either a Python builtin (e.g. _warnings.warn) or a third-party C/C++ Python extension (perhaps created with pybind).
+If it is a Python builtin, please file an issue on GitHub so the PyTorch team can add support for it and see the next case for a workaround.
+If it is a third-party C/C++ Python extension, please either wrap it into a PyTorch-understood custom operator (see https://pytorch.org/tutorials/advanced/custom_ops_landing_page.html for more details) or, if it is traceable, use `torch.compiler.allow_in_graph`.
+  torch._dynamo.utils.warn_once(explanation + "\n" + "\n".join(hints))
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2496: UserWarning: Dynamo detected a call to a `functools.lru_cache`-wrapped function at '_common.py:76'. Dynamo ignores the cache wrapper and directly traces the wrapped function. Silent incorrectness is only a *potential* risk, not something we have observed. Enable TORCH_LOGS=+dynamo for a DEBUG stack trace.
+
+This call originates from:
+  File "/opt/venv/lib/python3.12/site-packages/transformer_engine/pytorch/ops/_common.py", line 76, in maybe_autocast_dtype
+    if torch_version() >= (2, 4, 3):
+
+  torch._dynamo.utils.warn_once(msg)
+/usr/local/lib/python3.12/dist-packages/torch/_dynamo/variables/functions.py:2348: UserWarning: Dynamo does not know how to trace the builtin `transformer_engine_torch.pybind11_detail_function_record_v1_system_libstdcpp_gxx_abi_1xxx_use_cxx11_abi_1.rmsnorm_fwd.` This function is either a Python builtin (e.g. _warnings.warn) or a third-party C/C++ Python extension (perhaps created with pybind).
+If it is a Python builtin, please file an issue on GitHub so the PyTorch team can add support for it and see the next case for a workaround.
+If it is a third-party C/C++ Python extension, please either wrap it into a PyTorch-understood custom operator (see https://pytorch.org/tutorials/advanced/custom_ops_landing_page.html for more details) or, if it is traceable, use `torch.compiler.allow_in_graph`.
+  torch._dynamo.utils.warn_once(explanation + "\n" + "\n".join(hints))
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/tensor_parallel/layers.py:856: UserWarning: When using async grad allreduce it is recommended to set the environment variable CUDA_DEVICE_MAX_CONNECTIONS to 1 for maximum speedup
+  warnings.warn(
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/tensor_parallel/layers.py:856: UserWarning: When using async grad allreduce it is recommended to set the environment variable CUDA_DEVICE_MAX_CONNECTIONS to 1 for maximum speedup
+  warnings.warn(
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/tensor_parallel/layers.py:856: UserWarning: When using async grad allreduce it is recommended to set the environment variable CUDA_DEVICE_MAX_CONNECTIONS to 1 for maximum speedup
+  warnings.warn(
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/tensor_parallel/layers.py:856: UserWarning: When using async grad allreduce it is recommended to set the environment variable CUDA_DEVICE_MAX_CONNECTIONS to 1 for maximum speedup
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/usr/local/lib/python3.12/dist-packages/triton/language/core.py:2284: UserWarning: tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.
+  warn("tl.make_block_ptr is deprecated. Use TensorDescriptor or tl.make_tensor_descriptor instead.")
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/pipeline_parallel/schedules.py:220: UserWarning: c10d::broadcast_: an autograd kernel was not registered to the Autograd key(s) but we are trying to backprop through it. This may lead to silently incorrect behavior. This behavior is deprecated and will be removed in a future version of PyTorch. If your operator is differentiable, please ensure you have registered an autograd kernel to the correct Autograd key (e.g. DispatchKey::Autograd, DispatchKey::CompositeImplicitAutograd). If your operator is not differentiable, or to squash this warning and use the previous behavior, please register torch::CppFunction::makeFallthrough() to DispatchKey::Autograd. (Triggered internally at /opt/pytorch/pytorch/torch/csrc/autograd/autograd_not_implemented_fallback.cpp:76.)
+  Variable._execution_engine.run_backward(
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/pipeline_parallel/schedules.py:220: UserWarning: c10d::broadcast_: an autograd kernel was not registered to the Autograd key(s) but we are trying to backprop through it. This may lead to silently incorrect behavior. This behavior is deprecated and will be removed in a future version of PyTorch. If your operator is differentiable, please ensure you have registered an autograd kernel to the correct Autograd key (e.g. DispatchKey::Autograd, DispatchKey::CompositeImplicitAutograd). If your operator is not differentiable, or to squash this warning and use the previous behavior, please register torch::CppFunction::makeFallthrough() to DispatchKey::Autograd. (Triggered internally at /opt/pytorch/pytorch/torch/csrc/autograd/autograd_not_implemented_fallback.cpp:76.)
+  Variable._execution_engine.run_backward(
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/pipeline_parallel/schedules.py:220: UserWarning: c10d::broadcast_: an autograd kernel was not registered to the Autograd key(s) but we are trying to backprop through it. This may lead to silently incorrect behavior. This behavior is deprecated and will be removed in a future version of PyTorch. If your operator is differentiable, please ensure you have registered an autograd kernel to the correct Autograd key (e.g. DispatchKey::Autograd, DispatchKey::CompositeImplicitAutograd). If your operator is not differentiable, or to squash this warning and use the previous behavior, please register torch::CppFunction::makeFallthrough() to DispatchKey::Autograd. (Triggered internally at /opt/pytorch/pytorch/torch/csrc/autograd/autograd_not_implemented_fallback.cpp:76.)
+  Variable._execution_engine.run_backward(
+/opt/Megatron-Bridge/3rdparty/Megatron-LM/megatron/core/pipeline_parallel/schedules.py:220: UserWarning: c10d::broadcast_: an autograd kernel was not registered to the Autograd key(s) but we are trying to backprop through it. This may lead to silently incorrect behavior. This behavior is deprecated and will be removed in a future version of PyTorch. If your operator is differentiable, please ensure you have registered an autograd kernel to the correct Autograd key (e.g. DispatchKey::Autograd, DispatchKey::CompositeImplicitAutograd). If your operator is not differentiable, or to squash this warning and use the previous behavior, please register torch::CppFunction::makeFallthrough() to DispatchKey::Autograd. (Triggered internally at /opt/pytorch/pytorch/torch/csrc/autograd/autograd_not_implemented_fallback.cpp:76.)
+  Variable._execution_engine.run_backward(
+[rank0]:[W1006 00:51:20.037782292 ProcessGroupNCCL.cpp:4215] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 3.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[rank4]:[W1006 00:51:20.040901070 ProcessGroupNCCL.cpp:4215] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 3.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[rank2]:[W1006 00:51:20.041031083 ProcessGroupNCCL.cpp:4215] Warning: An unbatched P2P op (send/recv) was called on this ProcessGroup with size 3.  In lazy initialization mode, this will result in a new 2-rank NCCL communicator to be created. (function operator())
+[Rank 0] megatron.core.rerun_state_machine: Implicit initialization of Rerun State Machine!
+[Rank 0] megatron.core.rerun_state_machine: RerunStateMachine initialized in mode RerunMode.DISABLED
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+> setting tensorboard ...
+ [2026-10-06 00:51:26] iteration        1/      50 | consumed samples:           64 | elapsed time per iteration (ms): 167532.9 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 8.407016E-01 | loss scale: 1.0 | grad norm: 44.134 | number of skipped iterations:   0 | number of nan iterations:   0 |
+[Rank 1] (after 1 iterations) memory (GB) | mem-allocated-gigabytes: 26.326 | mem-active-gigabytes: 26.326 | mem-inactive-gigabytes: 0.38131 | mem-reserved-gigabytes: 31.564 | mem-max-allocated-gigabytes: 26.353 | mem-max-active-gigabytes: 26.353 | mem-max-inactive-gigabytes: 1.3087 | mem-max-reserved-gigabytes: 31.564 | mem-alloc-retires: 0 | mem-allocated-count: 577
+[Rank 0] (after 1 iterations) memory (GB) | mem-allocated-gigabytes: 26.336 | mem-active-gigabytes: 26.336 | mem-inactive-gigabytes: 0.37166 | mem-reserved-gigabytes: 31.564 | mem-max-allocated-gigabytes: 26.363 | mem-max-active-gigabytes: 26.363 | mem-max-inactive-gigabytes: 1.299 | mem-max-reserved-gigabytes: 31.564 | mem-alloc-retires: 0 | mem-allocated-count: 579[Rank 4] (after 1 iterations) memory (GB) | mem-allocated-gigabytes: 6.0389 | mem-active-gigabytes: 6.0389 | mem-inactive-gigabytes: 0.53776 | mem-reserved-gigabytes: 20.783 | mem-max-allocated-gigabytes: 16.121 | mem-max-active-gigabytes: 16.121 | mem-max-inactive-gigabytes: 6.0711 | mem-max-reserved-gigabytes: 20.783 | mem-alloc-retires: 0 | mem-allocated-count: 900
+
+ [2026-10-06 00:51:34] iteration        2/      50 | consumed samples:          128 | elapsed time per iteration (ms): 8172.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 4.835604E-01 | loss scale: 1.0 | grad norm: 21.386 | number of skipped iterations:   0 | number of nan iterations:   0 |[Rank 1] (after 2 iterations) memory (GB) | mem-allocated-gigabytes: 26.327 | mem-active-gigabytes: 26.327 | mem-inactive-gigabytes: 0.38023 | mem-reserved-gigabytes: 35.471 | mem-max-allocated-gigabytes: 34.787 | mem-max-active-gigabytes: 34.787 | mem-max-inactive-gigabytes: 1.7188 | mem-max-reserved-gigabytes: 35.471 | mem-alloc-retires: 0 | mem-allocated-count: 577
+
+[Rank 0] (after 2 iterations) memory (GB) | mem-allocated-gigabytes: 26.337 | mem-active-gigabytes: 26.337 | mem-inactive-gigabytes: 0.3698 | mem-reserved-gigabytes: 35.471 | mem-max-allocated-gigabytes: 34.796 | mem-max-active-gigabytes: 34.796 | mem-max-inactive-gigabytes: 1.7133 | mem-max-reserved-gigabytes: 35.471 | mem-alloc-retires: 0 | mem-allocated-count: 579
+[Rank 4] (after 2 iterations) memory (GB) | mem-allocated-gigabytes: 6.0389 | mem-active-gigabytes: 6.0389 | mem-inactive-gigabytes: 0.53776 | mem-reserved-gigabytes: 21.181 | mem-max-allocated-gigabytes: 18.753 | mem-max-active-gigabytes: 18.753 | mem-max-inactive-gigabytes: 6.0711 | mem-max-reserved-gigabytes: 21.181 | mem-alloc-retires: 0 | mem-allocated-count: 900
+ [2026-10-06 00:51:42] iteration        3/      50 | consumed samples:          192 | elapsed time per iteration (ms): 8344.3 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.507039E-01 | loss scale: 1.0 | grad norm: 13.311 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:51:52] iteration        4/      50 | consumed samples:          256 | elapsed time per iteration (ms): 9955.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.380577E-01 | loss scale: 1.0 | grad norm: 8.237 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:00] iteration        5/      50 | consumed samples:          320 | elapsed time per iteration (ms): 8036.1 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.224164E-01 | loss scale: 1.0 | grad norm: 20.523 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:10] iteration        6/      50 | consumed samples:          384 | elapsed time per iteration (ms): 9280.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 9.454612E-02 | loss scale: 1.0 | grad norm: 7.135 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:18] iteration        7/      50 | consumed samples:          448 | elapsed time per iteration (ms): 7845.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 8.530860E-02 | loss scale: 1.0 | grad norm: 8.641 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:25] iteration        8/      50 | consumed samples:          512 | elapsed time per iteration (ms): 7651.2 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 8.834675E-02 | loss scale: 1.0 | grad norm: 10.202 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:34] iteration        9/      50 | consumed samples:          576 | elapsed time per iteration (ms): 8790.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 7.580699E-02 | loss scale: 1.0 | grad norm: 7.338 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:42] iteration       10/      50 | consumed samples:          640 | elapsed time per iteration (ms): 8049.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 5.324097E-02 | loss scale: 1.0 | grad norm: 5.578 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:50] iteration       11/      50 | consumed samples:          704 | elapsed time per iteration (ms): 7737.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 6.880876E-02 | loss scale: 1.0 | grad norm: 3.942 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:52:57] iteration       12/      50 | consumed samples:          768 | elapsed time per iteration (ms): 7482.9 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 7.169866E-02 | loss scale: 1.0 | grad norm: 6.513 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:05] iteration       13/      50 | consumed samples:          832 | elapsed time per iteration (ms): 8060.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 4.651609E-02 | loss scale: 1.0 | grad norm: 5.403 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:13] iteration       14/      50 | consumed samples:          896 | elapsed time per iteration (ms): 7612.3 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.803953E-02 | loss scale: 1.0 | grad norm: 10.213 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:21] iteration       15/      50 | consumed samples:          960 | elapsed time per iteration (ms): 7869.5 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.472916E-02 | loss scale: 1.0 | grad norm: 3.729 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:29] iteration       16/      50 | consumed samples:         1024 | elapsed time per iteration (ms): 8371.9 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.654682E-02 | loss scale: 1.0 | grad norm: 3.228 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:37] iteration       17/      50 | consumed samples:         1088 | elapsed time per iteration (ms): 8069.5 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.332150E-02 | loss scale: 1.0 | grad norm: 4.114 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:45] iteration       18/      50 | consumed samples:         1152 | elapsed time per iteration (ms): 7911.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.138374E-02 | loss scale: 1.0 | grad norm: 3.418 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:53:55] iteration       19/      50 | consumed samples:         1216 | elapsed time per iteration (ms): 10040.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.414044E-02 | loss scale: 1.0 | grad norm: 3.636 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:03] iteration       20/      50 | consumed samples:         1280 | elapsed time per iteration (ms): 7687.6 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.105111E-02 | loss scale: 1.0 | grad norm: 5.581 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:11] iteration       21/      50 | consumed samples:         1344 | elapsed time per iteration (ms): 8046.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.755252E-02 | loss scale: 1.0 | grad norm: 3.162 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:19] iteration       22/      50 | consumed samples:         1408 | elapsed time per iteration (ms): 8122.2 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.733428E-02 | loss scale: 1.0 | grad norm: 3.272 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:27] iteration       23/      50 | consumed samples:         1472 | elapsed time per iteration (ms): 7886.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.117467E-02 | loss scale: 1.0 | grad norm: 2.756 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:35] iteration       24/      50 | consumed samples:         1536 | elapsed time per iteration (ms): 7824.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.159030E-02 | loss scale: 1.0 | grad norm: 3.477 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:44] iteration       25/      50 | consumed samples:         1600 | elapsed time per iteration (ms): 8774.0 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 3.934676E-02 | loss scale: 1.0 | grad norm: 2.169 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:51] iteration       26/      50 | consumed samples:         1664 | elapsed time per iteration (ms): 7888.0 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.217670E-02 | loss scale: 1.0 | grad norm: 1.779 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:54:59] iteration       27/      50 | consumed samples:         1728 | elapsed time per iteration (ms): 7768.3 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.561827E-02 | loss scale: 1.0 | grad norm: 3.165 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:07] iteration       28/      50 | consumed samples:         1792 | elapsed time per iteration (ms): 8052.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.094313E-02 | loss scale: 1.0 | grad norm: 3.400 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:17] iteration       29/      50 | consumed samples:         1856 | elapsed time per iteration (ms): 10083.1 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.706673E-02 | loss scale: 1.0 | grad norm: 1.688 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:26] iteration       30/      50 | consumed samples:         1920 | elapsed time per iteration (ms): 8760.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.889075E-02 | loss scale: 1.0 | grad norm: 2.046 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:35] iteration       31/      50 | consumed samples:         1984 | elapsed time per iteration (ms): 8529.0 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.164513E-02 | loss scale: 1.0 | grad norm: 2.490 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:42] iteration       32/      50 | consumed samples:         2048 | elapsed time per iteration (ms): 7695.5 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.254853E-02 | loss scale: 1.0 | grad norm: 1.527 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:50] iteration       33/      50 | consumed samples:         2112 | elapsed time per iteration (ms): 7985.9 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.613977E-02 | loss scale: 1.0 | grad norm: 2.327 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:55:59] iteration       34/      50 | consumed samples:         2176 | elapsed time per iteration (ms): 8255.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.660938E-02 | loss scale: 1.0 | grad norm: 1.413 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:08] iteration       35/      50 | consumed samples:         2240 | elapsed time per iteration (ms): 9023.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 9.427125E-03 | loss scale: 1.0 | grad norm: 2.692 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:15] iteration       36/      50 | consumed samples:         2304 | elapsed time per iteration (ms): 7837.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.322088E-02 | loss scale: 1.0 | grad norm: 3.504 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:23] iteration       37/      50 | consumed samples:         2368 | elapsed time per iteration (ms): 7814.6 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 2.244648E-02 | loss scale: 1.0 | grad norm: 16.639 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:31] iteration       38/      50 | consumed samples:         2432 | elapsed time per iteration (ms): 7999.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.163830E-02 | loss scale: 1.0 | grad norm: 0.946 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:39] iteration       39/      50 | consumed samples:         2496 | elapsed time per iteration (ms): 7945.9 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 8.068497E-03 | loss scale: 1.0 | grad norm: 1.442 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:47] iteration       40/      50 | consumed samples:         2560 | elapsed time per iteration (ms): 7708.7 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.034818E-02 | loss scale: 1.0 | grad norm: 0.709 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:56:55] iteration       41/      50 | consumed samples:         2624 | elapsed time per iteration (ms): 8063.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.016701E-02 | loss scale: 1.0 | grad norm: 1.478 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:03] iteration       42/      50 | consumed samples:         2688 | elapsed time per iteration (ms): 8343.0 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.276669E-02 | loss scale: 1.0 | grad norm: 1.196 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:11] iteration       43/      50 | consumed samples:         2752 | elapsed time per iteration (ms): 7620.9 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.057273E-02 | loss scale: 1.0 | grad norm: 4.210 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:19] iteration       44/      50 | consumed samples:         2816 | elapsed time per iteration (ms): 7860.8 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 6.413341E-03 | loss scale: 1.0 | grad norm: 1.035 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:27] iteration       45/      50 | consumed samples:         2880 | elapsed time per iteration (ms): 8086.1 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 9.462471E-03 | loss scale: 1.0 | grad norm: 1.372 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:34] iteration       46/      50 | consumed samples:         2944 | elapsed time per iteration (ms): 7572.4 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 9.696935E-03 | loss scale: 1.0 | grad norm: 1.883 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:43] iteration       47/      50 | consumed samples:         3008 | elapsed time per iteration (ms): 8270.3 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.257438E-02 | loss scale: 1.0 | grad norm: 3.086 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:51] iteration       48/      50 | consumed samples:         3072 | elapsed time per iteration (ms): 7835.6 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 6.720803E-03 | loss scale: 1.0 | grad norm: 1.316 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:57:59] iteration       49/      50 | consumed samples:         3136 | elapsed time per iteration (ms): 8293.3 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.135519E-02 | loss scale: 1.0 | grad norm: 2.532 | number of skipped iterations:   0 | number of nan iterations:   0 |
+ [2026-10-06 00:58:06] iteration       50/      50 | consumed samples:         3200 | elapsed time per iteration (ms): 7417.0 | learning rate: 1.000000E-05 | global batch size:    64 | lm loss: 1.816699E-02 | loss scale: 1.0 | grad norm: 2.291 | number of skipped iterations:   0 | number of nan iterations:   0 |
+[Rank 1] megatron.bridge.training.train_megatron_mimo: Rank 1: MegatronMIMO training completed
+[Rank 2] megatron.bridge.training.train_megatron_mimo: Rank 2: MegatronMIMO training completed
+[Rank 3] megatron.bridge.training.train_megatron_mimo: Rank 3: MegatronMIMO training completed
+[Rank 0] megatron.bridge.training.train_megatron_mimo: Rank 0: MegatronMIMO training completed
+[Rank 4] megatron.bridge.training.train_megatron_mimo: Rank 4: MegatronMIMO training completed
+[Rank 1] megatron.bridge.training.pretrain_megatron_mimo: MegatronMIMO pretraining completed
+[Rank 3] megatron.bridge.training.pretrain_megatron_mimo: MegatronMIMO pretraining completed
+[Rank 2] megatron.bridge.training.pretrain_megatron_mimo: MegatronMIMO pretraining completed
+[Rank 0] megatron.bridge.training.pretrain_megatron_mimo: MegatronMIMO pretraining completed
+[Rank 4] megatron.bridge.training.pretrain_megatron_mimo: MegatronMIMO pretraining completed
+[Rank 3] PASSED
+[Rank 0] PASSED
+[Rank 4] PASSED
+[Rank 1] PASSED
+[Rank 2] PASSED
