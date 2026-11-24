@@ -156,6 +156,54 @@ maximum and mean absolute loss differences from the uninterrupted baseline. A
 successful run means both resume paths produced comparable losses; inspect the
 logs and differences when diagnosing a mismatch.
 
+## AutoTP training to rollout weight sync
+
+`autotp_rollout_e2e.py` loads a dense Hugging Face checkpoint into an AutoTP + ZeRO training
+engine, trains a few steps, and moves the trained weights into rollout engines with a different TP
+size:
+
+- `ucp`: save a DeepSpeed checkpoint, convert it to Universal format, and load it.
+- `gather`: gather each whole parameter (`GatheredParameters` under ZeRO-3, then an all-gather of
+  the TP shards) and slice the rollout shard out of it.
+- `affine`: describe ZeRO's own storage with `autotp_storage_affine_maps`, plan with
+  `plan_transfer`, and run the plan with `execute_transfers`. No full parameter is materialized.
+
+Rollout engines start from NaN weights. Every path must reproduce the trained weights bit for bit,
+checked against whole parameters rebuilt with plain collectives. The script then trains and syncs
+`--sync_steps` more times, reusing the affine plans, and records wall time and the device memory
+each step adds at its peak.
+
+The affine path needs a DeepSpeed build with
+[#8809](https://github.com/deepspeedai/DeepSpeed/pull/8809) (transfer executor) and
+[#8885](https://github.com/deepspeedai/DeepSpeed/pull/8885) (ZeRO / AutoTP storage maps).
+
+```bash
+cd training/deepspeed_finetune_demo
+MODEL_NAME=/path/to/Qwen3-8B ./run_autotp_rollout_e2e.sh
+```
+
+`TRAIN_TP_SIZE` (2), `ROLLOUT_TP_SIZE` (4), `ZERO_STAGES` ("2 3"), `PATHS` (`ucp,gather,affine`),
+`REPLICA_POLICY`, `NUM_GPUS` (8), and `OUTPUT_ROOT` override the defaults; extra arguments go to
+the script. Each stage writes a log and a JSON report.
+
+Under ZeRO-0/1/2 every data-parallel rank holds a replica of its TP shard, so each target block
+can be read from several ranks. `--replica_policy` picks one: `lowest` (the planner's default),
+`local` (the target's own rank when it holds a replica, else the lowest), or `balanced` (local
+first, else the holder that has sent the fewest elements so far; default).
+
+Qwen3-8B, 8x NVIDIA L20, train TP 2 -> rollout TP 4, `--paths gather,affine`, all bitwise equal:
+
+| | ZeRO-2 gather | ZeRO-2 affine `lowest` | ZeRO-2 affine `balanced` | ZeRO-3 gather | ZeRO-3 affine |
+|---|---|---|---|---|---|
+| maps + plan (once) | - | 0.63 + 0.57 s | 0.70 + 0.70 s | - | 0.82 + 0.60 s |
+| first sync | 1.01 s | 1.16 s | 0.48 s | 1.71 s | 1.18 s |
+| repeated syncs | 0.78-0.82 s | 1.05-1.35 s | 0.49-0.55 s | 1.22-1.28 s | 0.45-0.74 s |
+| device memory added | 3.48 GB | 0.30 GB | 0.16 GB | 3.48 GB | 0.66 GB |
+| sent / local copy | - | 35.2 / 5.0 GB | 15.1 / 25.1 GB | - | 34.0 / 6.3 GB |
+| executor rounds | - | 96 | 41 | - | 32 |
+
+Each map has 3,192 pieces on both sides.
+
 ## HumanEval results
 
 | Model | HumanEval (base) | HumanEval+ |
