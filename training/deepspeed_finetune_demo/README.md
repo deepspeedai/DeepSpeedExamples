@@ -156,6 +156,103 @@ maximum and mean absolute loss differences from the uninterrupted baseline. A
 successful run means both resume paths produced comparable losses; inspect the
 logs and differences when diagnosing a mismatch.
 
+## AutoEP from HF checkpoint to rollout
+
+`autoep_rollout_e2e.py` follows weights from a Hugging Face checkpoint through AutoEP
+training to a rollout engine with a different expert layout, and checks precision at
+every step:
+
+1. Load the checkpoint, truncated to `NUM_LAYERS` (4 by default), into an AutoEP
+   training engine (`TRAIN_AUTOEP_SIZE`, default 4). Every weight must equal the
+   safetensors tensor bit for bit; logits are compared with plain transformers.
+2. Train a few steps.
+3. Move the trained weights to rollout engines (`ROLLOUT_AUTOEP_SIZE`, default 8) two ways:
+   - `ucp`: `save_checkpoint`, `ds_to_universal`, then `load_checkpoint` with `load_universal`;
+   - `affine`: AutoEP storage maps, `plan_transfer` and `execute_transfers` for the
+     experts, directly between devices; dense weights are copied on device (gathered
+     under ZeRO-3).
+4. Generate greedily with `HybridEngineRollout` on the training engine and on both
+   rollout engines.
+
+### Weight flows
+
+The two paths of step 3 next to the existing in-place rollout:
+
+```
+Universal checkpoint (offline, through storage)
+  training engine          save_checkpoint     ZeRO shards     ds_to_universal     universal      load_checkpoint     rollout engine
+  EP=4, ZeRO-k     ───────────────────────────>  on disk   ──────────────────────>  checkpoint  ──(load_universal)──>  EP=8, NaN init
+                                                                                    on disk
+
+AffineIR transfer (online, device to device)
+  training engine ── expert_storage_affine_maps() ──> source maps ─┐
+  (live storage: EDP replicas, ZeRO-3 fragments)                   ├─ plan_transfer ─> TransferPlan ─ execute_transfers ─> rollout experts
+  rollout engine  ── expert_storage_affine_maps() ──> target maps ─┘   (per tensor)                  (send/recv + local copy)
+  dense weights: copy_ on device (GatheredParameters under ZeRO-3)
+
+HybridEngineRollout (in place, reference)
+  training engine = rollout engine; sync_weights is a no-op, so the layout cannot change
+```
+
+|                        | Universal checkpoint        | AffineIR transfer                   | HybridEngineRollout     |
+|------------------------|-----------------------------|-------------------------------------|-------------------------|
+| Target layout          | any EP size                 | any EP size or expert placement     | same as training        |
+| Goes through storage   | yes, full checkpoint twice  | no                                  | no                      |
+| Source                 | saved ZeRO shards           | live parameter storage              | live parameters         |
+| Moves                  | all weights and, optionally, optimizer state | expert weights (dense copied separately) | nothing        |
+
+Measured on 8x Intel Arc Pro B70, Qwen3-30B-A3B truncated to 4 layers, training at EP4,
+rollout at EP8 (UCP is not run for ZeRO-3, see below):
+
+| Step                               | UCP, ZeRO-2  | AffineIR, ZeRO-2 | AffineIR, ZeRO-3 |
+|------------------------------------|--------------|------------------|------------------|
+| save / plan                        | 7.1 s        | 3.2 s            | 0.05 s           |
+| convert / execute                  | 107.7 s      | 0.27 s           | 0.23 s           |
+| load / dense copy                  | 25.1 s       | 0.01 s           | 0.18 s           |
+| rollout weights equal trained      | bitwise      | bitwise          | bitwise          |
+
+Each check covers 8.0e9 elements. AffineIR sent 4.2 GB between devices and copied 0.6 GB
+locally under ZeRO-2 (3.6 GB and 1.2 GB under ZeRO-3), in 12 rounds. Under ZeRO-3 the
+dense copy gathers each weight.
+
+### Checks
+
+Rollout engines start from NaN weights. The script exits with an error unless:
+
+- every training weight equals the safetensors tensor bit for bit after loading;
+- every rollout weight equals the trained weight bit for bit (experts are matched by
+  expert id through plain collectives);
+- the two paths' logits differ by no more than the forward's own run-to-run difference,
+  which is zero when the forward is deterministic.
+
+Logits and tokens against the training engine are reported but not required to match
+bit for bit. The expert layout changes how tokens are grouped in the grouped GEMM, and
+with it the bf16 accumulation order, so the training and rollout forwards round
+differently even with identical weights. Set `ROLLOUT_AUTOEP_SIZE` equal to
+`TRAIN_AUTOEP_SIZE` to remove this difference.
+
+Each stage writes `zero<stage>.json` with the checks, the time of every step (save,
+convert, load; plan, execute, dense copy; generation) and the generated text.
+
+```bash
+cd training/deepspeed_finetune_demo
+MODEL_NAME=/path/to/Qwen3-30B-A3B ./run_autoep_rollout_e2e.sh
+```
+
+`NUM_GPUS`, `NUM_LAYERS`, `TRAIN_AUTOEP_SIZE`, `ROLLOUT_AUTOEP_SIZE`, `ZERO_STAGES`
+(default `"2 3"`), and `OUTPUT_ROOT` override the defaults. The script needs a DeepSpeed
+build with the AutoEP storage maps
+([DeepSpeed#8800](https://github.com/deepspeedai/DeepSpeed/pull/8800)) and the AffineIR
+transfer executor ([DeepSpeed#8809](https://github.com/deepspeedai/DeepSpeed/pull/8809)).
+ZeRO-3 training with AutoEP also needs the fix that makes ZeRO-3 gather expert and dense
+parameters in the same order on every rank
+([DeepSpeed#8876](https://github.com/deepspeedai/DeepSpeed/pull/8876)); without it, training can hang from the third
+step. A universal checkpoint converted from ZeRO-3 keeps ZeRO-3 model file names, which
+the ZeRO-1 rollout engine cannot load, so the run script uses only the AffineIR path for
+ZeRO-3. The UCP path writes a full training checkpoint and its universal form under
+`OUTPUT_ROOT` (about 90 GB per stage for 4 layers of Qwen3-30B-A3B), removed after each
+stage.
+
 ## HumanEval results
 
 | Model | HumanEval (base) | HumanEval+ |
