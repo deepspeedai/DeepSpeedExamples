@@ -1,0 +1,1068 @@
+<title>rdsp, Explained</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F2F4F3; --surface:#FFFFFF; --sunk:#E7EBE9; --ink:#15212B; --body:#34424E; --muted:#5E6C77; --line:#D3D9D6;
+  --accent:#0F7F6B; --accent-soft:#D6EEE8; --meg:#3E5FC4; --meg-soft:#DDE4F7; --first:#B8691F; --first-soft:#F6E5D3;
+  --warn:#9A5B00; --warn-soft:#FBEBCF; --code-bg:#15212B; --code-ink:#E4ECEE;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --cond:'IBM Plex Sans Condensed','IBM Plex Sans','Arial Narrow',Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F161C; --surface:#172129; --sunk:#1E2A33; --ink:#E7EDF0; --body:#C3CED5; --muted:#93A2AD; --line:#2C3A44;
+    --accent:#3CC2A6; --accent-soft:#163A34; --meg:#8CA2EC; --meg-soft:#1F2A4A; --first:#E39E5B; --first-soft:#3A2A1A;
+    --warn:#E8B45A; --warn-soft:#3A2E17; --code-bg:#0A1015; --code-ink:#DCE6EA;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F161C; --surface:#172129; --sunk:#1E2A33; --ink:#E7EDF0; --body:#C3CED5; --muted:#93A2AD; --line:#2C3A44;
+  --accent:#3CC2A6; --accent-soft:#163A34; --meg:#8CA2EC; --meg-soft:#1F2A4A; --first:#E39E5B; --first-soft:#3A2A1A;
+  --warn:#E8B45A; --warn-soft:#3A2E17; --code-bg:#0A1015; --code-ink:#DCE6EA;
+}
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--body); font-family:var(--sans); font-size:17px; line-height:1.65; padding-inline:20px; padding-block:0 64px}
+.wrap{max-width:1180px; margin:0 auto; display:grid; grid-template-columns:240px minmax(0,1fr); gap:56px}
+@media (max-width:960px){ .wrap{grid-template-columns:minmax(0,1fr); gap:0} nav.toc{display:none} }
+nav.toc{position:sticky; top:env(safe-area-inset-top,0px); align-self:start; padding-top:40px; max-height:100vh; overflow:auto; font-size:14px}
+nav.toc p{font-family:var(--cond); text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-size:13px; margin:0 0 10px}
+nav.toc ol{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:2px; counter-reset:t}
+nav.toc a{display:block; padding:5px 10px; border-radius:6px; color:var(--body); text-decoration:none; border-left:2px solid transparent}
+nav.toc a:hover{background:var(--sunk)}
+nav.toc a.on{border-left-color:var(--accent); color:var(--ink); background:var(--surface); font-weight:500}
+main{min-width:0; padding-top:40px}
+header.hero{padding-block:24px 36px; border-bottom:1px solid var(--line); margin-bottom:12px}
+.eyebrow{font-family:var(--cond); font-weight:600; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin:0}
+h1{font-family:var(--cond); font-weight:700; color:var(--ink); font-size:clamp(34px,5vw,54px); line-height:1.05; margin:10px 0 16px; text-wrap:balance; letter-spacing:-.01em}
+h2{font-family:var(--cond); font-weight:700; color:var(--ink); font-size:clamp(26px,3.2vw,34px); line-height:1.15; margin:0 0 14px; text-wrap:balance}
+h3{font-family:var(--sans); font-weight:600; color:var(--ink); font-size:19px; line-height:1.3; margin:28px 0 8px}
+p{margin:0 0 14px; max-width:68ch}
+.lede{font-size:19px; color:var(--body); max-width:62ch}
+section.chap{padding-block:48px 12px; border-bottom:1px solid var(--line); scroll-margin-top:12px}
+.num{font-family:var(--mono); color:var(--muted); font-size:14px; margin-right:6px}
+b,strong{color:var(--ink); font-weight:600}
+code,.mono{font-family:var(--mono); font-size:.9em}
+code{background:var(--sunk); padding:1px 5px; border-radius:4px; color:var(--ink)}
+pre{background:var(--code-bg); color:var(--code-ink); font-family:var(--mono); font-size:14px; line-height:1.6; padding:18px 20px; border-radius:10px; overflow-x:auto; max-width:100%}
+pre code{background:none; padding:0; color:inherit}
+ul,ol{max-width:66ch; padding-left:22px; margin:0 0 14px}
+li{margin:4px 0}
+a{color:var(--accent)}
+.tldr{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:22px 26px; margin:22px 0 0; max-width:780px}
+.tldr h2{font-size:22px; margin-bottom:8px}
+.tldr ol{margin:0; max-width:none}
+.callout{border-radius:10px; padding:16px 20px; margin:18px 0; max-width:780px}
+.callout.note{background:var(--accent-soft); color:var(--ink)}
+.callout.warn{background:var(--warn-soft); color:var(--ink)}
+.callout p:last-child{margin-bottom:0}
+.callout .tag{font-family:var(--cond); font-weight:700; text-transform:uppercase; font-size:13px; letter-spacing:.08em; display:block; margin-bottom:4px}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:16px 0}
+.grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:16px 0}
+.box{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px 18px}
+.box h4{margin:0 0 6px; font-size:16px; color:var(--ink); font-weight:600}
+.box p{font-size:15.5px; margin:0; line-height:1.55}
+.scroll{overflow-x:auto; max-width:100%; margin:16px 0}
+table{border-collapse:collapse; width:100%; font-size:15px; background:var(--surface); border-radius:10px; overflow:hidden}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{background:var(--sunk); color:var(--ink); font-weight:600; font-size:14px}
+td.n,th.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.good{color:var(--accent); font-weight:600}
+.pill{display:inline-block; font-size:12.5px; font-weight:600; padding:2px 9px; border-radius:999px; white-space:nowrap}
+.pill.ok{background:var(--accent-soft); color:var(--accent)}
+.pill.no{background:var(--warn-soft); color:var(--warn)}
+details{background:var(--surface); border:1px solid var(--line); border-radius:10px; margin:14px 0; max-width:780px}
+details summary{cursor:pointer; padding:12px 16px; font-weight:600; color:var(--ink); list-style:none}
+details summary::before{content:"+"; font-family:var(--mono); color:var(--accent); display:inline-block; width:18px}
+details[open] summary::before{content:"−"}
+details>div{padding:0 18px 14px}
+details summary:focus-visible, button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+/* glossary terms */
+dfn{font-style:normal; border-bottom:1.5px dotted var(--accent); cursor:help; color:var(--ink)}
+#tip{position:fixed; z-index:20; max-width:320px; background:var(--ink); color:var(--bg); font-size:14px; line-height:1.5; padding:10px 12px; border-radius:8px; pointer-events:none; box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#tip b{color:var(--bg)}
+dl.gloss{display:grid; grid-template-columns:minmax(120px,190px) 1fr; gap:0; background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; max-width:900px}
+dl.gloss dt,dl.gloss dd{margin:0; padding:10px 14px; border-bottom:1px solid var(--line)}
+dl.gloss dt{font-weight:600; color:var(--ink); background:var(--sunk)}
+dl.gloss dd{font-size:15.5px}
+@media (max-width:560px){ dl.gloss{grid-template-columns:1fr} dl.gloss dt{border-bottom:none} }
+/* interactive panels */
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px; margin:20px 0}
+.panel .ptitle{font-family:var(--cond); font-weight:700; font-size:14px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 10px}
+.controls{display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; margin-bottom:12px; font-size:15px}
+.controls label{display:flex; gap:8px; align-items:center}
+select,input[type=range]{font:inherit; accent-color:var(--accent)}
+select{background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:4px 8px}
+button{font:inherit; font-size:15px; font-weight:600; border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:7px 14px; border-radius:8px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+button:disabled{opacity:.45; cursor:default}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.seg button{border:none; border-radius:0; padding:6px 12px; background:var(--bg); font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+.stat{display:flex; flex-wrap:wrap; gap:10px 26px; font-size:15px; margin-top:10px}
+.stat b{font-variant-numeric:tabular-nums}
+svg text{font-family:var(--sans)}
+/* step-through */
+#walk svg{width:100%; height:auto; max-width:100%; display:block}
+#walk .caption{min-height:112px; background:var(--sunk); border-radius:8px; padding:12px 16px; margin-top:12px}
+#walk .caption h4{margin:0 0 4px; color:var(--ink); font-size:16px}
+#walk .caption p{margin:0; font-size:15.5px}
+.w-node rect{fill:var(--surface); stroke:var(--line); stroke-width:2; transition:fill .25s, stroke .25s}
+.w-node text{fill:var(--ink); font-size:15px}
+.w-node .sub{fill:var(--muted); font-size:12.5px}
+.w-node.hot rect{fill:var(--accent-soft); stroke:var(--accent)}
+.w-edge{stroke:var(--line); stroke-width:3; fill:none; transition:stroke .25s}
+.w-edge.hot{stroke:var(--accent)}
+.w-edge.back.hot{stroke:var(--first)}
+.w-label{font-size:13px; fill:var(--muted)}
+.w-label.hot{fill:var(--ink); font-weight:600}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+.sched{overflow-x:auto; max-width:100%}
+.sched svg{display:block}
+.legend{display:flex; flex-wrap:wrap; gap:14px; font-size:14px; margin:8px 0 0}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+.sw{width:14px; height:14px; border-radius:3px; display:inline-block}
+.foot{font-size:14px; color:var(--muted); margin-top:40px}
+.kbd{font-family:var(--mono); font-size:13px; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 5px}
+</style>
+
+<div id="tip" hidden></div>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol id="tocList">
+    <li><a href="#summary">Read this first</a></li>
+    <li><a href="#problem">1. The problem</a></li>
+    <li><a href="#words">2. Words you need</a></li>
+    <li><a href="#pipeline">3. How a pipeline trains</a></li>
+    <li><a href="#schedule">4. The schedule (1F1B)</a></li>
+    <li><a href="#arch">5. Architecture</a></li>
+    <li><a href="#step">6. One step, end to end</a></li>
+    <li><a href="#shapes">7. Stages of different shapes</a></li>
+    <li><a href="#safety">8. Staying correct</a></li>
+    <li><a href="#ckpt">9. Checkpoints &amp; recovery</a></li>
+    <li><a href="#code">10. Code map</a></li>
+    <li><a href="#megatron">11. rdsp vs Megatron</a></li>
+    <li><a href="#evolution">12. First design → fix</a></li>
+    <li><a href="#results">13. Results</a></li>
+    <li><a href="#proof">14. How we know it's right</a></li>
+    <li><a href="#limits">15. Limitations</a></li>
+    <li><a href="#faq">16. FAQ</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <p class="eyebrow">Design &amp; architecture report · September 2026</p>
+  <h1>rdsp: training one model across many GPUs, with Ray between the pieces</h1>
+  <p class="lede">A from-scratch explanation of what rdsp is, how every part works, how it compares with NVIDIA Megatron, and what the measurements say. No prior knowledge of distributed training assumed. Dotted-underlined words show a definition when you hover or tap them.</p>
+</header>
+
+<!-- ===================================================== SUMMARY -->
+<section class="chap" id="summary">
+  <div class="tldr">
+    <h2>Read this first: the whole project in seven sentences</h2>
+    <ol>
+      <li>A neural network is a tall stack of <dfn data-t="layer">layers</dfn>; <b>rdsp cuts that stack into slices ("<dfn data-t="stage">stages</dfn>") and puts each slice on its own GPU(s)</b>, so a model can be trained across many GPUs.</li>
+      <li>Data flows through the stages like an assembly line: each stage passes its output to the next, and during learning the corrections flow back the other way.</li>
+      <li>Each stage is run by an ordinary <dfn data-t="deepspeed">DeepSpeed</dfn> engine, and the stages are started and connected by <dfn data-t="ray">Ray</dfn>; <b>neither library was modified</b>.</li>
+      <li>What's new compared with NVIDIA's <dfn data-t="megatron">Megatron</dfn>: <b>every stage can have a different number of GPUs and a different way of using them</b>. That matters because the last stage (which holds the output layer) does about twice the work of the others.</li>
+      <li>Every configuration was checked to produce the same numbers as training the unsplit model on one GPU. Those strict checks caught six real bugs, which are now fixed.</li>
+      <li>From the same pretrained weights and text, <b>rdsp and Megatron produce the same loss curve</b> at 1, 4 and 8 GPUs (within 0.05% per step). With every setting matched, precision included, on the same pinned-H100 machine, rdsp is <b>on par with Megatron or faster</b>. With small microbatches, where Python overhead dominates, it leads by 1.24–1.30×. In GPU-bound training with large microbatches and Megatron's fastest options, it leads by 1.10× at 1 GPU and 1.11× at 4, and ties at 8 (Chapter 13).</li>
+      <li>The core idea, a second GPU for the busiest stage, <b>didn't pay off on this model</b>. In three fair tests, a plain 5-stage pipeline beat 4 stages with a 2-GPU last stage by 3–9%: two GPUs made that stage only ~1.5× faster. rdsp still beat Megatron's best layouts by 1.18× at the same GPU count.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===================================================== 1 PROBLEM -->
+<section class="chap" id="problem">
+  <p class="eyebrow"><span class="num">1</span>The problem</p>
+  <h2>Why split a model across GPUs at all, and why by depth?</h2>
+  <p>Training a language model means showing it text, measuring how wrong its predictions are, and nudging millions of numbers (its <dfn data-t="weights">weights</dfn>) to be a little less wrong. Big models don't fit on one GPU, or train too slowly on one. So the work has to be split across GPUs. There are three basic ways to split it:</p>
+  <div class="grid3">
+    <div class="box"><h4>Split the data</h4><p><dfn data-t="dp">Data parallel</dfn>: every GPU holds the whole model and trains on different examples; afterwards they average what they learned. Simple, but every GPU must fit the whole model.</p></div>
+    <div class="box"><h4>Split each layer</h4><p><dfn data-t="tp">Tensor parallel</dfn>: each big matrix is cut into slices across GPUs. Works for huge layers, but GPUs must talk to each other inside every layer, so it needs very fast links.</p></div>
+    <div class="box"><h4>Split by depth</h4><p><dfn data-t="pp">Pipeline parallel</dfn>: GPU 1 holds layers 1–7, GPU 2 layers 8–14, and so on. GPUs only talk at the cut points, once per chunk of data. <b>This is what rdsp does.</b></p></div>
+  </div>
+  <p>Real systems combine all three. rdsp's organizing idea is pipeline parallelism, and inside each stage it can also use data, tensor, sequence or expert parallelism (Chapter 7).</p>
+
+  <h3>The part that motivated the project: stages don't do equal work</h3>
+  <p>In a language model the last layer (the <dfn data-t="head">output head</dfn>) turns each position into a score for every word in the vocabulary: 151,936 words for Qwen3. That one layer costs about a quarter of the model's compute. So if you cut 28 layers evenly into 4 stages, the last stage does <b>about 2.3× the work</b> of the others. In our early measurements it was 85% busy while a middle stage sat at 29%.</p>
+  <p>Megatron, the most widely used pipeline system, supports full 3D parallelism (tensor, pipeline and data, plus context and expert), but with one shape for the whole job: every stage gets the same number of GPUs, split the same way. rdsp's reason to exist is to let each stage be shaped for its own workload, for example giving the busy last stage more GPUs.</p>
+
+  <h3>The ground rules we set ourselves</h3>
+  <ul>
+    <li><b>No forks.</b> DeepSpeed and Ray are used only through their public interfaces. Zero lines changed in either, and a check against the pinned DeepSpeed source proves it.</li>
+    <li><b>A familiar interface.</b> <code>rdsp.initialize(...)</code> looks like <code>deepspeed.initialize(...)</code>, and <code>engine.train_batch()</code> performs exactly one optimizer step.</li>
+    <li><b>The same numbers.</b> A split model must learn exactly like the unsplit model, checked number by number, not just "it runs".</li>
+  </ul>
+<pre><code>import rdsp
+engine, _, _, _ = rdsp.initialize(
+    model=hf_model,                       # a normal Hugging Face model
+    config=deepspeed_config,              # a normal DeepSpeed config
+    pipeline_config=rdsp.PipelineConfig(stages=4, partition=rdsp.UniformTransformerBlocks()),
+    loss_fn=my_loss)
+
+for _ in range(steps):
+    loss = engine.train_batch()           # one call = one optimizer step</code></pre>
+</section>
+
+<!-- ===================================================== 2 WORDS -->
+<section class="chap" id="words">
+  <p class="eyebrow"><span class="num">2</span>Words you need</p>
+  <h2>A short glossary</h2>
+  <p>Every term used later is defined here. Anywhere in the report, dotted-underlined words show the same definition when you hover or tap them.</p>
+  <dl class="gloss" id="glossary"></dl>
+</section>
+
+<!-- ===================================================== 3 PIPELINE -->
+<section class="chap" id="pipeline">
+  <p class="eyebrow"><span class="num">3</span>How a pipeline trains</p>
+  <h2>Forward, backward, and the assembly line</h2>
+  <p>One <dfn data-t="step">training step</dfn> on a single GPU has three parts:</p>
+  <ol>
+    <li><b>Forward pass.</b> Text goes in at the bottom of the layer stack; each layer transforms it and hands the result up. The intermediate results are called <dfn data-t="activation">activations</dfn>. At the top, the model's predictions are compared with the right answers to get the <dfn data-t="loss">loss</dfn> (a single "how wrong" number).</li>
+    <li><b>Backward pass.</b> Starting from the loss, we go back down the stack computing, for every weight, which direction would reduce the loss. These are the <dfn data-t="gradient">gradients</dfn>. Each layer needs the activations it saved during the forward pass.</li>
+    <li><b>Optimizer step.</b> Every weight moves a little in its gradient's direction.</li>
+  </ol>
+
+  <h3>Split across GPUs</h3>
+  <p>With the stack split into stages, the forward pass becomes a relay: stage 0 computes its layers and <b>sends its activation</b> to stage 1, and so on up to the last stage, which computes the loss. The backward pass runs the relay in reverse: the last stage computes "how the loss changes with respect to its input" and <b>sends that gradient back</b> to the previous stage, which continues the backward pass from there. It's the chain rule of calculus, split across machines.</p>
+
+  <h3>Why "microbatches"?</h3>
+  <p>If you push the whole batch through stage 0, then stage 1, then stage 2, only one GPU works at a time. The fix is the assembly line: cut the batch into <dfn data-t="microbatch">microbatches</dfn>. While stage 1 works on microbatch 1, stage 0 already starts microbatch 2. Gradients from all microbatches are added up, and the weights update once at the end, so the result equals processing the whole batch at once.</p>
+  <p>Even so, at the start of a step later stages wait for their first input, and at the end earlier stages wait for their last gradient. That idle time is called the <dfn data-t="bubble">pipeline bubble</dfn>. More microbatches shrink it. The next chapter lets you see it.</p>
+
+  <div class="callout note"><span class="tag">One subtle rule</span><p>The record PyTorch keeps of the forward pass (needed for the backward pass) cannot leave the process that created it. So <b>the GPU that ran a microbatch's forward pass must also run its backward pass</b>, and the loss must be computed on the last stage, where the labels are sent. The driver program never touches activations or weights, only the final loss numbers.</p></div>
+</section>
+
+<!-- ===================================================== 4 SCHEDULE -->
+<section class="chap" id="schedule">
+  <p class="eyebrow"><span class="num">4</span>The schedule</p>
+  <h2>1F1B: the order each stage does its work</h2>
+  <p>Each stage needs a fixed order for its forwards (F) and backwards (B). rdsp uses <dfn data-t="1f1b">1F1B</dfn> ("one forward, one backward"): each stage does a few warm-up forwards, then alternates one forward with one backward, then finishes the remaining backwards. The alternative, GPipe, does all forwards first. The two orders take the same time, but 1F1B frees each microbatch's saved activations much sooner, so stages need far less memory.</p>
+
+  <div class="panel" id="schedPanel">
+    <p class="ptitle">Interactive: watch a pipeline step</p>
+    <div class="controls">
+      <label for="sStages">Stages <select id="sStages"><option>2</option><option selected>4</option><option>8</option></select></label>
+      <label for="sMb">Microbatches <select id="sMb"><option>4</option><option selected>8</option><option>16</option></select></label>
+      <span class="seg" role="group" aria-label="Schedule">
+        <button type="button" id="b1f1b" aria-pressed="true">1F1B</button>
+        <button type="button" id="bgpipe" aria-pressed="false">GPipe</button>
+      </span>
+      <label for="sOver">Overhead per call <input type="range" id="sOver" min="0" max="100" step="5" value="0"> <span id="sOverV" class="mono">0%</span></label>
+    </div>
+    <div class="sched" id="schedSvg"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--accent)"></i>Forward (1 time unit)</span>
+      <span><i class="sw" style="background:var(--meg)"></i>Backward (2 units)</span>
+      <span><i class="sw" style="background:var(--first)"></i>Overhead per call</span>
+      <span><i class="sw" style="background:var(--sunk); border:1px solid var(--line)"></i>Idle (the bubble)</span>
+    </div>
+    <div class="stat" id="schedStat"></div>
+  </div>
+  <p>Try it:</p>
+  <ul>
+    <li>Set 8 stages and 4 microbatches: most of the chart is idle.</li>
+    <li>Raise microbatches to 16: the bubble shrinks.</li>
+    <li>Switch to GPipe: the step takes the same time, but "peak saved activations" jumps to the full microbatch count on every stage.</li>
+    <li>Move the <b>overhead</b> slider: it adds a fixed cost to every forward and backward. That was the problem with rdsp's first design (Chapter 12).</li>
+  </ul>
+</section>
+
+<!-- ===================================================== 5 ARCH -->
+<section class="chap" id="arch">
+  <p class="eyebrow"><span class="num">5</span>Architecture</p>
+  <h2>The pieces, and what each one is responsible for</h2>
+  <p>rdsp has two halves. The <b>driver</b> is your Python program: it plans and coordinates, but never holds weights. The <b>stages</b> do the work: each stage is a group of Ray <dfn data-t="actor">actors</dfn>, one per GPU, each running a normal DeepSpeed engine on its slice of the model.</p>
+
+  <div class="scroll">
+  <svg viewBox="0 0 900 470" width="900" height="470" role="img" aria-label="Architecture: training script calls initialize, which runs the plan compiler and creates the coordinator. The coordinator sends one command per step to each of four stages. Each stage is a group of Ray actors running DeepSpeed. Neighbouring stages exchange activations forward and gradients backward over direct GPU links.">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+      <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+    </defs>
+    <rect x="10" y="14" width="880" height="150" rx="12" fill="var(--sunk)"/>
+    <text x="26" y="40" font-size="13" fill="var(--muted)" font-weight="600" letter-spacing="1">DRIVER PROCESS (your Python program: no weights, no activations)</text>
+    <g><rect x="26" y="56" width="250" height="92" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+      <text x="42" y="84" font-size="16" font-weight="600" fill="var(--ink)">Your training script</text>
+      <text x="42" y="108" font-size="13" fill="var(--body)">rdsp.initialize(...)</text>
+      <text x="42" y="128" font-size="13" fill="var(--body)">engine.train_batch()</text></g>
+    <g><rect x="324" y="56" width="250" height="92" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+      <text x="340" y="84" font-size="16" font-weight="600" fill="var(--ink)">Plan compiler</text>
+      <text x="340" y="108" font-size="13" fill="var(--body)">which layers go to which stage,</text>
+      <text x="340" y="128" font-size="13" fill="var(--body)">each stage's GPUs &amp; parallelism</text></g>
+    <g><rect x="622" y="56" width="252" height="92" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/>
+      <text x="638" y="84" font-size="16" font-weight="600" fill="var(--ink)">Coordinator</text>
+      <text x="638" y="108" font-size="13" fill="var(--body)">one command per stage per step,</text>
+      <text x="638" y="128" font-size="13" fill="var(--body)">ready→apply barrier, checkpoints</text></g>
+    <line x1="276" y1="102" x2="320" y2="102" stroke="var(--muted)" stroke-width="2" marker-end="url(#ah)"/>
+    <line x1="574" y1="102" x2="618" y2="102" stroke="var(--muted)" stroke-width="2" marker-end="url(#ah)"/>
+    <line x1="748" y1="148" x2="748" y2="200" stroke="var(--accent)" stroke-width="2.5"/>
+    <line x1="108" y1="200" x2="792" y2="200" stroke="var(--accent)" stroke-width="2.5"/>
+    <line x1="108" y1="200" x2="108" y2="238" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#aha)"/>
+    <line x1="336" y1="200" x2="336" y2="238" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#aha)"/>
+    <line x1="564" y1="200" x2="564" y2="238" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#aha)"/>
+    <line x1="792" y1="200" x2="792" y2="238" stroke="var(--accent)" stroke-width="2.5" marker-end="url(#aha)"/>
+    <text x="330" y="192" font-size="13" fill="var(--accent)" font-weight="600">Ray call: "run step g, here is your op list"</text>
+    <g id="stagesG"></g>
+    <text x="450" y="430" font-size="13.5" fill="var(--body)" text-anchor="middle">⇄ direct GPU-to-GPU links (NCCL): activations go right, gradients go left</text>
+    <text x="450" y="452" font-size="13.5" fill="var(--muted)" text-anchor="middle">each stage = one Ray actor per GPU; each actor runs an unmodified DeepSpeed engine</text>
+  </svg>
+  </div>
+
+  <h3>What each piece does</h3>
+  <div class="grid2">
+    <div class="box"><h4>Your training script</h4><p>Builds a Hugging Face model and a normal DeepSpeed config, calls <code>rdsp.initialize</code>, then calls <code>train_batch()</code> in a loop. It gets back a loss number per step and nothing else.</p></div>
+    <div class="box"><h4>Plan compiler</h4><p>Reads your settings and produces a frozen <b>plan</b>: which layers each stage owns, how many GPUs it has, how those GPUs split the work, how many microbatches per step, and the DeepSpeed config for each stage. Every mistake (e.g. a batch that can't be split evenly) is rejected here, before any GPU is touched. The plan has a fingerprint (hash) that checkpoints record.</p></div>
+    <div class="box"><h4>Coordinator</h4><p>Owns the step. It pulls exactly N microbatches, sends each stage one command, collects the loss, runs the "is everyone ready? then everyone update" barrier, counts steps, and runs checkpoint save and load.</p></div>
+    <div class="box"><h4>Stage workers (Ray actors)</h4><p>One process per GPU, placed by Ray on a machine with a free GPU (all of a stage's GPUs on one machine). Each runs the stage's op list: receive → forward → send, and receive gradient → backward → send.</p></div>
+    <div class="box"><h4>DeepSpeed adapter</h4><p>Wraps a normal DeepSpeed engine for one stage: mixed precision, the optimizer, <dfn data-t="zero">ZeRO</dfn> memory saving, and tensor/sequence/expert parallelism inside the stage. rdsp calls only DeepSpeed's public methods.</p></div>
+    <div class="box"><h4>Stage-to-stage links</h4><p>Two extra <dfn data-t="nccl">NCCL</dfn> channels per GPU, one for activations going forward, one for gradients going back. Tensors move GPU-to-GPU without touching the CPU or the driver.</p></div>
+  </div>
+
+  <details><summary>Why is the driver not allowed to hold tensors?</summary><div>
+    <p>Two reasons. First, activations can't be used for the backward pass anywhere except the process that produced them (Chapter 3), so shipping them to the driver buys nothing. Second, a driver that touches every tensor becomes a bottleneck and a single point of memory pressure. The rule is enforced by tests: nothing the public API returns can contain a Ray reference or a tensor that requires gradients.</p>
+  </div></details>
+</section>
+
+<!-- ===================================================== 6 STEP -->
+<section class="chap" id="step">
+  <p class="eyebrow"><span class="num">6</span>One step, end to end</p>
+  <h2>What happens when you call <code>train_batch()</code></h2>
+  <p>Click through one training step with 3 stages. The highlighted parts are active at that moment.</p>
+  <div class="panel" id="walk">
+    <p class="ptitle">Interactive: step-through</p>
+    <svg viewBox="0 0 860 300" role="img" aria-label="Step-through diagram of one training step: driver, three stages, links between them." id="walkSvg">
+      <defs>
+        <marker id="wa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+      </defs>
+      <g class="w-node" id="w-driver"><rect x="300" y="12" width="260" height="70" rx="10"/><text x="430" y="42" text-anchor="middle" font-weight="600">Driver (coordinator)</text><text x="430" y="64" text-anchor="middle" class="sub" id="w-driver-sub">idle</text></g>
+      <path class="w-edge" id="w-cmd0" d="M340,82 L120,160"/>
+      <path class="w-edge" id="w-cmd1" d="M430,82 L430,160"/>
+      <path class="w-edge" id="w-cmd2" d="M520,82 L740,160"/>
+      <g class="w-node" id="w-s0"><rect x="20" y="160" width="200" height="90" rx="10"/><text x="120" y="192" text-anchor="middle" font-weight="600">Stage 0</text><text x="120" y="214" text-anchor="middle" class="sub">embedding + layers 0–9</text><text x="120" y="236" text-anchor="middle" class="sub" id="w-s0-sub">waiting</text></g>
+      <g class="w-node" id="w-s1"><rect x="330" y="160" width="200" height="90" rx="10"/><text x="430" y="192" text-anchor="middle" font-weight="600">Stage 1</text><text x="430" y="214" text-anchor="middle" class="sub">layers 10–18</text><text x="430" y="236" text-anchor="middle" class="sub" id="w-s1-sub">waiting</text></g>
+      <g class="w-node" id="w-s2"><rect x="640" y="160" width="200" height="90" rx="10"/><text x="740" y="192" text-anchor="middle" font-weight="600">Stage 2</text><text x="740" y="214" text-anchor="middle" class="sub">layers 19–27 + head</text><text x="740" y="236" text-anchor="middle" class="sub" id="w-s2-sub">waiting</text></g>
+      <path class="w-edge" id="w-f01" d="M220,190 L330,190"/>
+      <path class="w-edge" id="w-f12" d="M530,190 L640,190"/>
+      <path class="w-edge back" id="w-b10" d="M330,226 L220,226"/>
+      <path class="w-edge back" id="w-b21" d="M640,226 L530,226"/>
+      <text class="w-label" id="w-lf" x="430" y="284" text-anchor="middle"> </text>
+    </svg>
+    <div class="controls" style="margin:12px 0 0">
+      <button type="button" id="wPrev">← Back</button>
+      <button type="button" class="primary" id="wNext">Next →</button>
+      <span id="wCount" class="mono" style="color:var(--muted)"></span>
+    </div>
+    <div class="caption" aria-live="polite"><h4 id="wTitle"></h4><p id="wText"></p></div>
+  </div>
+
+  <details><summary>The same step in code terms</summary><div>
+<pre><code>coordinator.train_batch(data):
+    entries = take exactly N microbatches        # fewer → the step fails, nothing sent
+    generation += 1                               # tags every command of this attempt
+    ops[s] = 1F1B op list for stage s             # [(forward,0), (forward,1), (backward,0), ...]
+    for each stage s:  send run_step(generation, ops[s], inputs if s==0, labels if s==last)
+    wait for all stages → losses from the last stage, "ready" from everyone
+    if every stage ready:  send apply() to every stage     # the one optimizer update
+    global_steps += 1; return mean(losses)
+
+stage worker run_step(ops):
+    for (kind, mb) in ops:
+        forward:  x = receive from previous stage (or the input); out = engine(x); send out → next stage
+        backward: g = receive from next stage (last stage: from its own loss); engine.backward(...)
+                  send (gradient w.r.t. this stage's input) → previous stage</code></pre>
+  </div></details>
+</section>
+
+<!-- ===================================================== 7 SHAPES -->
+<section class="chap" id="shapes">
+  <p class="eyebrow"><span class="num">7</span>Stages of different shapes</p>
+  <h2>A stage can use several GPUs, in four different ways</h2>
+  <p>Inside a stage, extra GPUs can split the work in any of four ways. Each one is an ordinary DeepSpeed feature, running inside that stage only.</p>
+  <div class="scroll"><table>
+    <tr><th>Way</th><th>What each GPU of the stage gets</th><th>When it helps</th><th>DeepSpeed feature</th></tr>
+    <tr><td><b>Data parallel</b></td><td>A different slice of the microbatch's rows (examples)</td><td>Plenty of rows; the stage's layers fit on one GPU</td><td>ZeRO 0/1/2</td></tr>
+    <tr><td><b>Tensor parallel</b></td><td>The same rows; a slice of every weight matrix</td><td>Very large layers; fast GPU links</td><td>AutoTP</td></tr>
+    <tr><td><b>Sequence parallel</b></td><td>The same rows; a different stretch of the text</td><td>Very long sequences</td><td>Ulysses</td></tr>
+    <tr><td><b>Expert parallel</b></td><td>A different slice of the rows; some of the "experts"</td><td>Mixture-of-experts models</td><td>AutoEP (+ "folding" with tensor parallel)</td></tr>
+  </table></div>
+  <p>Each stage declares its GPU count and its tensor/sequence/expert degree; the data-parallel degree is whatever is left. At startup, DeepSpeed reports each GPU's position in its stage, and rdsp refuses to run if that doesn't match the plan.</p>
+
+  <h3>The boundary problem: when neighbours split the data differently</h3>
+  <p>Suppose stage 1 splits each microbatch's rows between 2 GPUs and stage 2 splits them between 4. Stage 1's GPUs each hold half the rows, and stage 2's GPUs each need a quarter. rdsp works out, for every receiving GPU, exactly which pieces of which sending GPUs overlap its slice. It sends only those pieces and stitches them together on arrival. Nothing is ever gathered in one place. The same routine runs in reverse for gradients.</p>
+
+  <div class="panel" id="bPanel">
+    <p class="ptitle">Interactive: who sends what at a boundary</p>
+    <div class="controls">
+      <label for="bSrc">Sending stage splits rows into <select id="bSrc"><option>1</option><option selected>2</option><option>4</option><option>3</option></select></label>
+      <label for="bDst">Receiving stage splits rows into <select id="bDst"><option>1</option><option>2</option><option selected>4</option><option>3</option></select></label>
+    </div>
+    <div class="scroll" id="bSvg"></div>
+    <div class="stat" id="bStat"></div>
+  </div>
+
+  <h3>The gradient-scale rule (the subtle part)</h3>
+  <p>DeepSpeed assumes each GPU's loss is the average over <i>its own</i> rows, and so it <b>averages</b> gradients across a stage's data-parallel GPUs. But it <b>adds</b> gradients across sequence-parallel GPUs, because each holds a different stretch of the same rows. When a gradient crosses from a stage with 1 data-parallel GPU into a stage with 2, it must be rescaled so that after DeepSpeed's averaging each weight gets the true gradient. rdsp's rule: <b>the gradient entering stage s is multiplied by (data-parallel GPUs of s) ÷ (data-parallel GPUs of the next stage).</b></p>
+  <details><summary>Worked example</summary><div>
+    <p>Last stage: 1 GPU. The previous stage: 2 data-parallel GPUs. The last stage computes the true gradient for all rows, <i>g</i>. Each of the previous stage's GPUs gets its half of <i>g</i>, runs backward, and gets weight-gradients <i>w₁</i> and <i>w₂</i>, whose sum is the true weight gradient. DeepSpeed then averages: (w₁+w₂)/2, which is half the truth. Multiplying the incoming gradient by 2/1 = 2 first makes the average exactly right.</p>
+    <p>We initially applied this rule to sequence-parallel GPUs too, which doubled their updates, because DeepSpeed adds rather than averages over them. A per-weight comparison test caught it (Chapter 14).</p>
+  </div></details>
+</section>
+
+<!-- ===================================================== 8 SAFETY -->
+<section class="chap" id="safety">
+  <p class="eyebrow"><span class="num">8</span>Staying correct</p>
+  <h2>Five rules that keep a split model identical to an unsplit one</h2>
+  <div class="grid2">
+    <div class="box"><h4>1 · Nobody updates alone</h4><p>After all backwards, the coordinator asks every stage "are you completely done?" Only if <b>all</b> say yes does it tell all of them to run the optimizer, exactly once. Weight updates on different machines can't be undone, so this barrier matters.</p></div>
+    <div class="box"><h4>2 · Add, don't replace</h4><p>Gradients from N microbatches must be added up. DeepSpeed decides when to add using an "accumulation boundary"; rdsp marks only the last backward of the step as the boundary. (Without that, ZeRO-1/2 silently kept only the last microbatch.)</p></div>
+    <div class="box"><h4>3 · A failed step leaves no trace</h4><p>If a step fails before the update, every stage throws away that attempt's activations, partial gradients and even its random-number draws, so a retry equals a clean step exactly.</p></div>
+    <div class="box"><h4>4 · Half-updated means locked</h4><p>If a failure happens <i>during</i> the update, some stages may have updated and some not. The engine then locks ("poisoned") and refuses every call until restored from a checkpoint. Refusing loudly beats silently training a half-updated model.</p></div>
+    <div class="box"><h4>5 · No per-stage gradient clipping</h4><p>DeepSpeed clips gradients by default, but per stage, which is a different algorithm from clipping the whole model. rdsp turns it off and rejects an explicit setting until whole-pipeline clipping exists.</p></div>
+    <div class="box"><h4>How a failure shows up</h4><p>You always get one of rdsp's own errors: <code>StepFailed</code> (nothing changed, retry is safe) or <code>PipelinePoisoned</code> (restore required). Never a raw Ray or NCCL exception.</p></div>
+  </div>
+  <details><summary>The backward handoff trick</summary><div>
+    <p>DeepSpeed's public backward function only accepts a single number (a loss). A middle stage has no loss, only an incoming gradient <i>g</i> for its output. rdsp hands DeepSpeed the number <code>(output · g).sum()</code>, whose derivative with respect to the output is exactly <i>g</i>. Tested against an unsplit model, gradients came out bit-identical under every ZeRO mode, in bf16, with accumulation.</p>
+  </div></details>
+</section>
+
+<!-- ===================================================== 9 CKPT -->
+<section class="chap" id="ckpt">
+  <p class="eyebrow"><span class="num">9</span>Checkpoints &amp; recovery</p>
+  <h2>One consistent snapshot across every GPU</h2>
+  <p>Each stage saves itself using DeepSpeed's own checkpoint function (weights, optimizer, learning-rate schedule). rdsp adds what makes the separate files belong together:</p>
+  <ol>
+    <li><b>Save.</b> Every GPU of every stage saves; each also saves its random-number state. The driver records how many microbatches the data loader has handed out.</li>
+    <li><b>Fingerprint.</b> Each stage computes a fingerprint (SHA-256) of every file it wrote.</li>
+    <li><b>Commit.</b> Only when <b>every</b> GPU has reported success does the driver write a small <code>manifest.json</code> listing every file, its fingerprint, the plan's fingerprint and the step number. A folder without a manifest is an unfinished save and is never loaded.</li>
+    <li><b>Load.</b> The manifest is checked first: same plan? all files present and unchanged? Then every stage re-checks its own files on its own machine, and only if <b>all</b> pass does any stage load.</li>
+    <li><b>Recover.</b> If a GPU worker died, loading tears the whole pipeline down, rebuilds it (preferring the same machines, so their local files are still there), then loads.</li>
+  </ol>
+  <div class="callout note"><span class="tag">Tested property</span><p>Train, save, keep training. Then build a brand-new pipeline from <i>different</i> random weights, load, and keep training. Its losses match the original run bit for bit, including the dropout randomness and the position in the data.</p></div>
+</section>
+
+<!-- ===================================================== 10 CODE -->
+<section class="chap" id="code">
+  <p class="eyebrow"><span class="num">10</span>Code map</p>
+  <h2>Which file does what</h2>
+  <p>All code is in <code>rdsp/src/ray_deepspeed_pipeline/</code>. The files are grouped by when they run.</p>
+  <div class="scroll"><table>
+    <tr><th>When</th><th>File</th><th>Responsibility</th></tr>
+    <tr><td>Setup</td><td><code>api.py</code></td><td><code>initialize()</code>: validates arguments, returns <code>(engine, None, dataloader, None)</code></td></tr>
+    <tr><td>Setup</td><td><code>config.py</code></td><td><code>PipelineConfig</code>, <code>StageOverride</code> (per-stage GPUs, tp/sp/ep, ZeRO stage)</td></tr>
+    <tr><td>Setup</td><td><code>partition.py</code></td><td>Finds the model's layer list, assigns every weight to a stage by name, builds each stage's module (Llama/Qwen-style models get a dedicated stage type)</td></tr>
+    <tr><td>Setup</td><td><code>compiler.py</code> → <code>plan.py</code></td><td>Turns the config into the frozen <code>ExecutionPlan</code>; all validation happens here</td></tr>
+    <tr><td>Every step</td><td><code>engine.py</code></td><td>The object you hold: <code>train_batch</code>, <code>eval_batch</code>, <code>save/load_checkpoint</code>; refuses <code>forward/backward/step</code></td></tr>
+    <tr><td>Every step</td><td><code>coordinator.py</code></td><td>One step: microbatches, one command per stage, ready→apply barrier, failure states</td></tr>
+    <tr><td>Every step</td><td><code>schedule.py</code></td><td>Generates each stage's 1F1B op list</td></tr>
+    <tr><td>Every step</td><td><code>stage_worker.py</code></td><td>The Ray actor per GPU (<code>run_step</code>)</td></tr>
+    <tr><td>Setup</td><td><code>stage_group.py</code></td><td>Placement on machines, startup and mesh checks; the per-stage client</td></tr>
+    <tr><td>Every step</td><td><code>deepspeed_adapter.py</code></td><td>Wraps the DeepSpeed engine: forward, backward handoff, accumulation boundary, resets, tensor/sequence/expert setup</td></tr>
+    <tr><td>Every step</td><td><code>p2p.py</code></td><td>The two NCCL channels (forward / backward) between neighbouring stages</td></tr>
+    <tr><td>Every step</td><td><code>boundary.py</code></td><td>The re-splitting geometry between differently shaped stages</td></tr>
+    <tr><td>Save/load</td><td><code>checkpoint.py</code></td><td>Manifest, fingerprints, verification</td></tr>
+    <tr><td>Reference</td><td><code>support_matrix.py</code></td><td>Which configurations are validated, with the evidence for each</td></tr>
+  </table></div>
+</section>
+
+<!-- ===================================================== 11 MEGATRON -->
+<section class="chap" id="megatron">
+  <p class="eyebrow"><span class="num">11</span>rdsp vs Megatron</p>
+  <h2>Same pipelining idea, different ownership of each stage</h2>
+  <p><dfn data-t="megatron">Megatron-LM</dfn> is NVIDIA's training framework and the de-facto standard for large-scale pipeline training. Both systems split the model by depth, use 1F1B, and move tensors between neighbouring GPUs with NCCL. The difference is where the structure lives.</p>
+  <div class="scroll"><table>
+    <tr><th></th><th>Megatron-LM</th><th>rdsp</th></tr>
+    <tr><td><b>Shape of stages</b></td><td>3D parallel (tensor × pipeline × data, plus context and expert), but one TP × DP shape for every stage</td><td>Each stage its own GPU count and parallelism</td></tr>
+    <tr><td><b>Who runs the schedule</b></td><td>Every GPU process runs the whole schedule itself, inside one <code>torchrun</code> job</td><td>Each stage's workers run their own op list; a driver starts each step and runs the update barrier</td></tr>
+    <tr><td><b>How workers start</b></td><td>A fixed set of processes launched together</td><td>Ray places each stage's workers where GPUs are free, and can rebuild them</td></tr>
+    <tr><td><b>Model code</b></td><td>Megatron's own model definitions; HF weights must be converted</td><td>The unmodified Hugging Face model, split by layer names</td></tr>
+    <tr><td><b>Inside a stage</b></td><td>Megatron's own tensor / context / expert parallel layers</td><td>A stock DeepSpeed engine (ZeRO, AutoTP, Ulysses, AutoEP)</td></tr>
+    <tr><td><b>Kernels</b></td><td>Transformer Engine fused kernels</td><td>HF layers; fused kernels via Liger in our benchmark</td></tr>
+    <tr><td><b>Balancing uneven stages</b></td><td>Can move layers between stages (layout string)</td><td>Can move layers <i>and</i> give a stage more GPUs</td></tr>
+    <tr><td><b>Failures</b></td><td>Restart the job from a checkpoint</td><td>Clean error and retry; lock and whole-pipeline restore</td></tr>
+    <tr><td><b>Maturity</b></td><td>Production-scale, thousands of GPUs</td><td>Research prototype; tested on one machine</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="tag">Trade-off in one sentence</span><p>rdsp buys per-stage flexibility with an extra coordination layer (Ray and a driver). Megatron has no such layer, so it wastes less time between GPUs; rdsp's job is to make that layer cheap enough (Chapter 12).</p></div>
+</section>
+
+<!-- ===================================================== 12 EVOLUTION -->
+<section class="chap" id="evolution">
+  <p class="eyebrow"><span class="num">12</span>First design → fix</p>
+  <h2>How profiling changed the design</h2>
+  <h3>The first design: the driver sent every operation</h3>
+  <p>Originally the driver sent every single forward and backward to every stage as its own Ray call, and Ray carried the tensors between stages. It was simple, and correct. But at 8 stages it got <b>slower</b> than at 4 (43.5k → 36.8k tokens/s on H100). A profile showed why (these profile runs landed on H200s):</p>
+  <div class="scroll"><table>
+    <tr><th>First design, H200, 16 microbatches</th><th class="n">4 stages</th><th class="n">8 stages</th></tr>
+    <tr><td>Step time</td><td class="n">742 ms</td><td class="n">831 ms</td></tr>
+    <tr><td>Each GPU idle</td><td class="n">37–42%</td><td class="n">60–66%</td></tr>
+    <tr><td>Idle expected from the schedule alone</td><td class="n">16%</td><td class="n">30%</td></tr>
+    <tr><td>Real compute per forward/backward call</td><td class="n">12.8 ms</td><td class="n">8.4 ms</td></tr>
+    <tr><td>Ray overhead per call</td><td class="n">4.7 ms</td><td class="n">4.9 ms</td></tr>
+    <tr><td>Ray calls per step</td><td class="n">~424</td><td class="n">~944</td></tr>
+  </table></div>
+  <p>Doubling the stages halved each call's real work, but the ~5 ms of fixed overhead per call stayed. And because the pipeline runs its slots back to back, the overhead sat on the critical path every time. (Set the overhead slider in Chapter 4 to about 60% to see the same effect.)</p>
+
+  <h3>The fix: each stage runs its own schedule</h3>
+  <p>Now the driver sends each stage <b>one</b> command per step containing its whole op list, and neighbouring stages exchange tensors directly over two NCCL channels per GPU. At 8 stages, Ray calls per step fall from about 944 to about 16. The computation is unchanged: the new path produces bit-identical numbers to the old one.</p>
+  <details><summary>Why two channels, one per direction?</summary><div>
+    <p>NCCL processes the messages on one channel strictly in order. If activations and gradients shared a channel, a stage's "receive gradient" could get stuck behind its own "send activation", and its neighbour's behind theirs, a deadlock. With one direction per channel, messages always flow one way, and the 1F1B order guarantees every receive's matching send eventually happens.</p>
+  </div></details>
+  <div class="scroll"><table>
+    <tr><th>H200, 16 microbatches, sequence 512</th><th class="n">First design</th><th class="n">Stage-local (now)</th><th class="n">Change</th></tr>
+    <tr><td>4 stages</td><td class="n">742 ms · 44.2k tokens/s</td><td class="n good">602 ms · 54.4k tokens/s</td><td class="n">1.23×</td></tr>
+    <tr><td>8 stages</td><td class="n">831 ms · 39.4k tokens/s</td><td class="n good">392 ms · 83.6k tokens/s</td><td class="n">2.12×</td></tr>
+  </table></div>
+  <p style="font-size:14px; color:var(--muted)">Both designs on H200 machines (separate machines, so allow ±20%). The Megatron column shown here before came from H100s, so it has been removed; Chapter 13 has the same-machine comparison.</p>
+</section>
+
+<!-- ===================================================== 13 RESULTS -->
+<section class="chap" id="results">
+  <p class="eyebrow"><span class="num">13</span>Results</p>
+  <h2>Megatron vs rdsp, matched setting by setting</h2>
+  <div class="callout warn"><span class="tag">Read this before any number</span><p>Our cloud provider (Modal) sometimes fills a request for H100 GPUs with <b>H200</b>s, a related but different chip. The earlier headline benchmark mixed them without our noticing: rdsp's final numbers ran on H200s, Megatron's on H100s. Those comparisons are withdrawn. Below, only runs on the same machine, and so the same chip, are compared directly. The benchmark now refuses to run on anything but an H100.</p></div>
+  <p><b>What is identical on both sides</b> in the runs below:</p>
+  <div class="scroll"><table>
+    <tr><th>Setting</th><th>Megatron-Core</th><th>rdsp</th></tr>
+    <tr><td>Starting weights</td><td colspan="2">Pretrained Qwen3-0.6B (copied into Megatron's layout, every weight checked)</td></tr>
+    <tr><td>Training data</td><td colspan="2">WikiText-103, same batches in the same order; 150 steps of 16 microbatches × 2,048 tokens</td></tr>
+    <tr><td>Layers per stage</td><td colspan="2">1 GPU: all 28 · 4 GPUs: 7-7-7-7 · 8 GPUs: 4-4-4-4-3-3-3-3</td></tr>
+    <tr><td>Fused kernels</td><td>Transformer Engine: RoPE, SwiGLU, norm, cross-entropy, flash attention</td><td>Liger: RoPE, SwiGLU, norm, cross-entropy; flash attention (PyTorch)</td></tr>
+    <tr><td>Optimizer</td><td colspan="2">Fused Adam, lr 1e-5, no clipping; bf16 weights with an fp32 master copy</td></tr>
+    <tr><td>Summing gradients across microbatches</td><td>fp32 (its default) <b>and</b> bf16 (matched), both measured</td><td>bf16 (DeepSpeed's behaviour for this config)</td></tr>
+    <tr><td>GPU and machine</td><td colspan="2">Pinned H100 (checked on every GPU before running); all three setups back to back on one machine</td></tr>
+    <tr><td>Extras only Megatron has</td><td>Fused weight-gradient accumulation; Python garbage collection off</td><td>–</td></tr>
+    <tr><td>How a step is timed</td><td>On the GPU process, around one step</td><td>From the driver: includes Ray's control messages</td></tr>
+  </table></div>
+  <div class="panel" id="rPanel">
+    <p class="ptitle">Interactive: tokens per second, same pinned-H100 machine per GPU count</p>
+    <div class="controls">
+      <span class="seg" role="group" aria-label="Microbatch size">
+        <button type="button" id="rSmall" aria-pressed="true">Small microbatches (2,048 tokens)</button>
+        <button type="button" id="rLarge" aria-pressed="false">Large microbatches (8,192 tokens)</button>
+      </span>
+    </div>
+    <div class="scroll" id="rSvg"></div>
+    <div class="legend" id="rLegend"></div>
+    <p id="rNote" style="font-size:14px; color:var(--muted); margin:8px 0 0"></p>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>GPUs</th><th class="n">Megatron, fp32 summing</th><th class="n">Megatron, bf16 summing</th><th class="n">rdsp</th><th class="n">rdsp faster than matched-precision Megatron</th></tr>
+    <tr><td>8</td><td class="n">379 ms · 86.5k tok/s</td><td class="n">372 ms · 88.1k</td><td class="n">288 ms · 113.6k</td><td class="n"><b>1.29×</b></td></tr>
+    <tr><td>4</td><td class="n">553 ms · 59.3k</td><td class="n">569 ms · 57.6k</td><td class="n">436 ms · 75.2k</td><td class="n"><b>1.30×</b></td></tr>
+    <tr><td>1</td><td class="n">1,486 ms · 22.1k</td><td class="n">1,465 ms · 22.4k</td><td class="n">1,179 ms · 27.8k</td><td class="n"><b>1.24×</b></td></tr>
+  </table></div>
+  <h3>How to read it</h3>
+  <ul>
+    <li><b>The apples-to-apples result:</b> with every setting matched, precision included, on the same pinned-H100 machine, <b>rdsp is 1.24× faster at 1 GPU, 1.30× at 4 and 1.29× at 8</b>. Both frameworks learn identically (below).</li>
+    <li><b>Where the lead comes from:</b> it's already there on one GPU, where no pipelining happens, so it isn't an advantage of rdsp's pipeline design. The profile below shows it's mostly lower Python overhead in this small-microbatch setting, plus a cheaper cross-entropy. The pipeline holds the lead at 4 and 8 GPUs (1.30×, 1.29×) and doesn't lose it.</li>
+    <li><b>Precision barely matters.</b> Switching Megatron to bf16 summing changed its speed by −3% to +2% at every size. So rdsp's lead isn't a precision artefact.</li>
+    <li><b>Machines vary; ratios hold.</b> An earlier 4-GPU machine ran both frameworks ~25% faster (Megatron 441 ms, rdsp 321 ms), but the ratio (1.37×) was similar. Absolute speeds and speed-ups across GPU counts therefore aren't reliable; same-machine ratios are.</li>
+    <li><b>An earlier 1-GPU figure was wrong.</b> Before this run, a cross-machine comparison suggested rdsp led by only ~1.11× at 1 GPU. The same-machine run says 1.24×.</li>
+  </ul>
+  <h3 id="whyfaster">Why rdsp is faster on one GPU, and when the gap shrinks</h3>
+  <p>With every setting matched, you might expect equal speed on one GPU. But the two run different code: Megatron uses NVIDIA's Transformer Engine and compiled kernels, while rdsp runs the Hugging Face model with Liger kernels. We profiled both on one pinned H100, using the same tool and the same 10 steps.</p>
+  <div class="panel" id="gPanel">
+    <p class="ptitle">Where each step's time goes: GPU computing vs GPU idle</p>
+    <div class="scroll" id="gSvg"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--meg)"></i>Megatron: GPU computing</span>
+      <span><i class="sw" style="background:var(--accent)"></i>rdsp: GPU computing</span>
+      <span><i class="sw" style="background:var(--sunk); outline:1px solid var(--line); outline-offset:-1px"></i>GPU idle, waiting for the CPU</span>
+    </div>
+    <p style="font-size:14px; color:var(--muted); margin:8px 0 0">One pinned H100 per group, all rows in a group on the same machine; the two groups ran on different machines. Idle = step time − GPU kernel time. Hover a bar for exact values.</p>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>1 GPU, same machine</th><th class="n">Step</th><th class="n">GPU computing</th><th class="n">GPU idle</th><th class="n">rdsp faster by</th></tr>
+    <tr><td colspan="5"><b>Small microbatches</b> (2,048 tokens, as in the headline runs)</td></tr>
+    <tr><td>Megatron, default cross-entropy</td><td class="n">1,195 ms</td><td class="n">482 ms</td><td class="n">713 ms (60%)</td><td class="n"></td></tr>
+    <tr><td>rdsp</td><td class="n">1,014 ms</td><td class="n">437 ms</td><td class="n">577 ms (57%)</td><td class="n">1.18×</td></tr>
+    <tr><td colspan="5"><b>Large microbatches</b> (8,192 tokens, same data and tokens per step)</td></tr>
+    <tr><td>Megatron, default cross-entropy</td><td class="n">587 ms</td><td class="n">385 ms</td><td class="n">202 ms</td><td class="n">1.33×</td></tr>
+    <tr><td>Megatron, Transformer Engine cross-entropy</td><td class="n">485 ms</td><td class="n">322 ms</td><td class="n">163 ms</td><td class="n"><b>1.10×</b></td></tr>
+    <tr><td>rdsp</td><td class="n">442 ms</td><td class="n">342 ms</td><td class="n">100 ms</td><td class="n">–</td></tr>
+  </table></div>
+  <ul>
+    <li><b>With small microbatches, both frameworks leave the GPU idle most of the time.</b> Each operation is tiny, so the CPU, issuing 25,000–35,000 GPU operations per step through Python, sets the pace. About three-quarters of rdsp's lead there is lower CPU overhead per operation. The rest is cross-entropy: Megatron's default version takes ~82 ms per step against ~17 ms for Liger's.</li>
+    <li><b>With larger microbatches, the GPU does most of the work</b> and the gap narrows. Using Megatron's Transformer Engine cross-entropy option, <b>Megatron's GPU work is actually slightly less than rdsp's</b> (322 vs 342 ms). rdsp stays ahead, 1.10×, only because the GPU waits less between operations.</li>
+    <li><b>What it means for the headline:</b> the 1.24–1.30× leads were measured with small microbatches and Megatron's default cross-entropy, where Python overhead dominates. The table below repeats the pipelined runs with large microbatches.</li>
+    <li>Losses still match: per-step difference 0.1% median, both within 0.05% of the plain model at step 0.</li>
+  </ul>
+  <p><b>Pipelined, large microbatches.</b> 16 microbatches of 8,192 tokens per step (the same schedule as the headline runs, with 4× larger microbatches). Megatron uses its fastest matched options (Transformer Engine cross-entropy, bf16 summing). Both frameworks ran back to back on one pinned-H100 machine per size:</p>
+  <div class="scroll"><table>
+    <tr><th>GPUs</th><th class="n">Megatron</th><th class="n">rdsp</th><th class="n">rdsp faster by</th></tr>
+    <tr><td>1</td><td class="n">485 ms · 67.6k tok/s</td><td class="n">442 ms · 74.1k</td><td class="n">1.10×</td></tr>
+    <tr><td>4</td><td class="n">753 ms · 174.2k</td><td class="n">680 ms · 192.8k</td><td class="n">1.11×</td></tr>
+    <tr><td>8</td><td class="n">528 ms · 248.4k</td><td class="n">520 ms · 251.9k</td><td class="n"><b>1.02× (a tie)</b></td></tr>
+  </table></div>
+  <p><b>Bottom line:</b> in GPU-bound training rdsp is <b>on par with Megatron or slightly faster</b>: 1.10× on one GPU, 1.11× at 4, even at 8. rdsp's pipeline adds no measurable cost over Megatron's, and the Ray layer is invisible at this scale. Losses agree (final 2.7942 vs 2.7939–2.7949).</p>
+  <h3>Both frameworks learn the same thing</h3>
+  <div class="panel" id="mPanel">
+    <p class="ptitle">Interactive: training loss at each GPU count</p>
+    <div class="controls">
+      <span class="seg" role="group" aria-label="GPU count">
+        <button type="button" data-k="1" aria-pressed="false">1 GPU</button>
+        <button type="button" data-k="4" aria-pressed="false">4 GPUs</button>
+        <button type="button" data-k="8" aria-pressed="true">8 GPUs</button>
+      </span>
+      <label for="mSmooth"><input type="checkbox" id="mSmooth" checked> Smooth (10-step average)</label>
+    </div>
+    <div class="scroll" id="mSvg"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--meg)"></i>Megatron-Core, fp32 summing</span>
+      <span><i class="sw" style="background:var(--first)"></i>Megatron-Core, bf16 summing</span>
+      <span><i class="sw" style="background:var(--accent)"></i>rdsp</span>
+    </div>
+    <p style="font-size:14px; color:var(--muted); margin:8px 0 0">150 steps, 32,768 tokens each. The three lines overlap almost exactly. Hover to read values.</p>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>GPUs</th><th class="n">Step 0: Megatron / rdsp</th><th class="n">Final (step 149): fp32 / bf16 / rdsp</th><th class="n">Mean of last 50</th><th class="n">Per-step difference vs rdsp (median / worst)</th></tr>
+    <tr><td>1</td><td class="n">3.3371 / 3.3369</td><td class="n">2.6481 / 2.6475 / 2.6475</td><td class="n">2.7285 / 2.7284 / 2.7289</td><td class="n">0.05% / 1.5%</td></tr>
+    <tr><td>4</td><td class="n">3.3371 / 3.3369</td><td class="n">2.6474 / 2.6479 / 2.6494</td><td class="n">2.7285 / 2.7285 / 2.7291</td><td class="n">0.05% / 1.5%</td></tr>
+    <tr><td>8</td><td class="n">3.3371 / 3.3369</td><td class="n">2.6474 / 2.6478 / 2.6494</td><td class="n">2.7285 / 2.7284 / 2.7291</td><td class="n">0.05% / 1.5%</td></tr>
+  </table></div>
+  <p>The plain Hugging Face model's loss on step 0's batch is 3.3383. Both frameworks start there, which confirms the weights loaded correctly. From then on they stay within bf16 rounding noise of each other at every size and precision setting.</p>
+
+  <h3>Earlier measurements</h3>
+  <details><summary>Full grid: first design (driver dispatch) vs Megatron <code>pretrain_gpt.py</code>, both on H100, separate machines</summary><div class="scroll">
+  <table>
+    <tr><th class="n">Stages</th><th class="n">Microbatches</th><th class="n">Sequence</th><th class="n">Megatron</th><th class="n">rdsp via Ray store</th><th class="n">rdsp via RDT</th></tr>
+    <tr><td class="n">2</td><td class="n">4</td><td class="n">512</td><td class="n">20.7k</td><td class="n">25.0k</td><td class="n">28.1k</td></tr>
+    <tr><td class="n">2</td><td class="n">8</td><td class="n">512</td><td class="n">23.5k</td><td class="n">29.4k</td><td class="n">33.6k</td></tr>
+    <tr><td class="n">2</td><td class="n">16</td><td class="n">512</td><td class="n">23.7k</td><td class="n">31.8k</td><td class="n">37.5k</td></tr>
+    <tr><td class="n">4</td><td class="n">4</td><td class="n">512</td><td class="n">25.9k</td><td class="n">26.7k</td><td class="n">30.2k</td></tr>
+    <tr><td class="n">4</td><td class="n">8</td><td class="n">512</td><td class="n">32.4k</td><td class="n">33.5k</td><td class="n">37.9k</td></tr>
+    <tr><td class="n">4</td><td class="n">16</td><td class="n">512</td><td class="n">36.0k</td><td class="n">40.3k</td><td class="n">43.5k</td></tr>
+    <tr><td class="n">2</td><td class="n">4</td><td class="n">2048</td><td class="n">20.5k</td><td class="n">25.9k</td><td class="n">30.1k</td></tr>
+    <tr><td class="n">2</td><td class="n">8</td><td class="n">2048</td><td class="n">22.4k</td><td class="n">29.4k</td><td class="n">32.8k</td></tr>
+    <tr><td class="n">2</td><td class="n">16</td><td class="n">2048</td><td class="n">24.0k</td><td class="n">33.4k</td><td class="n">35.7k</td></tr>
+    <tr><td class="n">4</td><td class="n">4</td><td class="n">2048</td><td class="n">26.9k</td><td class="n">26.2k</td><td class="n">30.6k</td></tr>
+    <tr><td class="n">4</td><td class="n">8</td><td class="n">2048</td><td class="n">33.6k</td><td class="n">33.1k</td><td class="n">38.2k</td></tr>
+    <tr><td class="n">4</td><td class="n">16</td><td class="n">2048</td><td class="n">38.8k</td><td class="n">40.9k</td><td class="n">43.6k</td></tr>
+  </table>
+  <p style="font-size:14px; color:var(--muted); margin-top:8px">tokens per second. "Ray store": tensors copied through Ray's shared memory via the CPU. "RDT": Ray Direct Transport, GPU-to-GPU. These cells predate the stage-local redesign.</p>
+  </div></details>
+
+
+  <h3 id="losscurves">The first matched run: 4 stages, 300 steps</h3>
+  <p>This was the first run with both frameworks on the same machine, weights and data. It came before Megatron's fusions were switched on in its training loop.</p>
+  <ul>
+    <li><b>Same pretrained Qwen3-0.6B weights</b> for both. For Megatron they were copied into its own layer format by hand, and every parameter was checked to receive exactly one weight.</li>
+    <li><b>Same real text</b> (WikiText-103), same batches, same order: 300 steps, 4 stages, 8 microbatches, sequence 512.</li>
+    <li><b>Same optimizer:</b> Adam, lr 1e-5, bf16, no clipping.</li>
+  </ul>
+  <div class="panel" id="lPanel">
+    <p class="ptitle">Interactive: training loss, Megatron vs rdsp</p>
+    <div class="controls">
+      <span class="seg" role="group" aria-label="X axis">
+        <button type="button" id="lStep" aria-pressed="true">By step</button>
+        <button type="button" id="lTime" aria-pressed="false">By wall-clock time</button>
+      </span>
+      <label for="lSmooth"><input type="checkbox" id="lSmooth" checked> Smooth (20-step average)</label>
+    </div>
+    <div class="scroll" id="lSvg"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--meg)"></i>Megatron-Core (4 stages)</span>
+      <span><i class="sw" style="background:var(--accent)"></i>rdsp, stage-local (4 stages)</span>
+    </div>
+    <p style="font-size:14px; color:var(--muted); margin:8px 0 0">4×H100, 16,384 tokens per step. The time view starts the clock after step 0, which is one-time warm-up (Megatron 7.3 s, rdsp 11.9 s: rdsp also sets up its stage-to-stage links then). Hover the chart to read values.</p>
+  </div>
+  <div class="scroll"><table>
+    <tr><th></th><th class="n">Step 0 loss</th><th class="n">Step 299</th><th class="n">Mean, last 50 steps</th><th class="n">Median step</th></tr>
+    <tr><td>Plain Hugging Face model (reference, no training)</td><td class="n">3.3523</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+    <tr><td><b>Megatron-Core</b></td><td class="n">3.3528 (+0.02%)</td><td class="n">2.6795</td><td class="n">2.7124</td><td class="n">317 ms · 51.6k tok/s</td></tr>
+    <tr><td><b>rdsp</b></td><td class="n">3.3516 (−0.02%)</td><td class="n">2.6797</td><td class="n">2.7129</td><td class="n">247 ms · 66.4k tok/s</td></tr>
+  </table></div>
+  <p><b>What it shows:</b> both start exactly where the unsplit model is (proof the weights loaded correctly), and the curves lie on top of each other. Step by step they differ by 0.05% at the median and 1.5% at worst, which is bf16 rounding noise. rdsp trains the same model to the same place as Megatron. It is also faster in this run: 247 vs 317 ms per step, so after warm-up it runs the remaining 299 steps in 74 s vs 96 s. Its one-time warm-up is longer (12 s vs 7 s), so counting everything the totals are 86 s vs 103 s.</p>
+  <div class="callout warn"><span class="tag">Withdrawn claim</span><p>An earlier version of this page said Megatron's <code>pretrain_gpt.py</code> script carries ~35% overhead, based on 505 ms per step there vs 317 ms here. Those two runs were on different machines, and possibly different chips. Given the ±20% machine-to-machine spread and the H100/H200 mix-up, that comparison proves nothing, so the claim is withdrawn.</p></div>
+  <details><summary>How the weights were moved into Megatron</summary><div>
+    <p>Megatron fuses the query, key and value projections into one matrix, ordered by attention head group: for each of the 8 key/value groups, the 2 query heads, then the key head, then the value head. The Hugging Face q/k/v matrices were reshaped and interleaved into that order; gate and up projections were stacked into Megatron's first MLP matrix; the norms went into Transformer Engine's fused layer-norm slots. One quirk: Megatron divides the loss by the microbatch count in place, and a detached copy of it for logging shares that memory. So the first run logged values exactly 8× too small, while the gradients were unaffected. We corrected by ×8 and fixed the logging.</p>
+  </div></details>
+  <h3 id="coreidea">The core idea, tested fairly: does the busy stage benefit from a second GPU?</h3>
+  <p>The stage holding the output layer (the "head") does the most work. rdsp can give that one stage 2 GPUs; Megatron can't. We tested it on one pinned-H100 machine with large microbatches, against the best layouts both frameworks can build by moving layers between equal stages.</p>
+  <div class="scroll"><table>
+    <tr><th>Setup (one machine, back to back)</th><th>Layers per stage (H = head)</th><th>GPUs per stage</th><th class="n">Step</th><th class="n">Tokens/s</th></tr>
+    <tr><td>Megatron, 4 stages balanced</td><td><code>9 · 9 · 9 · 1+H</code></td><td><code>1 · 1 · 1 · 1</code></td><td class="n">631 ms</td><td class="n">207.8k</td></tr>
+    <tr><td><b>rdsp</b>, same layout</td><td><code>9 · 9 · 9 · 1+H</code></td><td><code>1 · 1 · 1 · 1</code></td><td class="n">535 ms</td><td class="n">245.1k (1.18× Megatron)</td></tr>
+    <tr><td>Megatron, 5 stages balanced</td><td><code>7 · 7 · 7 · 6 · 1+H</code></td><td><code>1 · 1 · 1 · 1 · 1</code></td><td class="n">530 ms</td><td class="n">247.5k</td></tr>
+    <tr><td><b>rdsp</b>, same layout</td><td><code>7 · 7 · 7 · 6 · 1+H</code></td><td><code>1 · 1 · 1 · 1 · 1</code></td><td class="n good">451 ms</td><td class="n good">290.6k (1.18× Megatron): fastest</td></tr>
+    <tr><td><b>rdsp, uneven</b>: head stage on 2 GPUs</td><td><code>8 · 8 · 8 · 4+H</code></td><td><code>1 · 1 · 1 · <b>2</b></code></td><td class="n">484 ms</td><td class="n">270.8k (1.10× Megatron, 0.93× rdsp 5 equal)</td></tr>
+  </table></div>
+  <ul>
+    <li><b>rdsp beats Megatron in every matched layout</b>, by 1.18× at both 4 and 5 GPUs. Every setup trained to the same loss (median per-step difference ≤ 0.13%).</li>
+    <li><b>The uneven setup lost to simply adding a 5th stage.</b> With 5 GPUs, rdsp's plain 5-stage layout was 7% faster than the 2-GPU head stage.</li>
+    <li><b>Why:</b> we expected the head to cost about 10 layers' worth of time, based on arithmetic. In practice it's a single large, efficient matrix multiply, while each layer runs many small operations. Timed, the head is closer to 5–6 layers. So a 5th equal stage already spreads the work almost evenly, and the 2-GPU head stage adds overhead with nothing to gain: the two GPUs must sync their gradients, and each microbatch is split between them.</li>
+  </ul>
+  <p><b>A second chance, with the prediction written down first.</b> That test gave the uneven setup a lopsided layout (8-8-8-4). By the same reasoning, its fair layout is 7-7-7-7: the same slowest-stage work as 5 equal stages, but one fewer stage. We predicted it would win by ~1.14× with 4 microbatches, where each extra stage adds a lot of idle time, and by ~1.05× with 16. Same machine, back to back:</p>
+  <div class="scroll"><table>
+    <tr><th>rdsp, one pinned-H100 machine</th><th class="n">5 equal stages: <code>7 · 7 · 7 · 6 · 1+H</code>, 1 GPU each</th><th class="n">Uneven: <code>7 · 7 · 7 · 7+H</code>, last stage on <b>2</b> GPUs</th><th class="n">Uneven vs equal</th></tr>
+    <tr><td>4 microbatches per step</td><td class="n">187 ms · 174.9k tok/s</td><td class="n">193 ms · 169.9k</td><td class="n">0.97×</td></tr>
+    <tr><td>16 microbatches per step</td><td class="n">456 ms · 287.3k</td><td class="n">501 ms · 261.8k</td><td class="n">0.91×</td></tr>
+  </table></div>
+  <ul>
+    <li><b>The prediction was wrong both times.</b> The 2-GPU stage was itself the bottleneck: ~26–28 ms per microbatch, where the other stages took ~23 ms. Two GPUs made that stage only about 1.5–1.6× faster, not 2×. Splitting each microbatch in half leaves each GPU too little work to run efficiently, and the two GPUs also sync gradients and split and reassemble the data between stages.</li>
+    <li><b>Verdict for Qwen3-0.6B:</b> adding a stage always beat giving one stage a second GPU. The idea can only pay off when a stage's work is large enough to split efficiently across GPUs, and can't be spread by moving layers. Examples: a much bigger model, a huge vocabulary, a vision encoder, or a stage that runs out of memory. Testing that would need a larger model than this project used.</li>
+  </ul>
+  <p style="font-size:14px; color:var(--muted)">Earlier, a similar table said extra GPUs made rdsp slower. That table compared runs on different chip types (H100 vs H200) using the first design, and is superseded by this one.</p>
+</section>
+
+<!-- ===================================================== 14 PROOF -->
+<section class="chap" id="proof">
+  <p class="eyebrow"><span class="num">14</span>How we know it's right</p>
+  <h2>Every configuration is compared with an unsplit model</h2>
+  <p>The yardstick everywhere: <b>the split model must produce the same numbers as the unsplit model</b> trained on one GPU from the same starting weights and data.</p>
+  <div class="scroll"><table>
+    <tr><th>Configuration</th><th>GPUs per stage</th><th>Result</th><th>Status</th></tr>
+    <tr><td>Qwen3-0.6B, bf16</td><td>1 · 1</td><td>Losses within bf16 rounding</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>Changing shape at a boundary</td><td>1 · 2 · 1</td><td>Losses within 1 part in 10,000</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>Different GPU counts</td><td>2 · 4 · 2</td><td>Losses within 1e-4</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>Data parallel + ZeRO 2/1/0</td><td>4 · 2 · 2</td><td>Losses within 1e-4</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>Tensor parallel</td><td>1 · 2 · 4</td><td>Every weight's update within 2.4e-5</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>Sequence parallel</td><td>2 · 4 · 1</td><td>Every weight's update within 2.4e-5</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>Expert parallel + folding</td><td>1 · 4 · 2</td><td>Weight updates within 3e-4</td><td><span class="pill ok">Supported</span></td></tr>
+    <tr><td>All four kinds combined</td><td>2 · 2 · 2 · 2</td><td>Weight updates within 2.4e-5</td><td><span class="pill ok">Passes</span></td></tr>
+    <tr><td>Design doc's 32-GPU topology</td><td>8 · 8 · 8 · 8 on 4 machines</td><td>Not run: account allows 10 GPUs</td><td><span class="pill no">Not validated</span></td></tr>
+  </table></div>
+  <h3>Making the test strict enough to trust</h3>
+  <ul>
+    <li><b>SGD, not Adam.</b> Adam ignores a gradient that is uniformly too big or too small, so an early Adam-based test passed a deliberately broken build. Plain SGD exposes any scale error.</li>
+    <li><b>A sensitivity check.</b> The test refuses to run unless each step moves the loss by at least 20× the tolerance, so an error can't hide inside it.</li>
+    <li><b>Per-weight comparison.</b> For tensor/sequence/expert parallel, every weight's one-step change is compared with the unsplit model's.</li>
+    <li><b>Failure drills.</b> Each configuration also saves and restores, and has a GPU worker killed mid-training and recovered.</li>
+  </ul>
+  <h3>The six bugs these tests caught</h3>
+  <div class="grid3">
+    <div class="box"><h4>ZeRO-1/2 kept only the last microbatch</h4><p>Gradients were replaced instead of added. Fixed by marking only the last backward as the accumulation boundary.</p></div>
+    <div class="box"><h4>Qwen3 head norms under tensor parallel</h4><p>Each GPU saw only its own heads' part of the norm gradients; GPUs drifted apart. Fixed by summing them.</p></div>
+    <div class="box"><h4>Sequence-parallel updates doubled</h4><p>The gradient-scale rule treated sequence shards like data-parallel GPUs. Fixed (Chapter 7).</p></div>
+    <div class="box"><h4>Folded experts sent a partial gradient</h4><p>Each GPU held a different partial gradient below expert layers. Fixed by averaging at the expert layer's input.</p></div>
+    <div class="box"><h4>Failed steps left traces</h4><p>Gradients and random draws from an abandoned step leaked into the retry. Now discarded.</p></div>
+    <div class="box"><h4>Silent per-stage clipping</h4><p>DeepSpeed's default clipping ran per stage. Now off; explicit clipping is rejected.</p></div>
+  </div>
+  <p>Totals: <b>290 CPU tests</b> and <b>32 GPU tests</b> (8×L4, real DeepSpeed, NCCL) pass on the final design.</p>
+</section>
+
+<!-- ===================================================== 15 LIMITS -->
+<section class="chap" id="limits">
+  <p class="eyebrow"><span class="num">15</span>Limitations</p>
+  <h2>What these results do not show</h2>
+  <ul>
+    <li><b>One run per cell, and machines vary.</b> The same configuration varied by up to ~20% between machines, so only same-machine comparisons are reliable.</li>
+    <li><b>Earlier results mixed chips.</b> Modal ran some "H100" jobs on H200s, and the first headline compared rdsp on H200 with Megatron on H100. Those comparisons are withdrawn; the harness now refuses non-H100 machines.</li>
+    <li><b>rdsp's speed lead depends on the regime.</b> It's 1.24–1.30× with small microbatches, where Python overhead dominates. In GPU-bound runs it's 1.10× at 1 GPU and 1.11× at 4, a tie at 8. Megatron's pure GPU work is slightly less. Larger models are untested.</li>
+    <li><b>One small model, one machine.</b> Everything was measured on a 0.6B model; larger models are untested.</li>
+    <li><b>Multi-machine is untested.</b> The 32-GPU, 4-machine topology never ran (the Modal account allows 10 GPUs at once, and multi-machine Modal needs 8 GPUs per machine). The multi-machine code paths are exercised on one machine only.</li>
+        <li><b>Scaling across GPU counts isn't measured reliably.</b> Each GPU count ran on a different machine, and machines differ by up to ~25%. Beyond 8 stages is unmeasured.</li>
+    <li><b>Heterogeneous stages didn't pay off on this model.</b> A second GPU for the head stage lost to a plain 5-stage pipeline by 3–9% in three fair tests (4 and 16 microbatches, two layouts). Splitting a stage's small microbatches across two GPUs gains only ~1.5×.</li>
+    <li><b>No whole-pipeline gradient clipping.</b></li>
+    <li><b>DeepSpeed constraints:</b> sequence parallel can't be on the last stage; tensor and sequence parallel can't share a stage.</li>
+    <li><b>Model support:</b> plain layer stacks and Llama/Qwen-style HF models split automatically; other architectures need their own stage type.</li>
+    <li><b>Checkpoints on local disks</b> survive a crashed worker, not a lost machine.</li>
+    
+  </ul>
+  <h3>Future work</h3>
+  <ol>
+    <li><b>Heterogeneous stages on a larger model</b>, where one stage's work is big enough to split efficiently across GPUs. This is the one setting where the project's core idea could still pay off.</li>
+    <li><b>The 32-GPU, 4-machine topology</b>, with a higher GPU limit or on AWS.</li>
+    <li><b>Repeats of the same-machine cells</b>, to put error bars on the 1.1–1.2× speed leads.</li>
+  </ol>
+</section>
+
+<!-- ===================================================== 16 FAQ -->
+<section class="chap" id="faq">
+  <p class="eyebrow"><span class="num">16</span>FAQ</p>
+  <h2>Questions people ask</h2>
+  <details><summary>Why not just use DeepSpeed's own pipeline engine?</summary><div><p>DeepSpeed's <code>PipelineModule</code> also requires every stage to share one shape, and it runs as one fixed job like Megatron. rdsp's point is per-stage shapes; it reuses DeepSpeed for everything <i>inside</i> a stage.</p></div></details>
+  <details><summary>Why Ray?</summary><div><p>Ray starts a worker process on any machine with a free GPU, lets the driver call methods on it, reports when it dies, and lets us rebuild it. That is what makes "stage 3 gets 4 GPUs, stage 1 gets 2" and whole-pipeline recovery straightforward. After the redesign, Ray is used for control (one call per stage per step), not for moving tensors.</p></div></details>
+  <details><summary>Does the driver become a bottleneck?</summary><div><p>Not anymore. In the stage-local design it sends one command per stage per step and receives one loss list, about 16 Ray calls per step at 8 stages. Its submission work was already off the critical path in the profile.</p></div></details>
+  <details><summary>What does "bit-identical" mean here?</summary><div><p>For the dispatch redesign, the old and new paths were run from the same weights and data and produced exactly the same floating-point losses. For split vs unsplit models, results match within tiny rounding differences (1 part in 10,000 or better in fp32), because adding numbers in a different order rounds slightly differently.</p></div></details>
+  <details><summary>What is RDT, and is it still used?</summary><div><p>Ray Direct Transport lets Ray move GPU tensors between actors without a CPU copy. It sped up the first design by 6–18%. The stage-local design makes it unnecessary: tensors go over rdsp's own NCCL channels. RDT was removed together with the older driver-dispatch mode.</p></div></details>
+  <details><summary>How do I choose stage shapes?</summary><div><p>Today: give each stage enough GPUs to fit its layers, use data parallel when there are enough rows to split, tensor parallel only within one machine, and consider moving layers off the last stage. The measurements so far don't yet show heterogeneous shapes beating uniform ones at small scale; that is the open experiment.</p></div></details>
+  <p class="foot">Sources: rdsp/docs/ENGINEERING.md, rdsp/docs/BENCHMARK_RESULTS.md, support_matrix.py, and the Modal benchmark runs of 22–23 September 2026. All numbers are measured unless marked otherwise.</p>
+</section>
+</main>
+</div>
+
+<script>
+(function(){
+/* ---------------- glossary ---------------- */
+const G = {
+  layer:["Layer","One step of the model's computation (e.g. one transformer block). A language model is a stack of dozens of layers."],
+  weights:["Weights","The millions or billions of numbers inside a model that training adjusts."],
+  stage:["Stage","A contiguous slice of the model's layers that runs on its own GPU or group of GPUs."],
+  gpu:["GPU","The accelerator chip that does the math. Examples here: NVIDIA L4 (small) and H100 (large)."],
+  activation:["Activation","The output of a layer during the forward pass. It is passed to the next layer (or next stage) and saved for the backward pass."],
+  loss:["Loss","One number saying how wrong the model's predictions were for a batch. Training tries to make it smaller."],
+  gradient:["Gradient","For each weight: which direction, and how strongly, to change it to reduce the loss. Computed by the backward pass."],
+  step:["Training step","One forward pass, one backward pass, and one weight update over a batch of data."],
+  microbatch:["Microbatch","A slice of the batch. The pipeline streams microbatches through the stages like an assembly line and adds up their gradients."],
+  bubble:["Pipeline bubble","Time a stage sits idle: waiting for its first input at the start of a step, or its last gradient at the end."],
+  "1f1b":["1F1B","'One forward, one backward': the order each stage processes microbatches. It keeps few activations in memory at once."],
+  dp:["Data parallel","Several GPUs hold the same layers and each processes different rows (examples); their gradients are averaged."],
+  tp:["Tensor parallel","Each weight matrix is cut into slices across GPUs; the GPUs cooperate inside every layer."],
+  sp:["Sequence parallel","Each GPU processes a different stretch of the text sequence (DeepSpeed's version is called Ulysses)."],
+  ep:["Expert parallel","In mixture-of-experts models, each GPU holds some of the 'expert' sub-networks; tokens are routed to the GPU with their expert."],
+  pp:["Pipeline parallel","The model is split by depth into stages on different GPUs; data flows through them in order."],
+  zero:["ZeRO","DeepSpeed's memory-saving scheme for data parallel: optimizer state (ZeRO-1) and gradients (ZeRO-2) are split across GPUs instead of copied."],
+  deepspeed:["DeepSpeed","Microsoft's training library. rdsp uses one unmodified DeepSpeed engine per stage for the optimizer, mixed precision, ZeRO and in-stage parallelism."],
+  ray:["Ray","A framework for running Python across many processes and machines. rdsp uses it to start, place, call and rebuild the stage workers."],
+  actor:["Ray actor","A long-lived Python object living in its own process, whose methods the driver can call remotely. rdsp runs one per GPU."],
+  nccl:["NCCL","NVIDIA's library for moving data directly between GPUs, including across machines, without going through the CPU."],
+  megatron:["Megatron-LM","NVIDIA's large-scale training framework and the standard reference for pipeline parallelism. It requires all stages to share one shape."],
+  head:["Output head","The final layer that scores every word in the vocabulary for each position. For Qwen3 it's 151,936 words wide, which is why the last stage is the busiest."],
+  driver:["Driver","Your Python program. It plans and coordinates the stages but never holds weights or activations."]
+};
+const dl = document.getElementById('glossary');
+["layer","weights","stage","activation","loss","gradient","step","microbatch","bubble","1f1b","pp","dp","tp","sp","ep","zero","deepspeed","ray","actor","nccl","megatron","head"].forEach(k=>{
+  const dt=document.createElement('dt'); dt.textContent=G[k][0]; dt.id='g-'+k;
+  const dd=document.createElement('dd'); dd.textContent=G[k][1]; dl.append(dt,dd);
+});
+const tip=document.getElementById('tip');
+function showTip(el){ const d=G[el.dataset.t]; if(!d) return; tip.innerHTML='<b>'+d[0]+'.</b> '+d[1]; tip.hidden=false;
+  const r=el.getBoundingClientRect(); const w=Math.min(320, window.innerWidth-24);
+  tip.style.maxWidth=w+'px'; let x=Math.min(Math.max(12,r.left), window.innerWidth-w-12);
+  let y=r.bottom+8; tip.style.left=x+'px'; tip.style.top=y+'px';
+  const th=tip.getBoundingClientRect().height; if(y+th>window.innerHeight-8){ tip.style.top=(r.top-th-8)+'px'; } }
+document.querySelectorAll('dfn[data-t]').forEach(el=>{
+  el.tabIndex=0;
+  el.addEventListener('mouseenter',()=>showTip(el)); el.addEventListener('mouseleave',()=>tip.hidden=true);
+  el.addEventListener('focus',()=>showTip(el)); el.addEventListener('blur',()=>tip.hidden=true);
+  el.addEventListener('click',e=>{ e.stopPropagation(); tip.hidden ? showTip(el) : (tip.hidden=true); });
+});
+document.addEventListener('click',()=>tip.hidden=true); window.addEventListener('scroll',()=>tip.hidden=true,{passive:true});
+
+/* ---------------- TOC highlight ---------------- */
+const links=[...document.querySelectorAll('#tocList a')]; const byId={}; links.forEach(a=>byId[a.getAttribute('href').slice(1)]=a);
+const obs=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ links.forEach(l=>l.classList.remove('on')); const a=byId[e.target.id]; if(a) a.classList.add('on'); } }); },{rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('section.chap').forEach(s=>obs.observe(s));
+
+/* ---------------- architecture stage boxes ---------------- */
+const st=[["Stage 0","embedding + layers","2 GPUs · data parallel"],["Stage 1","layers","2 GPUs · tensor parallel"],["Stage 2","layers","2 GPUs · sequence parallel"],["Stage 3","layers + output head","4 GPUs · expert + tensor"]];
+const sg=document.getElementById('stagesG'); let h='';
+st.forEach((s,i)=>{ const x=18+i*228; h+=`<rect x="${x}" y="240" width="180" height="150" rx="10" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
+<text x="${x+14}" y="266" font-size="16" font-weight="600" fill="var(--ink)">${s[0]}</text>
+<text x="${x+14}" y="288" font-size="13" fill="var(--body)">${s[1]}</text>
+<text x="${x+14}" y="308" font-size="13" fill="var(--body)">${s[2]}</text>`;
+  const n=i==3?4:2; for(let g=0; g<n; g++){ const gx=x+14+g*40; h+=`<rect x="${gx}" y="326" width="32" height="46" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/><text x="${gx+16}" y="354" font-size="11" text-anchor="middle" fill="var(--accent)">GPU</text>`; }
+  if(i<3){ const ax=x+180; h+=`<line x1="${ax+4}" y1="300" x2="${ax+44}" y2="300" stroke="var(--ink)" stroke-width="2" marker-end="url(#ah)" marker-start="url(#ah)"/>`; }
+});
+sg.innerHTML=h;
+
+/* ---------------- step-through ---------------- */
+const W=[
+ ["You call engine.train_batch()","The driver takes exactly N microbatches from your data (say 4). If the data runs out partway, the step fails before anything is sent. Then it increments the 'generation' number that tags every message of this attempt.",{n:["w-driver"],d:"taking 4 microbatches"}],
+ ["One command per stage","The driver sends each stage a single Ray call: 'run step g; here is your list of forwards and backwards in 1F1B order'. Stage 0 also gets the input tokens; the last stage gets the labels.",{n:["w-driver","w-s0","w-s1","w-s2"],e:["w-cmd0","w-cmd1","w-cmd2"],d:"sent 3 commands",s:["got op list","got op list","got op list + labels"]}],
+ ["Forward: stage 0 starts","Stage 0 runs its layers on microbatch 0 and sends the activation straight to stage 1's GPU over NCCL. It immediately starts microbatch 1: the assembly line.",{n:["w-s0"],e:["w-f01"],s:["forward mb0 → send"],l:"activation of microbatch 0 → stage 1"}],
+ ["Forward reaches the end","Stage 1 does the same and passes to stage 2. Stage 2, the last stage, runs its layers and the output head, then computes the loss for microbatch 0 using the labels.",{n:["w-s1","w-s2"],e:["w-f01","w-f12"],s:["forward mb1","forward mb0 → send","forward mb0 → loss"],l:"activations flow right"}],
+ ["Backward flows back","Stage 2 starts the backward pass from its loss and sends 'how the loss changes with my input' back to stage 1, which continues the backward pass and sends its own input-gradient to stage 0. Meanwhile, later microbatches are still flowing forward (1F1B).",{n:["w-s0","w-s1","w-s2"],e:["w-b21","w-b10","w-f01","w-f12"],s:["F mb2 / B mb0","F mb1 / B mb0","B mb0 → send"],l:"gradients flow left while activations still flow right"}],
+ ["Every stage reports 'ready'","When a stage has finished all its backwards, its gradients for all microbatches are added up and it reports ready. The last stage also returns the loss of every microbatch.",{n:["w-driver","w-s0","w-s1","w-s2"],e:["w-cmd0","w-cmd1","w-cmd2"],d:"all 3 ready · losses received",s:["ready","ready","ready + losses"]}],
+ ["All update together","Only because all three are ready does the driver tell every stage to run its optimizer, exactly once. If one had failed, nothing would have been updated and the step would be safe to retry.",{n:["w-driver","w-s0","w-s1","w-s2"],e:["w-cmd0","w-cmd1","w-cmd2"],d:"apply → all stages",s:["weights updated","weights updated","weights updated"]}],
+ ["train_batch() returns","The driver adds 1 to the step counter and returns the average loss as a plain number. It never held a weight or an activation.",{n:["w-driver"],d:"step done · returns mean loss"}]
+];
+let wi=0;
+function wRender(){
+  document.querySelectorAll('#walkSvg .hot').forEach(e=>e.classList.remove('hot'));
+  const [t,txt,o]=W[wi];
+  (o.n||[]).forEach(id=>document.getElementById(id).classList.add('hot'));
+  (o.e||[]).forEach(id=>document.getElementById(id).classList.add('hot'));
+  document.getElementById('w-driver-sub').textContent=o.d||'waiting';
+  ['w-s0-sub','w-s1-sub','w-s2-sub'].forEach((id,i)=>{ document.getElementById(id).textContent=(o.s&&o.s[i])||'waiting'; });
+  const lf=document.getElementById('w-lf'); lf.textContent=o.l||' '; lf.classList.toggle('hot',!!o.l);
+  document.getElementById('wTitle').textContent=(wi+1)+'. '+t; document.getElementById('wText').textContent=txt;
+  document.getElementById('wCount').textContent='step '+(wi+1)+' of '+W.length;
+  document.getElementById('wPrev').disabled=wi==0; document.getElementById('wNext').disabled=wi==W.length-1;
+}
+document.getElementById('wPrev').onclick=()=>{ if(wi>0){wi--; wRender();} };
+document.getElementById('wNext').onclick=()=>{ if(wi<W.length-1){wi++; wRender();} };
+wRender();
+
+/* ---------------- 1F1B simulator ---------------- */
+let mode='1f1b';
+function ops(s,P,M){ if(mode==='gpipe'){ const o=[]; for(let k=0;k<M;k++)o.push(['F',k]); for(let k=M-1;k>=0;k--)o.push(['B',k]); return o; }
+  const w=Math.min(P-1-s,M), o=[]; for(let k=0;k<w;k++)o.push(['F',k]); for(let k=0;k<M-w;k++){o.push(['F',w+k]);o.push(['B',k]);} for(let k=M-w;k<M;k++)o.push(['B',k]); return o; }
+function simulate(P,M,over){
+  const F=1,B=2, seq=[...Array(P)].map((_,s)=>ops(s,P,M)), done={}, idx=Array(P).fill(0), free=Array(P).fill(0), blocks=[];
+  let remaining=P*2*M, guard=0;
+  while(remaining>0 && guard++<100000){
+    let progressed=false;
+    for(let s=0;s<P;s++){
+      while(idx[s]<seq[s].length){
+        const [k,m]=seq[s][idx[s]];
+        let dep;
+        if(k==='F') dep = s===0?0:done['F'+(s-1)+'_'+m];
+        else dep = s===P-1?done['F'+s+'_'+m]:done['B'+(s+1)+'_'+m];
+        if(dep===undefined) break;
+        const dur=(k==='F'?F:B), o=over*(k==='F'?F:B)*0+over;
+        const start=Math.max(free[s],dep);
+        if(o>0) blocks.push({s,k:'O',m,t0:start,t1:start+o});
+        blocks.push({s,k,m,t0:start+o,t1:start+o+dur});
+        free[s]=start+o+dur; done[k+s+'_'+m]=free[s]; idx[s]++; remaining--; progressed=true;
+      }
+    }
+    if(!progressed) break;
+  }
+  const T=Math.max(...free);
+  let peak=0; for(let s=0;s<P;s++){ let live=0,pk=0; seq[s].forEach(([k])=>{ if(k==='F'){live++;pk=Math.max(pk,live);} else live--; }); peak=Math.max(peak,pk); }
+  const work=P*M*(1+2); const idle=1-work/(P*T);
+  return {blocks,T,peak,idle};
+}
+function drawSched(){
+  const P=+document.getElementById('sStages').value, M=+document.getElementById('sMb').value, pct=+document.getElementById('sOver').value;
+  document.getElementById('sOverV').textContent=pct+'% of a forward';
+  const {blocks,T,peak,idle}=simulate(P,M,pct/100);
+  const base=simulate(P,M,0);
+  const unit=Math.max(8, Math.min(26, 880/T)), rowH=P>4?26:34, left=78, W=left+T*unit+10, H=P*rowH+34;
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Pipeline schedule: ${P} stages, ${M} microbatches, step takes ${T.toFixed(1)} time units">`;
+  for(let i=0;i<P;i++){ const y=i*rowH+4; s+=`<rect x="${left}" y="${y}" width="${T*unit}" height="${rowH-6}" fill="var(--sunk)" rx="3"/><text x="${left-10}" y="${y+rowH/2+1}" text-anchor="end" font-size="13" fill="var(--muted)">stage ${i}</text>`; }
+  blocks.forEach(b=>{ const x=left+b.t0*unit, w=(b.t1-b.t0)*unit, y=b.s*rowH+4;
+    const c=b.k==='F'?'var(--accent)':b.k==='B'?'var(--meg)':'var(--first)';
+    s+=`<rect x="${x+.5}" y="${y}" width="${Math.max(w-1,1)}" height="${rowH-6}" fill="${c}" rx="3"/>`;
+    if(b.k!=='O' && w>=18) s+=`<text x="${x+w/2}" y="${y+rowH/2+1}" text-anchor="middle" font-size="11.5" fill="var(--bg)" font-weight="600">${b.k}${b.m}</text>`; });
+  const ty=P*rowH+22; s+=`<text x="${left}" y="${ty}" font-size="12.5" fill="var(--muted)">time →  (one forward = 1 unit, one backward = 2 units)</text></svg>`;
+  document.getElementById('schedSvg').innerHTML=s;
+  const tb=(P-1)/(M+P-1);
+  document.getElementById('schedStat').innerHTML=
+    `<span>Step time: <b>${T.toFixed(1)}</b> units${pct?` (vs ${base.T.toFixed(1)} with no overhead: <b>+${Math.round((T/base.T-1)*100)}%</b>)`:''}</span>`+
+    `<span>Idle (bubble): <b>${Math.round(idle*100)}%</b> <span style="color:var(--muted)">(textbook ${(tb*100).toFixed(0)}%)</span></span>`+
+    `<span>Peak saved activations per stage: <b>${peak}</b></span>`;
+}
+['sStages','sMb','sOver'].forEach(id=>document.getElementById(id).addEventListener('input',drawSched));
+const b1=document.getElementById('b1f1b'), b2=document.getElementById('bgpipe');
+b1.onclick=()=>{mode='1f1b'; b1.setAttribute('aria-pressed','true'); b2.setAttribute('aria-pressed','false'); drawSched();};
+b2.onclick=()=>{mode='gpipe'; b2.setAttribute('aria-pressed','true'); b1.setAttribute('aria-pressed','false'); drawSched();};
+drawSched();
+
+/* ---------------- boundary visualizer ---------------- */
+function drawB(){
+  const a=+document.getElementById('bSrc').value, b=+document.getElementById('bDst').value;
+  const W=720, H=230, x0=120, bw=560; let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rows of one microbatch split ${a} ways on the sending stage and ${b} ways on the receiving stage">`;
+  s+=`<text x="${x0-12}" y="48" text-anchor="end" font-size="13" fill="var(--muted)">sending</text><text x="${x0-12}" y="64" text-anchor="end" font-size="13" fill="var(--muted)">stage</text>`;
+  s+=`<text x="${x0-12}" y="178" text-anchor="end" font-size="13" fill="var(--muted)">receiving</text><text x="${x0-12}" y="194" text-anchor="end" font-size="13" fill="var(--muted)">stage</text>`;
+  for(let i=0;i<a;i++){ const x=x0+i*bw/a; s+=`<rect x="${x+2}" y="30" width="${bw/a-4}" height="44" rx="6" fill="var(--first-soft)" stroke="var(--first)" stroke-width="1.5"/><text x="${x+bw/a/2}" y="57" text-anchor="middle" font-size="13" fill="var(--ink)">GPU ${i}: rows ${Math.round(i*100/a)}–${Math.round((i+1)*100/a)}%</text>`; }
+  let msgs=0;
+  for(let j=0;j<b;j++){ const x=x0+j*bw/b; s+=`<rect x="${x+2}" y="160" width="${bw/b-4}" height="44" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/><text x="${x+bw/b/2}" y="187" text-anchor="middle" font-size="13" fill="var(--ink)">GPU ${j}: rows ${Math.round(j*100/b)}–${Math.round((j+1)*100/b)}%</text>`;
+    for(let i=0;i<a;i++){ if(i*b<(j+1)*a && j*a<(i+1)*b){ msgs++; const lo=Math.max(i/a,j/b), hi=Math.min((i+1)/a,(j+1)/b), mid=x0+(lo+hi)/2*bw;
+      const sx=x0+(i+.5)*bw/a, dx=x0+(j+.5)*bw/b; s+=`<path d="M${(sx+mid)/2},76 C${(sx+mid)/2},118 ${(dx+mid)/2},118 ${(dx+mid)/2},156" fill="none" stroke="var(--muted)" stroke-width="2"/><circle cx="${(dx+mid)/2}" cy="156" r="3.5" fill="var(--muted)"/>`; } } }
+  s+='</svg>'; document.getElementById('bSvg').innerHTML=s;
+  document.getElementById('bStat').innerHTML=`<span><b>${msgs}</b> messages per microbatch, forward (and the same back, for gradients)</span><span>Gradient scale on the way back: × <b>${a}/${b}</b> = ${(a/b).toFixed(2)}</span>`+
+   (a===b?`<span>Same split on both sides: each GPU talks to exactly one partner, no re-slicing.</span>`:'');
+}
+['bSrc','bDst'].forEach(id=>document.getElementById(id).addEventListener('input',drawB)); drawB();
+
+/* ---------------- results chart ---------------- */
+const RS={small:{max:120,ticks:[0,20,40,60,80,100,120],note:"All three setups back to back on one machine per GPU count; Megatron uses its default cross-entropy. Medians of steps 10–59 (4 and 8 GPUs) or 10–99 (1 GPU).",
+  x:["1 GPU","4 GPUs","8 GPUs"], s:[
+  {n:"Megatron, fp32 summing (default)",c:"var(--meg)",v:[22.1,59.3,86.5]},
+  {n:"Megatron, bf16 summing (matched)",c:"var(--meg-soft)",dash:"var(--meg)",v:[22.4,57.6,88.1]},
+  {n:"rdsp, stage-local",c:"var(--accent)",v:[27.8,75.2,113.6]}]},
+ large:{max:300,ticks:[0,50,100,150,200,250,300],note:"Megatron with Transformer Engine cross-entropy and bf16 summing (its fastest matched option) vs rdsp, back to back on one machine per GPU count. 1 GPU: 4 microbatches per step (32,768 tokens), 4 and 8 GPUs: 16 microbatches (131,072 tokens).",
+  x:["1 GPU","4 GPUs","8 GPUs"], s:[
+  {n:"Megatron, TE cross-entropy, bf16 summing",c:"var(--meg)",v:[67.6,174.2,248.4]},
+  {n:"rdsp, stage-local",c:"var(--accent)",v:[74.1,192.8,251.9]}]}};
+let R=RS.small, rel=false;
+function drawR(){
+  const W=760,H=360,l=58,r=16,t=20,b=46, pw=W-l-r, ph=H-t-b;
+  const vals=R.s.map(s=>s.v.map(v=>v==null?null:(rel?v/s.v[0]:v)));
+  const max=R.max, ticks=R.ticks;
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${rel?'Speed-up versus one GPU':'Thousands of tokens per second'} at 1, 4 and 8 GPUs for Megatron and rdsp on pinned H100 machines">`;
+  ticks.forEach(k=>{ const y=t+ph-(k/max)*ph; s+=`<line x1="${l}" y1="${y}" x2="${W-r}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${l-8}" y="${y+4}" text-anchor="end" font-size="12" fill="var(--muted)">${rel?k+'×':k+'k'}</text>`; });
+  const ns=R.s.length, gw=pw/R.x.length, bw=Math.min(48,(gw-30)/3);
+  R.x.forEach((xl,gi)=>{ const cx=l+gw*(gi+.5); s+=`<text x="${cx}" y="${H-18}" text-anchor="middle" font-size="13" fill="var(--body)">${xl}</text>`;
+    R.s.forEach((se,si)=>{ const v=vals[si][gi]; const x=cx-(ns*bw+(ns-1)*2)/2+si*(bw+2);
+      if(v==null){ s+=`<text x="${x+bw/2}" y="${t+ph-6}" text-anchor="middle" font-size="11" fill="var(--muted)">${se.na||'n/m'}</text>`; return; }
+      const h=(v/max)*ph, y=t+ph-h;
+      s+=`<path d="M${x},${t+ph} V${y+4} Q${x},${y} ${x+4},${y} H${x+bw-4} Q${x+bw},${y} ${x+bw},${y+4} V${t+ph} Z" fill="${se.c}"${se.dash?` stroke="${se.dash}" stroke-width="1.5" stroke-dasharray="4 3"`:''}><title>${se.n}, ${xl}: ${rel?v.toFixed(1)+'× vs its own 1 GPU':se.v[gi]+'k tokens/s'}</title></path>`;
+      s+=`<text x="${x+bw/2}" y="${y-6}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--ink)">${rel?v.toFixed(1)+'×':v}</text>`; }); });
+  s+=`<line x1="${l}" y1="${t+ph}" x2="${W-r}" y2="${t+ph}" stroke="var(--muted)" stroke-width="1.5"/></svg>`;
+  document.getElementById('rSvg').innerHTML=s;
+}
+function setR(k){ R=RS[k]; document.getElementById('rSmall').setAttribute('aria-pressed',k==='small'); document.getElementById('rLarge').setAttribute('aria-pressed',k==='large');
+  document.getElementById('rLegend').innerHTML=R.s.map(s=>`<span><i class="sw" style="background:${s.c}${s.dash?';outline:1.5px dashed '+s.dash+';outline-offset:-1.5px':''}"></i>${s.n}</span>`).join('');
+  document.getElementById('rNote').textContent=R.note; drawR(); }
+document.getElementById('rSmall').onclick=()=>setR('small'); document.getElementById('rLarge').onclick=()=>setR('large');
+setR('small');
+
+/* ---------------- loss curves ---------------- */
+const LS = {"meg":[3.3528,3.2403,3.1981,3.1596,3.0609,3.0679,3.1951,2.7387,2.968,2.9474,2.969,3.0696,2.7634,2.9986,2.7195,2.8415,2.8932,2.637,2.739,2.8256,2.8331,3.1227,2.8869,2.7272,2.9677,2.6505,3.0973,2.9398,2.855,3.1556,2.6757,3.2112,2.812,2.8442,2.8555,2.8472,2.7741,2.849,2.8918,2.6854,2.6215,2.8592,2.9016,2.7651,2.7768,2.7329,2.9543,2.6792,2.7901,2.798,2.9069,2.6753,2.9311,2.8652,2.8497,2.837,2.7112,2.6753,2.8209,2.8091,2.933,2.8235,2.6439,2.8687,2.7867,2.9003,2.8105,2.7503,2.6868,2.9739,2.3611,2.7631,2.6764,3.0242,2.8905,2.7104,2.839,2.7802,2.6482,2.3545,2.7471,2.8872,2.6732,2.7969,2.8085,2.8838,2.8652,2.6334,3.0121,2.444,2.5613,2.6614,2.9808,2.7504,2.4418,2.6602,2.9403,2.7831,2.6777,2.5475,2.6993,2.7131,2.7595,2.76,2.7853,2.8178,2.8496,2.8454,2.8561,2.5107,2.9834,2.8041,2.7296,2.745,2.7874,2.91,2.5433,2.6547,2.8701,2.8173,2.9189,2.8984,2.7467,2.8068,2.6578,2.6844,2.9495,3.0922,2.9051,2.5125,2.7748,2.5117,2.6868,2.8605,2.8108,2.5755,2.9029,2.9002,2.7761,2.6924,2.8721,2.4569,2.6486,2.8379,2.4308,3.0162,3.1423,2.677,2.9673,3.1798,2.7593,2.5908,2.8099,2.6258,2.724,2.5142,2.8337,2.5439,2.7407,2.6293,2.556,2.841,2.6595,2.5354,2.7891,3.0835,2.6134,2.6223,2.8056,2.6458,2.9455,2.99,2.6175,2.5232,2.7579,3.0786,2.8639,2.7434,2.766,2.5065,2.671,2.7893,2.9924,2.4355,2.5135,2.4053,2.7985,2.641,2.7562,2.8077,2.9419,2.9124,2.6401,2.6173,2.66,2.87,2.8926,2.5613,2.4311,2.6168,2.4449,2.5051,2.7657,2.3162,2.7325,2.4729,2.5714,2.6872,2.4303,2.3584,3.0888,2.5256,2.7777,2.9453,2.6964,2.7607,2.4712,2.8638,2.7103,2.9719,3.0315,2.6765,2.6512,2.8183,2.7631,2.5121,2.7489,2.7571,2.7493,2.7389,2.5038,2.8356,2.7419,2.6776,2.7639,3.2406,2.9414,2.8083,2.8231,2.648,2.7341,2.8085,2.5859,2.8205,2.718,2.9336,2.8502,2.7143,2.6352,2.6419,2.8401,2.716,2.6682,2.4315,2.7829,2.7959,2.8664,2.6347,2.7263,2.6388,2.8125,2.8729,2.6526,2.7318,2.8294,2.9627,2.5654,2.6673,2.7113,2.6987,2.7761,2.9278,2.9015,2.5853,2.8153,2.6302,2.4796,2.8333,2.8038,2.7359,2.8739,3.1394,2.3799,2.7122,2.9421,2.7128,2.4868,2.5817,2.5947,2.4196,2.6317,2.5302,2.5852,2.8033,2.7209,2.7605,2.8042,2.5724,2.5942,2.6795],"rd":[3.3516,3.291,3.2148,3.1719,3.0664,3.0742,3.2012,2.7734,2.9844,2.959,2.9824,3.0781,2.7715,3.0039,2.7266,2.8457,2.8965,2.6406,2.7441,2.8301,2.8379,3.127,2.8906,2.7266,2.9668,2.6523,3.0996,2.9434,2.8555,3.1582,2.6758,3.2109,2.8125,2.8438,2.8574,2.8477,2.7754,2.8516,2.8945,2.6875,2.623,2.8594,2.9023,2.7637,2.7773,2.7344,2.9551,2.6797,2.793,2.7969,2.9082,2.6777,2.9336,2.8652,2.8516,2.8398,2.709,2.6758,2.8223,2.8105,2.9336,2.8223,2.6445,2.8672,2.7871,2.9023,2.8105,2.7539,2.6875,2.9727,2.3613,2.7656,2.6777,3.0254,2.8945,2.709,2.8379,2.7812,2.6484,2.3555,2.748,2.8867,2.6758,2.7988,2.8086,2.8809,2.8672,2.6348,3.0156,2.4434,2.5625,2.6621,2.9805,2.75,2.4414,2.6562,2.9434,2.7832,2.6797,2.5469,2.6992,2.7109,2.7578,2.7617,2.7832,2.8203,2.8496,2.8457,2.8574,2.5117,2.9805,2.8066,2.7305,2.7441,2.7891,2.9082,2.541,2.6543,2.8691,2.8184,2.918,2.9004,2.748,2.8105,2.6602,2.6836,2.9492,3.0938,2.9062,2.5137,2.7734,2.5137,2.6875,2.8613,2.8086,2.5742,2.9023,2.9004,2.7754,2.6934,2.873,2.459,2.6484,2.8379,2.4316,3.0195,3.1426,2.6777,2.9688,3.1797,2.7578,2.5879,2.8105,2.627,2.7246,2.5137,2.832,2.5449,2.7383,2.6279,2.5547,2.8418,2.6621,2.5352,2.7891,3.082,2.6152,2.6211,2.8066,2.6445,2.9453,2.9902,2.6191,2.5234,2.7578,3.0762,2.8652,2.7441,2.7637,2.5049,2.6719,2.7871,2.9922,2.4355,2.5156,2.4043,2.7988,2.6406,2.7578,2.8066,2.9414,2.9121,2.6387,2.6172,2.6621,2.8711,2.8926,2.5625,2.4297,2.6172,2.4414,2.5059,2.7666,2.3184,2.7305,2.4707,2.5723,2.6855,2.4297,2.3604,3.0879,2.5273,2.7773,2.9473,2.6973,2.7598,2.4688,2.8672,2.709,2.9707,3.0293,2.6777,2.6504,2.8203,2.7656,2.5088,2.748,2.7578,2.7539,2.7402,2.5059,2.8379,2.7422,2.6797,2.7617,3.2422,2.9414,2.8066,2.8242,2.6504,2.7354,2.8086,2.584,2.8184,2.7207,2.9355,2.8516,2.7148,2.6348,2.6396,2.8438,2.7148,2.668,2.4316,2.7832,2.7988,2.8691,2.6348,2.7285,2.6387,2.8105,2.875,2.6523,2.7344,2.8281,2.9629,2.5654,2.666,2.7109,2.6992,2.7793,2.9277,2.9043,2.5859,2.8164,2.6289,2.4805,2.834,2.8027,2.7344,2.873,3.1406,2.3799,2.7129,2.9434,2.7148,2.4863,2.5801,2.5957,2.4199,2.6328,2.5312,2.5859,2.8047,2.7227,2.7578,2.8047,2.5723,2.5957,2.6797],"megT":[7.2872,0.332,0.3155,0.3108,0.3128,0.3147,0.3129,0.3171,0.317,0.3182,0.3148,0.3226,0.3165,0.3125,0.3091,0.3168,0.3109,0.313,0.3133,0.3127,0.3156,0.3168,0.3128,0.312,0.3102,0.3086,0.3075,0.3141,0.3092,0.3109,0.3119,0.309,0.3194,0.3144,0.3108,0.3184,0.3212,0.3211,0.3216,0.3117,0.3182,0.3183,0.3165,0.3205,0.3152,0.3111,0.3134,0.3211,0.3205,0.3189,0.3161,0.3188,0.3167,0.3206,0.3141,0.3129,0.3224,0.3231,0.32,0.3212,0.3125,0.3084,0.3136,0.3134,0.3122,0.3134,0.3134,0.3177,0.3186,0.3075,0.3166,0.3115,0.3161,0.3153,0.3203,0.3166,0.3261,0.3193,0.3167,0.3196,0.3209,0.3192,0.32,0.317,0.3144,0.3131,0.3221,0.3236,0.3188,0.3197,0.3094,0.3109,0.3133,0.3128,0.3149,0.3113,0.3099,0.3151,0.3113,0.3156,0.3143,0.3147,0.3131,0.317,0.3176,0.3183,0.3246,0.3159,0.3233,0.3149,0.313,0.3173,0.3185,0.3217,0.3137,0.3139,0.3107,0.3169,0.3177,0.3168,0.3183,0.3178,0.3175,0.3161,0.3254,0.3265,0.318,0.3191,0.3159,0.3175,0.3158,0.3118,0.3177,0.3152,0.3145,0.3147,0.3171,0.3164,0.316,0.312,0.3113,0.3166,0.3119,0.313,0.3138,0.315,0.3128,0.3099,0.3146,0.3189,0.3165,0.316,0.3163,0.3186,0.3167,0.3129,0.3123,0.3071,0.3149,0.3141,0.3181,0.3175,0.3132,0.3169,0.3171,0.3169,0.3128,0.3172,0.3166,0.3181,0.3159,0.3183,0.3122,0.321,0.3184,0.3214,0.4939,0.3145,0.3139,0.3141,0.3145,0.3133,0.3152,0.3219,0.3134,0.3126,0.3126,0.3128,0.3116,0.3116,0.3103,0.3144,0.3139,0.3123,0.3124,0.3086,0.3144,0.3164,0.3122,0.3188,0.3242,0.3188,0.3152,0.3129,0.3129,0.3134,0.3154,0.3167,0.3154,0.3178,0.3181,0.3172,0.3175,0.3192,0.3188,0.3256,0.3222,0.3204,0.3197,0.3182,0.3179,0.3173,0.3223,0.3148,0.3179,0.3185,0.3157,0.3197,0.3173,0.3228,0.3245,0.3179,0.3177,0.315,0.318,0.3171,0.3184,0.3272,0.3269,0.3241,0.3248,0.3263,0.331,0.3305,0.3313,0.3256,0.3311,0.3334,0.3334,0.3327,0.3359,0.3358,0.3353,0.3373,0.3366,0.3368,0.3365,0.3378,0.3388,0.3394,0.3419,0.3453,0.3409,0.3472,0.3416,0.3438,0.3424,0.3399,0.3454,0.3433,0.3397,0.342,0.345,0.3397,0.3388,0.3436,0.3357,0.3411,0.3409,0.3341,0.3409,0.338,0.3345,0.3388,0.3399,0.3343,0.335,0.3389,0.3357,0.3377,0.3322,0.3282,0.3282,0.3277,0.3263,0.3255,0.3294,0.3286,0.3286,0.3296],"rdT":[11.9393,0.2564,0.2544,0.261,0.2599,0.2577,0.2501,0.2529,0.2533,0.255,0.2485,0.2586,0.2537,0.2519,0.2513,0.25,0.2578,0.2558,0.2514,0.2536,0.253,0.2582,0.2559,0.2535,0.2544,0.2503,0.2462,0.2509,0.2475,0.2506,0.2492,0.2498,0.2468,0.2486,0.2498,0.2443,0.2445,0.2449,0.2457,0.2417,0.2448,0.2455,0.2441,0.2405,0.2439,0.2447,0.2498,0.2444,0.2454,0.2441,0.2441,0.2443,0.2442,0.2512,0.2468,0.2449,0.2461,0.2468,0.245,0.2455,0.2494,0.2535,0.2539,0.2523,0.2469,0.245,0.2467,0.2479,0.2469,0.2441,0.2435,0.2428,0.2432,0.2462,0.2423,0.2459,0.2436,0.2416,0.2447,0.2406,0.2415,0.2445,0.2406,0.2469,0.2431,0.2389,0.2426,0.245,0.2457,0.2439,0.2478,0.2428,0.2477,0.2457,0.2452,0.2475,0.2423,0.245,0.2463,0.247,0.2447,0.2507,0.2466,0.2433,0.2424,0.2445,0.2474,0.2462,0.2432,0.2475,0.2457,0.2461,0.2453,0.2435,0.2409,0.2454,0.2448,0.2453,0.2444,0.239,0.2414,0.2422,0.241,0.2384,0.2397,0.2426,0.2365,0.2428,0.2373,0.2381,0.2409,0.2399,0.2406,0.2408,0.2368,0.2368,0.241,0.2409,0.2404,0.238,0.2408,0.2396,0.2414,0.2399,0.2407,0.238,0.2399,0.2384,0.2403,0.2432,0.2398,0.2447,0.2476,0.2495,0.2468,0.2516,0.2439,0.2442,0.2478,0.2495,0.2436,0.2488,0.248,0.2493,0.2495,0.26,0.2501,0.2534,0.2496,0.2475,0.2496,0.2457,0.2483,0.2482,0.2472,0.2444,0.245,0.247,0.2479,0.2424,0.2454,0.2455,0.2515,0.2487,0.2482,0.2468,0.245,0.2461,0.2451,0.2459,0.2475,0.2518,0.2493,0.2488,0.2479,0.2475,0.2514,0.2484,0.2484,0.2531,0.2504,0.2533,0.2513,0.2508,0.251,0.2526,0.2513,0.2494,0.2445,0.2455,0.2514,0.2507,0.2486,0.2493,0.2562,0.2477,0.2502,0.2459,0.2489,0.2433,0.2541,0.2502,0.2486,0.2475,0.2508,0.2513,0.251,0.2511,0.2495,0.2455,0.2469,0.2439,0.2465,0.2469,0.2429,0.2446,0.2484,0.251,0.2526,0.2465,0.249,0.2499,0.2467,0.2496,0.2509,0.2468,0.2489,0.2467,0.2554,0.2547,0.2532,0.2473,0.2487,0.2515,0.2523,0.2465,0.2475,0.2501,0.2448,0.2439,0.2445,0.2434,0.2471,0.2427,0.2473,0.2492,0.2485,0.2422,0.2512,0.2531,0.2499,0.2485,0.2566,0.2501,0.253,0.2504,0.2497,0.2521,0.2516,0.2443,0.2421,0.2419,0.2407,0.2409,0.2446,0.2477,0.2526,0.2449,0.2504,0.25,0.2488,0.2487,0.2519,0.2501,0.2488,0.2514,0.2474,0.248,0.2474,0.2437]};
+let lByTime=false, lSmooth=true;
+function cum(a){ let s=0; return a.map((v,i)=>i===0?0:(s+=v)); } /* step 0 = warm-up, excluded */
+function smooth(a,w){ return a.map((_,i)=>{ const lo=Math.max(0,i-w+1); let s=0; for(let j=lo;j<=i;j++) s+=a[j]; return s/(i-lo+1); }); }
+function drawL(){
+  const W=760,H=340,l=56,r=16,t=16,b=44,pw=W-l-r,ph=H-t-b;
+  const series=[{n:"Megatron-Core",c:"var(--meg)",y:LS.meg,x:cum(LS.megT)},{n:"rdsp",c:"var(--accent)",y:LS.rd,x:cum(LS.rdT)}];
+  series.forEach(s=>{ s.ys=lSmooth?smooth(s.y,20):s.y; s.xs=lByTime?s.x:s.y.map((_,i)=>i); });
+  const xmax=lByTime?Math.ceil(Math.max(...series.map(s=>s.xs[s.xs.length-1]))/10)*10:300;
+  const ymin=2.4, ymax=3.6;
+  const X=v=>l+v/xmax*pw, Y=v=>t+(1-(v-ymin)/(ymax-ymin))*ph;
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Training loss over ${lByTime?'seconds':'steps'} for Megatron and rdsp; the two curves overlap, both falling from 3.35 to about 2.68">`;
+  for(let v=2.4; v<=3.61; v+=0.2){ s+=`<line x1="${l}" y1="${Y(v)}" x2="${W-r}" y2="${Y(v)}" stroke="var(--line)"/><text x="${l-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)">${v.toFixed(1)}</text>`; }
+  const xt=lByTime?[0,20,40,60,80,100]:[0,50,100,150,200,250,300];
+  xt.filter(v=>v<=xmax).forEach(v=>{ s+=`<text x="${X(v)}" y="${H-22}" text-anchor="middle" font-size="12" fill="var(--muted)">${v}${lByTime?' s':''}</text>`; });
+  s+=`<text x="${l+pw/2}" y="${H-4}" text-anchor="middle" font-size="12.5" fill="var(--body)">${lByTime?'wall-clock seconds':'training step'}</text>`;
+  series.forEach(se=>{ s+=`<polyline fill="none" stroke="${se.c}" stroke-width="2" stroke-linejoin="round" points="${se.ys.map((v,i)=>X(se.xs[i]).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/>`;
+    const i=se.ys.length-1; s+=`<circle cx="${X(se.xs[i])}" cy="${Y(se.ys[i])}" r="4" fill="${se.c}"/>`; });
+  s+=`<line id="lCross" x1="0" y1="${t}" x2="0" y2="${t+ph}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  s+=`<rect id="lHit" x="${l}" y="${t}" width="${pw}" height="${ph}" fill="transparent"/></svg><div id="lTip" class="stat" style="min-height:26px"></div>`;
+  const box=document.getElementById('lSvg'); box.innerHTML=s;
+  const svg=box.querySelector('svg'), hit=svg.querySelector('#lHit'), cross=svg.querySelector('#lCross'), tipEl=document.getElementById('lTip');
+  function at(xv){ return series.map(se=>{ let k=0; while(k<se.xs.length-1 && se.xs[k+1]<=xv) k++; return {n:se.n,c:se.c,v:se.ys[k],step:k}; }); }
+  hit.addEventListener('mousemove',e=>{ const r=svg.getBoundingClientRect(); const px=(e.clientX-r.left)*(W/r.width); const xv=(px-l)/pw*xmax;
+    cross.setAttribute('x1',px); cross.setAttribute('x2',px); cross.setAttribute('visibility','visible');
+    tipEl.innerHTML=at(xv).map(o=>`<span><i class="sw" style="background:${o.c}"></i> ${o.n}: <b>${o.v.toFixed(4)}</b> (step ${o.step})</span>`).join('')+(lByTime?`<span>at ${xv.toFixed(1)} s</span>`:''); });
+  hit.addEventListener('mouseleave',()=>{ cross.setAttribute('visibility','hidden'); tipEl.innerHTML=''; });
+}
+const ls1=document.getElementById('lStep'), ls2=document.getElementById('lTime');
+ls1.onclick=()=>{lByTime=false; ls1.setAttribute('aria-pressed','true'); ls2.setAttribute('aria-pressed','false'); drawL();};
+ls2.onclick=()=>{lByTime=true; ls2.setAttribute('aria-pressed','true'); ls1.setAttribute('aria-pressed','false'); drawL();};
+document.getElementById('lSmooth').addEventListener('change',e=>{lSmooth=e.target.checked; drawL();});
+drawL();
+
+/* ---------------- matched loss curves (1/4/8 GPUs) ---------------- */
+const MS={"1":{"mf":[3.3371,3.2939,3.1485,3.0645,3.0588,3.13,2.9931,2.8608,2.8397,2.8408,3.0357,2.8635,2.8533,3.0646,3.0527,2.9819,2.8715,2.8949,2.8523,2.824,2.7799,2.8664,2.7955,2.8431,2.8273,2.8201,2.9348,2.8753,2.7217,2.8467,2.9086,2.7838,2.8711,2.8039,2.8571,2.5898,2.8726,2.8193,2.837,2.5233,2.836,2.752,2.872,2.7712,2.754,2.6333,2.8832,2.5669,2.8826,2.6286,2.725,2.777,2.8217,2.8654,2.7042,2.9122,2.75,2.8667,2.6182,2.8561,2.9257,2.8004,2.6823,3.0326,2.7278,2.6545,2.7919,2.7095,2.9184,2.7461,2.6727,2.7555,2.7359,2.9212,3.0886,2.6866,2.7316,2.6284,2.6989,2.6987,2.7098,2.6063,2.9529,2.6318,2.7377,2.9746,2.5793,2.9327,2.816,2.6482,2.7458,2.7251,2.479,2.7366,2.7955,2.9384,2.6413,2.7789,2.7376,2.5379,2.4879,2.5537,2.6177,2.6398,2.4085,2.8199,2.8758,2.745,2.6865,2.8587,2.8663,2.7493,2.6535,2.7697,2.7563,2.6802,2.7214,3.0192,2.8887,2.7517,2.7814,2.7211,2.8365,2.7931,2.6509,2.7885,2.5601,2.799,2.7606,2.6923,2.8531,2.7077,2.9097,2.644,2.7173,2.862,2.7541,2.7365,2.6675,2.7814,3.0127,2.5645,2.842,2.5437,2.5096,2.5893,2.6993,2.7531,2.6976,2.6481],"mb":[3.3371,3.294,3.1482,3.0648,3.059,3.1299,2.9934,2.8609,2.84,2.8414,3.0362,2.8632,2.8533,3.0649,3.0529,2.9816,2.8713,2.8947,2.8526,2.8241,2.7796,2.8664,2.7958,2.843,2.8269,2.8204,2.9347,2.8753,2.7219,2.8467,2.9082,2.7842,2.8714,2.8039,2.8566,2.5895,2.8726,2.8194,2.8367,2.5231,2.836,2.7521,2.8721,2.771,2.7539,2.6327,2.8832,2.5666,2.8825,2.6287,2.7245,2.7768,2.821,2.8651,2.7044,2.9119,2.7499,2.8667,2.6183,2.8557,2.9257,2.8,2.6825,3.0325,2.7281,2.6543,2.7917,2.7099,2.9181,2.7458,2.6727,2.7554,2.7358,2.9215,3.0888,2.6867,2.7315,2.6282,2.6995,2.6989,2.7099,2.6062,2.9529,2.6316,2.7378,2.9747,2.5791,2.9323,2.8157,2.6482,2.7456,2.7247,2.4786,2.7365,2.7953,2.9382,2.6413,2.7786,2.7377,2.538,2.4879,2.5537,2.6175,2.6397,2.4081,2.8198,2.8752,2.7449,2.6864,2.8586,2.8663,2.7495,2.6532,2.7696,2.7561,2.68,2.7217,3.0186,2.8884,2.7516,2.7815,2.7211,2.8364,2.7929,2.6503,2.7881,2.5598,2.7993,2.7603,2.6923,2.853,2.7078,2.9095,2.6441,2.7172,2.8621,2.7547,2.7362,2.6677,2.7817,3.0128,2.5643,2.8423,2.5432,2.5096,2.5891,2.6986,2.7532,2.698,2.6475],"rd":[3.3369,3.3438,3.1689,3.0781,3.0557,3.1367,3.0,2.8955,2.8545,2.8506,3.0469,2.874,2.8613,3.0723,3.0596,2.9873,2.876,2.8984,2.8545,2.8271,2.7822,2.8691,2.7988,2.8457,2.8301,2.8223,2.9395,2.877,2.7227,2.8486,2.9141,2.7842,2.873,2.8066,2.8584,2.5918,2.873,2.8213,2.8389,2.5215,2.8369,2.7529,2.8721,2.7734,2.7539,2.6318,2.8848,2.5679,2.8838,2.6299,2.7266,2.7803,2.8232,2.8662,2.7061,2.9121,2.7529,2.8672,2.6191,2.8545,2.9277,2.7998,2.6826,3.0342,2.7295,2.6562,2.791,2.7109,2.916,2.748,2.6719,2.7568,2.7373,2.9189,3.0889,2.6855,2.7305,2.6299,2.6992,2.6987,2.7109,2.6055,2.9541,2.6328,2.7383,2.9756,2.5811,2.9316,2.8174,2.6465,2.7451,2.7275,2.4795,2.7363,2.7959,2.9385,2.6406,2.7783,2.7368,2.5371,2.4888,2.5562,2.6191,2.6396,2.4082,2.8213,2.876,2.7441,2.6875,2.8584,2.8682,2.75,2.6543,2.7725,2.7559,2.6797,2.7207,3.0205,2.8896,2.7539,2.7812,2.7207,2.8369,2.793,2.6514,2.7881,2.5586,2.7998,2.7607,2.6914,2.8545,2.709,2.9111,2.646,2.7197,2.8613,2.7529,2.7363,2.667,2.7793,3.0127,2.5649,2.8428,2.5449,2.5078,2.5889,2.6973,2.7559,2.6992,2.6475]},"4":{"mf":[3.3371,3.2937,3.1475,3.0648,3.0589,3.13,2.9934,2.861,2.84,2.8409,3.0364,2.8633,2.8531,3.0648,3.053,2.9815,2.8713,2.8951,2.8524,2.8242,2.7795,2.8668,2.7955,2.8433,2.8277,2.8201,2.9347,2.8752,2.7222,2.8466,2.9086,2.7839,2.871,2.804,2.8568,2.5899,2.8728,2.819,2.8364,2.523,2.8363,2.7522,2.8725,2.7712,2.754,2.6332,2.8833,2.5665,2.8826,2.6289,2.725,2.7769,2.8219,2.8655,2.7044,2.9121,2.7502,2.867,2.6186,2.856,2.9254,2.8004,2.6824,3.0325,2.7281,2.6544,2.7919,2.7094,2.9186,2.7463,2.6725,2.7555,2.7357,2.9215,3.0889,2.6868,2.7319,2.6283,2.6996,2.6984,2.7101,2.6067,2.9528,2.6318,2.738,2.9749,2.5792,2.9326,2.8156,2.6482,2.7462,2.7247,2.479,2.7365,2.7951,2.9381,2.6412,2.7786,2.7378,2.5376,2.4877,2.5538,2.6177,2.6401,2.4083,2.8199,2.8757,2.7447,2.6864,2.8589,2.8667,2.7493,2.6534,2.7699,2.7562,2.6801,2.7214,3.0193,2.8885,2.7513,2.7811,2.721,2.8363,2.7929,2.6506,2.7884,2.5597,2.799,2.7611,2.6918,2.8529,2.7075,2.9103,2.6439,2.717,2.862,2.7544,2.7364,2.6676,2.7814,3.0124,2.5643,2.8424,2.5433,2.5093,2.5889,2.6989,2.7533,2.6981,2.6474],"mb":[3.3371,3.2936,3.1477,3.0647,3.0589,3.1301,2.9935,2.8609,2.8402,2.8407,3.036,2.8633,2.8532,3.0648,3.0531,2.9818,2.8713,2.8949,2.8522,2.8243,2.78,2.8666,2.7956,2.8428,2.8272,2.8204,2.9351,2.8754,2.722,2.8468,2.9085,2.7841,2.871,2.804,2.857,2.5897,2.8729,2.8189,2.8367,2.5228,2.8365,2.7518,2.8724,2.7714,2.7541,2.6328,2.8835,2.5666,2.883,2.6285,2.7245,2.7768,2.8217,2.8654,2.7044,2.9123,2.7501,2.867,2.6187,2.8557,2.9259,2.8001,2.6825,3.0325,2.7282,2.6544,2.792,2.7095,2.9186,2.7459,2.6728,2.7558,2.7357,2.9213,3.0887,2.6866,2.7317,2.6281,2.6993,2.6983,2.7104,2.6068,2.9528,2.6313,2.7379,2.9747,2.5792,2.9327,2.8157,2.6481,2.7456,2.7249,2.4791,2.7366,2.7956,2.9383,2.6412,2.7788,2.7377,2.5376,2.4881,2.5538,2.6176,2.6396,2.4082,2.8199,2.8758,2.7449,2.6866,2.8587,2.8666,2.7499,2.6533,2.7696,2.756,2.68,2.7217,3.0188,2.8886,2.7517,2.7813,2.7207,2.8366,2.7929,2.6505,2.7881,2.5601,2.7984,2.7609,2.6922,2.8529,2.7079,2.9101,2.644,2.7169,2.8621,2.7546,2.7363,2.6675,2.7816,3.0122,2.5643,2.8422,2.5434,2.509,2.5888,2.699,2.7534,2.6979,2.6479],"rd":[3.3369,3.3438,3.1689,3.0771,3.0547,3.1367,3.0,2.8965,2.8545,2.8506,3.0459,2.875,2.8594,3.0732,3.0605,2.9854,2.876,2.8984,2.8574,2.8281,2.7842,2.8691,2.7979,2.8467,2.8301,2.8223,2.9395,2.875,2.7236,2.8496,2.9141,2.7842,2.873,2.8066,2.8574,2.5918,2.873,2.8213,2.8398,2.5225,2.8369,2.7529,2.8721,2.7734,2.7539,2.6328,2.8838,2.5669,2.8828,2.6289,2.7256,2.7783,2.8232,2.8652,2.707,2.9102,2.752,2.8672,2.6201,2.8535,2.9277,2.8008,2.6816,3.0342,2.7295,2.6553,2.791,2.7109,2.9189,2.7471,2.6748,2.7578,2.7363,2.9209,3.0889,2.6865,2.7314,2.6299,2.6992,2.7002,2.7119,2.6064,2.9541,2.6328,2.7402,2.9756,2.5811,2.9336,2.8184,2.6455,2.7461,2.7275,2.4805,2.7373,2.7969,2.9395,2.6406,2.7793,2.7363,2.5371,2.4888,2.5562,2.6182,2.6416,2.4092,2.8213,2.877,2.7441,2.6875,2.8604,2.8691,2.75,2.6543,2.7715,2.7549,2.6797,2.7207,3.0205,2.8896,2.7529,2.7812,2.7207,2.8359,2.793,2.6504,2.7891,2.5596,2.7979,2.7607,2.6914,2.8545,2.708,2.9111,2.6479,2.7168,2.8623,2.7539,2.7373,2.6689,2.7803,3.0127,2.564,2.8428,2.5449,2.5107,2.5908,2.6982,2.7539,2.6992,2.6494]},"8":{"mf":[3.3371,3.2938,3.1482,3.0646,3.0589,3.1301,2.9929,2.8612,2.8401,2.841,3.0359,2.8633,2.8533,3.0649,3.0528,2.9819,2.8712,2.8946,2.8522,2.8241,2.7794,2.8664,2.7959,2.8427,2.8275,2.8202,2.9347,2.8752,2.7219,2.8466,2.9085,2.7837,2.871,2.8038,2.8569,2.5898,2.8728,2.8191,2.8364,2.5229,2.8362,2.7521,2.8725,2.771,2.754,2.633,2.8835,2.5661,2.8826,2.6283,2.725,2.7767,2.8214,2.8653,2.7041,2.9122,2.75,2.8668,2.6183,2.8557,2.9256,2.8002,2.6823,3.0327,2.7279,2.654,2.7918,2.7095,2.9184,2.7459,2.6726,2.7557,2.7357,2.9213,3.0887,2.6868,2.7318,2.6281,2.6991,2.6986,2.7098,2.607,2.9528,2.6312,2.7375,2.9743,2.5791,2.9326,2.8159,2.6485,2.7459,2.7254,2.4789,2.7364,2.7956,2.9381,2.6414,2.7788,2.7378,2.5375,2.4882,2.554,2.6178,2.6397,2.408,2.8196,2.8754,2.745,2.6868,2.8585,2.8668,2.7492,2.6532,2.7692,2.756,2.6797,2.7215,3.0191,2.8884,2.7518,2.7813,2.7213,2.8367,2.793,2.6506,2.7886,2.5604,2.7991,2.7608,2.6918,2.8528,2.7077,2.91,2.6441,2.7174,2.8618,2.7545,2.7359,2.6678,2.7814,3.013,2.5643,2.8422,2.5437,2.5092,2.5891,2.6989,2.7532,2.6978,2.6474],"mb":[3.3371,3.2937,3.1481,3.0644,3.0591,3.1301,2.993,2.8612,2.8402,2.8411,3.0357,2.8634,2.8532,3.0649,3.0529,2.9819,2.8715,2.8946,2.8522,2.8242,2.7798,2.8664,2.796,2.843,2.8272,2.8201,2.9347,2.8752,2.7217,2.8466,2.9084,2.784,2.871,2.8036,2.8567,2.5897,2.8727,2.8194,2.8363,2.5229,2.8364,2.7519,2.8723,2.7708,2.7539,2.6328,2.8833,2.5664,2.8823,2.6285,2.7245,2.7765,2.8218,2.8653,2.7045,2.9126,2.75,2.8669,2.6183,2.8561,2.9256,2.8002,2.6828,3.0323,2.7279,2.6544,2.792,2.7095,2.9183,2.7461,2.6725,2.7562,2.736,2.9214,3.0886,2.6867,2.7315,2.628,2.6994,2.6985,2.7096,2.6062,2.9527,2.6319,2.7378,2.9745,2.5791,2.9324,2.8156,2.6483,2.7458,2.7248,2.4789,2.7361,2.7953,2.938,2.6414,2.7785,2.7377,2.5376,2.4877,2.5538,2.6175,2.6398,2.4083,2.8199,2.8762,2.7447,2.6862,2.8584,2.8664,2.7497,2.6534,2.7697,2.756,2.68,2.7217,3.0189,2.8884,2.7516,2.7815,2.721,2.8367,2.7927,2.6506,2.788,2.5598,2.7994,2.7612,2.6921,2.8527,2.7078,2.9101,2.6437,2.7165,2.862,2.7544,2.7362,2.6678,2.7814,3.0124,2.5643,2.8422,2.5436,2.5091,2.5891,2.699,2.7533,2.6979,2.6478],"rd":[3.3369,3.3428,3.1689,3.0771,3.0557,3.1367,2.999,2.8955,2.8545,2.8496,3.0469,2.875,2.8604,3.0723,3.0596,2.9863,2.875,2.8984,2.8545,2.8271,2.7842,2.8691,2.7979,2.8467,2.8301,2.8223,2.9404,2.8789,2.7236,2.8506,2.9131,2.7852,2.873,2.8066,2.8574,2.5908,2.874,2.8213,2.8389,2.5244,2.8369,2.7529,2.873,2.7734,2.7539,2.6318,2.8838,2.5669,2.8838,2.6299,2.7256,2.7793,2.8213,2.8652,2.7061,2.9121,2.752,2.8672,2.6196,2.8545,2.9277,2.7998,2.6816,3.0342,2.7295,2.6553,2.79,2.7109,2.917,2.7471,2.6748,2.7568,2.7363,2.9199,3.0889,2.6855,2.7314,2.6309,2.7002,2.6992,2.7119,2.6064,2.9561,2.6338,2.7393,2.9736,2.5811,2.9316,2.8174,2.6465,2.7451,2.7266,2.4785,2.7373,2.7949,2.9395,2.6406,2.7793,2.7368,2.5371,2.4878,2.5552,2.6182,2.6387,2.4092,2.8193,2.876,2.7451,2.6875,2.8594,2.8691,2.75,2.6543,2.7715,2.7559,2.6797,2.7207,3.0195,2.8906,2.7529,2.7803,2.7197,2.8369,2.793,2.6504,2.7891,2.5596,2.7998,2.7607,2.6914,2.8545,2.707,2.9111,2.6475,2.7168,2.8633,2.7539,2.7383,2.6699,2.7803,3.0146,2.5649,2.8428,2.5449,2.5098,2.5908,2.6982,2.7549,2.6982,2.6494]}};
+let mK="8", mSm=true;
+function drawM(){
+  const W=760,H=320,l=56,r=16,t=16,b=44,pw=W-l-r,ph=H-t-b, d=MS[mK], n=d.rd.length;
+  const series=[{n:"Megatron, fp32 summing",c:"var(--meg)",y:d.mf},{n:"Megatron, bf16 summing",c:"var(--first)",y:d.mb},{n:"rdsp",c:"var(--accent)",y:d.rd}];
+  series.forEach(s=>s.ys=mSm?smooth(s.y,10):s.y);
+  const ymin=2.4,ymax=3.6, X=i=>l+i/(n-1)*pw, Y=v=>t+(1-(v-ymin)/(ymax-ymin))*ph;
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Training loss over 150 steps at ${mK} GPU(s): Megatron fp32, Megatron bf16 and rdsp overlap, falling from 3.34 to about 2.65">`;
+  for(let v=2.4; v<=3.61; v+=0.2){ s+=`<line x1="${l}" y1="${Y(v)}" x2="${W-r}" y2="${Y(v)}" stroke="var(--line)"/><text x="${l-8}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--muted)">${v.toFixed(1)}</text>`; }
+  [0,25,50,75,100,125,149].forEach(v=>{ s+=`<text x="${X(v)}" y="${H-22}" text-anchor="middle" font-size="12" fill="var(--muted)">${v}</text>`; });
+  s+=`<text x="${l+pw/2}" y="${H-4}" text-anchor="middle" font-size="12.5" fill="var(--body)">training step</text>`;
+  series.forEach(se=>{ s+=`<polyline fill="none" stroke="${se.c}" stroke-width="2" stroke-linejoin="round" points="${se.ys.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/>`; });
+  s+=`<line id="mCross" x1="0" y1="${t}" x2="0" y2="${t+ph}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/><rect id="mHit" x="${l}" y="${t}" width="${pw}" height="${ph}" fill="transparent"/></svg><div id="mTip" class="stat" style="min-height:26px"></div>`;
+  const box=document.getElementById('mSvg'); box.innerHTML=s;
+  const svg=box.querySelector('svg'), hit=svg.querySelector('#mHit'), cr=svg.querySelector('#mCross'), tip=document.getElementById('mTip');
+  hit.addEventListener('mousemove',e=>{ const rc=svg.getBoundingClientRect(); const px=(e.clientX-rc.left)*(W/rc.width); const i=Math.max(0,Math.min(n-1,Math.round((px-l)/pw*(n-1))));
+    cr.setAttribute('x1',X(i)); cr.setAttribute('x2',X(i)); cr.setAttribute('visibility','visible');
+    tip.innerHTML=`<span>step ${i}</span>`+series.map(o=>`<span><i class="sw" style="background:${o.c}"></i> ${o.n}: <b>${o.ys[i].toFixed(4)}</b></span>`).join(''); });
+  hit.addEventListener('mouseleave',()=>{ cr.setAttribute('visibility','hidden'); tip.innerHTML=''; });
+}
+document.querySelectorAll('#mPanel [data-k]').forEach(bt=>bt.onclick=()=>{ mK=bt.dataset.k; document.querySelectorAll('#mPanel [data-k]').forEach(x=>x.setAttribute('aria-pressed',x===bt?'true':'false')); drawM(); });
+document.getElementById('mSmooth').addEventListener('change',e=>{mSm=e.target.checked; drawM();});
+drawM();
+
+/* ---------------- 1-GPU time breakdown ---------------- */
+const GB=[{g:"Small microbatches (2,048 tokens)",rows:[["Megatron, default CE",482,713,"var(--meg)"],["rdsp",437,577,"var(--accent)"]]},
+         {g:"Large microbatches (8,192 tokens)",rows:[["Megatron, default CE",385,202,"var(--meg)"],["Megatron, TE CE",322,163,"var(--meg)"],["rdsp",342,100,"var(--accent)"]]}];
+(function drawG(){
+  const W=760,l=190,r=60,pw=W-l-r,max=1200,bh=24,gap=10; let y=10, s="";
+  const X=v=>l+v/max*pw;
+  GB.forEach(gr=>{ s+=`<text x="0" y="${y+14}" font-size="13" font-weight="600" fill="var(--ink)">${gr.g}</text>`; y+=26;
+    gr.rows.forEach(([n,busy,idle,c])=>{
+      s+=`<text x="${l-10}" y="${y+bh/2+4}" text-anchor="end" font-size="12.5" fill="var(--body)">${n}</text>`;
+      s+=`<rect x="${l}" y="${y}" width="${X(busy)-l}" height="${bh}" rx="3" fill="${c}"><title>${n}: GPU computing ${busy} ms per step</title></rect>`;
+      s+=`<rect x="${X(busy)+2}" y="${y}" width="${Math.max(0,X(busy+idle)-X(busy)-2)}" height="${bh}" rx="3" fill="var(--sunk)" stroke="var(--line)"><title>${n}: GPU idle ${idle} ms per step</title></rect>`;
+      s+=`<text x="${X(busy+idle)+6}" y="${y+bh/2+4}" font-size="12" font-weight="600" fill="var(--ink)">${busy+idle} ms</text>`;
+      y+=bh+gap; }); y+=10; });
+  [0,300,600,900,1200].forEach(v=>{ s=`<line x1="${X(v)}" y1="30" x2="${X(v)}" y2="${y-10}" stroke="var(--line)"/><text x="${X(v)}" y="${y+4}" text-anchor="middle" font-size="12" fill="var(--muted)">${v} ms</text>`+s; });
+  document.getElementById('gSvg').innerHTML=`<svg width="${W}" height="${y+12}" viewBox="0 0 ${W} ${y+12}" role="img" aria-label="Step time split into GPU computing and GPU idle. Small microbatches: Megatron 482 computing plus 713 idle, rdsp 437 plus 577. Large microbatches: Megatron default CE 385 plus 202, Megatron TE CE 322 plus 163, rdsp 342 plus 100 milliseconds.">${s}</svg>`;
+})();
+})();
+</script>

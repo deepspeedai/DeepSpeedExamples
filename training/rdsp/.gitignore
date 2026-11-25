@@ -1,0 +1,41 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.cache/
+.DS_Store
+*.egg-info/
+dist/
+build/
+
+# raw run logs and profiles
+bench/results/
+
+# bench_oct10: the working folder of the October-November benchmark rounds
+# (plans, queues, notes, raw logs, profiles).
+bench_oct10/
+
+# what the bench/ scripts write when they run stays local...
+bench/**/logs*/*
+bench/**/profiles*/
+bench/**/prep/
+bench/mimo_vs_rdsp/sweep/
+bench/mimo_vs_rdsp/convert.log
+*.sqlite
+*.nsys-rep
+*.qdrep
+*.pt.trace.json
+*.dmon
+
+# benchmark logs and raw results stay local: docs/REPRODUCE.md names the log
+# each run writes; the write-ups (*.md) are kept
+bench/published/
+bench/blog_round/logs27b/
+bench/encoder_test/results/**
+!bench/encoder_test/results/**/
+!bench/encoder_test/results/**/*.md
+bench/torchtitan/results/data_check.txt
+
+# nCompass profiling plugin's working files
+ncompass/

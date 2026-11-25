@@ -1,0 +1,9 @@
+<section id="cover" data-transition="fade" style="background:#16202B; color:#EDEBE4; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px; display:flex; flex-direction:column; gap:40px; justify-content:space-between">
+
+<p style="font-size:26px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#5CC7B1">rdsp · project review · September 2026</p>
+<h1 style="font-size:104px; font-weight:600; line-height:1.05; color:#EDEBE4; width:1500px">Training one model across many GPUs, with Ray between the pieces</h1>
+<div style="flex:1"></div>
+<p style="font-size:32px; line-height:1.4; color:#B9C3CC; width:1400px">Pipeline parallelism on Ray + DeepSpeed: what we built, how it compares with NVIDIA Megatron, and where it falls short.</p>
+
+<aside>rdsp = ray_deepspeed_pipeline. External package: splits a Hugging Face model by depth into stages, each stage a group of Ray workers running an ordinary DeepSpeed engine. Deck covers design, correctness evidence, the Megatron benchmark, the profile that led to the stage-local redesign, and limitations.</aside>
+</section>

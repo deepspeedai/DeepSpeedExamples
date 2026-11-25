@@ -1,0 +1,71 @@
+{
+ "v": 4,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-09-23T15:20:00Z"
+ },
+ "title": "rdsp: Pipeline Parallelism on Ray + DeepSpeed",
+ "order": [
+  "cover",
+  "goal",
+  "built",
+  "arch",
+  "step",
+  "shapes",
+  "versus",
+  "correct",
+  "bugs",
+  "ckpt",
+  "profile",
+  "fix",
+  "setup",
+  "headline",
+  "why",
+  "gpubound",
+  "loss",
+  "scaling",
+  "balanced",
+  "nothelp",
+  "conclusions",
+  "limits",
+  "next",
+  "detail"
+ ],
+ "sections": {
+  "intro": {
+   "description": "What rdsp is for and where it stands",
+   "start": "cover"
+  },
+  "design": {
+   "description": "How it works and how it differs from Megatron",
+   "start": "arch"
+  },
+  "correct": {
+   "description": "Evidence that the split model trains like the unsplit one",
+   "start": "correct"
+  },
+  "perf": {
+   "description": "The profile, the fix, and the benchmark against Megatron",
+   "start": "profile"
+  },
+  "close": {
+   "description": "Conclusions, limitations and future work",
+   "start": "conclusions"
+  },
+  "appendix": {
+   "description": "Earlier first-design grid",
+   "start": "detail"
+  }
+ },
+ "faces": {
+  "ibm-plex-sans": {
+   "family": "IBM Plex Sans",
+   "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap"
+  },
+  "jetbrains-mono": {
+   "family": "JetBrains Mono",
+   "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap"
+  }
+ },
+ "designSystems": []
+}

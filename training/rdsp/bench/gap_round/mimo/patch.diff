@@ -1,0 +1,24 @@
+343a344,347
+>     if os.environ.get("MIMO_RECOMPUTE") == "1":
+>         standard_provider.recompute_granularity = "full"
+>         standard_provider.recompute_method = "uniform"
+>         standard_provider.recompute_num_layers = 1
+1009,1010c1013,1014
+<     optimizer_cfg.use_precision_aware_optimizer = False
+<     optimizer_cfg.main_grads_dtype = torch.float32
+---
+>     optimizer_cfg.use_precision_aware_optimizer = True
+>     optimizer_cfg.main_grads_dtype = torch.bfloat16
+1011a1016
+>     optimizer_cfg.store_param_remainders = True
+1056c1061
+<             grad_reduce_in_fp32=True,
+---
+>             grad_reduce_in_fp32=False,
+1066c1071,1074
+<     cfg.mixed_precision = "bf16_mixed" if not args.fp32 else None
+---
+>     from megatron.bridge.training.mixed_precision import bf16_mixed as _bf16_mixed
+>     _mp = _bf16_mixed()
+>     _mp.grad_reduce_in_fp32 = False
+>     cfg.mixed_precision = _mp if not args.fp32 else None

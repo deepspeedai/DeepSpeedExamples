@@ -1,0 +1,1 @@
+mixed_precision=null model.bf16=true model.fp16=false model.params_dtype=bf16 model.pipeline_dtype=bf16 optimizer.bf16=true optimizer.fp16=false optimizer.params_dtype=bf16 optimizer.use_precision_aware_optimizer=true optimizer.main_grads_dtype=bf16 optimizer.main_params_dtype=fp32 optimizer.store_param_remainders=true optimizer.exp_avg_dtype=fp32 optimizer.exp_avg_sq_dtype=fp32

@@ -1,0 +1,19 @@
+<section id="setup" data-transition="fade" style="background:#F6F5F1; color:#16202B; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px; display:flex; flex-direction:column; ; gap:32px">
+<div style="display:flex; flex-direction:column; gap:12px"><p style="font-size:24px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#138A74">Benchmark setup</p><h2 style="font-size:60px; font-weight:600; line-height:1.15; color:#16202B">Same weights, data, kernels and chip; compared only on the same machine</h2></div>
+<div style="display:flex; gap:48px">
+<div style="flex:1; display:flex; flex-direction:column; gap:16px">
+<h3 style="font-size:30px; font-weight:600">How it was run</h3>
+<ul style="font-size:26px; line-height:1.45; color:#48525E">
+<li>Megatron-Core's own 1F1B schedule in a lean training loop, fusions on</li>
+<li>rdsp, stage-local design, Liger fused kernels</li>
+<li>150 steps of 16 microbatches × 2,048 tokens, at 1, 4 and 8 GPUs</li>
+<li>Pinned H100 (checked on every GPU); all setups back to back on one machine per GPU count</li>
+<li>One image: torch 2.9, CUDA 13, DeepSpeed (pinned), Megatron-Core 0.19.2</li>
+</ul></div>
+<div style="flex:1; display:flex; flex-direction:column; gap:16px">
+<h3 style="font-size:30px; font-weight:600">Matched on both sides</h3>
+<table style="font-size:23px; color:#16202B; font-family:'IBM Plex Sans', Arial, sans-serif; padding:10px 14px"><tr style="background:#16202B"><th style="width:38%; text-align:left">Setting</th><th style="width:62%; text-align:left">Value</th></tr><tr style="background:#EEECE6"><td><b>Starting weights</b></td><td>Pretrained Qwen3-0.6B, both</td></tr><tr><td><b>Data</b></td><td>WikiText-103, same batches, same order</td></tr><tr style="background:#EEECE6"><td><b>Layers per stage</b></td><td>Identical (8 GPUs: 4-4-4-4-3-3-3-3)</td></tr><tr><td><b>Fused kernels</b></td><td>RoPE, SwiGLU, norm, cross-entropy, Adam, flash attention</td></tr><tr style="background:#EEECE6"><td><b>Optimizer</b></td><td>Adam, lr 1e-5, no clipping, fp32 master weights</td></tr><tr><td><b>Gradient summing</b></td><td>rdsp bf16; Megatron fp32 (default) or bf16</td></tr></table>
+</div></div>
+
+<aside>Megatron's HF weights were mapped by hand into its fused layout; every Megatron parameter is checked to receive exactly one weight, and the layer coverage across ranks is checked. The one remaining mismatch is gradient summing precision: DeepSpeed ZeRO-0 bf16 sums microbatch gradients in bf16; Megatron defaults to fp32 (its --grad-reduce-in-bf16 option matches rdsp). Megatron also keeps fused weight-gradient accumulation and disabled Python GC, which only help it.</aside>
+</section>
