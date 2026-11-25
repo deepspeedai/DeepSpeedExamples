@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
-# Fresh Linux GPU node -> ready to run recipes/ and bench/mimo/runs.sh.
+# Fresh Linux GPU node -> ready to run recipes/ and bench/common/runs.sh.
 # Python 3.12 venv in ~/venv, torch 2.13, DeepSpeed at the pinned commit every
 # result used, rdsp (editable), Qwen3.5 kernels, and the NeMo container for the
 # Megatron side. Needs NVIDIA drivers, CUDA, Docker with the NVIDIA runtime.

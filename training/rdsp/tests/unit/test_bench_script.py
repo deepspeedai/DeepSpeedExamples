@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 
-"""bench/mimo/bench.sh: which runs.sh cases a layout launches, in what order,
+"""bench/qwen35_small/bench.sh: which runs.sh cases a layout launches, in what order,
 and what it skips. DRY_RUN=1 prints the plan instead of running it."""
 
 import os
@@ -10,7 +10,7 @@ import subprocess
 import pytest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-BENCH = os.path.join(ROOT, "bench", "mimo", "bench.sh")
+BENCH = os.path.join(ROOT, "bench", "qwen35_small", "bench.sh")
 
 
 def plan(tmp_path, *layouts, model="Qwen3.5-4B", **env):
@@ -38,22 +38,6 @@ def test_each_layout_runs_megatron_then_rdsp(tmp_path):
         "tp4pp2-megatron",
         "tp4pp2-rdsp",
         "coloc-rdsp",
-    ]
-
-
-def test_mimo_means_every_non_colocated_mimo_pair(tmp_path):
-    code, out = plan(tmp_path, "mimo")
-    assert code == 0, out
-    cases = [line.split()[-1] for line in out.splitlines() if line.startswith("run ")][2:]
-    assert cases == [
-        "noncoloc-mimo",
-        "noncoloc-rdsp",
-        "vision2-mimo",
-        "vision2-rdsp",
-        "langpp2-mimo",
-        "langpp2-rdsp",
-        "langtp4-mimo",
-        "langtp4-rdsp",
     ]
 
 

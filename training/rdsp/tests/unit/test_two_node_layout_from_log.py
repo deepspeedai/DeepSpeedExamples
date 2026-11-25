@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 
-"""bench/two_node_35b/scripts/layout_from_log.py: Bridge's cut and the vision stage's
+"""bench/common/layout_from_log.py: Bridge's cut and the vision stage's
 width for the two-node runs, read from rdsp's run 1 log rather than picked by hand."""
 
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "..", "bench", "two_node_35b", "scripts"))
+sys.path.insert(0, os.path.join(HERE, "..", "..", "bench", "common"))
 
 import layout_from_log as lfl  # noqa: E402
 

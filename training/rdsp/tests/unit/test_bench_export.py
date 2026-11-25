@@ -11,7 +11,7 @@ import sys
 import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path[:0] = [os.path.join(HERE, "..", "..", "bench", "mimo"), os.path.join(HERE, "..", "..")]
+sys.path[:0] = [os.path.join(HERE, "..", "..", "bench", "common"), os.path.join(HERE, "..", "..")]
 
 from export_bridge_batches import save_step, to_rdsp_sample  # noqa: E402
 

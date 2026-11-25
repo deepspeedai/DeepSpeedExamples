@@ -5,8 +5,7 @@
 # GPUs, stage 1 tensor parallel on 2 GPUs. WikiText-103.
 #
 # GPUs:     4
-# Measured: not benchmarked in this exact layout; Qwen3-0.6B against
-#           Megatron-Core on H100 is in docs/BENCHMARK_RESULTS.md
+# Measured: not benchmarked; a starting point for text-only models
 #
 # Extra arguments are passed to train.py and override the flags below.
 set -euo pipefail

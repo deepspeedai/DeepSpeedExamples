@@ -17,9 +17,9 @@ Qwen3.5 vision-language models on H100 GPUs, trained on CORD-v2. Median time per
 
 - On the 35B that is 1.36× Megatron-Bridge's throughput and 1.43× TorchTitan's; on the 27B, 1.42× and 1.23×. With two rows per microbatch, the fastest setting for both pipelines on the 27B, rdsp is 1.05× Megatron-Bridge.
 - On MegatronMIMO's own layouts, with one GPU for the vision encoder, rdsp runs at 0.99–1.09× MIMO's throughput.
-- rdsp ran the 35B with the vision encoder on its own 4-GPU stage and six 2-GPU language stages, and the 27B as eight 1-GPU stages, each choosing how many of its layers to recompute. Megatron-Bridge used the layout of NVIDIA's H100 recipe on the 35B and rdsp's eight-stage split on the 27B. TorchTitan sharded over all GPUs, with expert parallelism on the 35B.
+- rdsp ran the 35B with the vision encoder on its own 4-GPU stage and six 2-GPU language stages, and the 27B as eight 1-GPU stages, each recomputing its own number of layers. Both measured their own cuts. Megatron-Bridge used the layout of NVIDIA's H100 recipe on the 35B and rdsp's eight-stage split on the 27B. TorchTitan sharded over all GPUs, with expert parallelism on the 35B.
 
-One run per configuration. Settings and commands for each number: [docs/REPRODUCE.md](docs/REPRODUCE.md). Earlier Qwen3.5-2B and 4B results on 8 GPUs: [docs/BENCHMARK_RESULTS.md](docs/BENCHMARK_RESULTS.md).
+One run per configuration. Settings and commands for each number: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md#reproducing-the-blogs-results). Earlier Qwen3.5-2B and 4B results on 8 GPUs: [docs/BENCHMARK_RESULTS.md](docs/BENCHMARK_RESULTS.md).
 
 ## Install
 
@@ -29,7 +29,7 @@ Linux, CUDA GPUs, Python 3.12. On a fresh node:
 bash bench/setup_node.sh
 ```
 
-This builds `~/venv` with torch, DeepSpeed at the commit every result was measured with, and rdsp, and pulls the container the Megatron comparisons run in. To install by hand, or without the container: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md#install).
+This builds `~/venv` with torch, DeepSpeed at the commit every result was measured with, and rdsp, and pulls the container the Megatron comparisons run in ([docs/GETTING_STARTED.md](docs/GETTING_STARTED.md#install)).
 
 Importing `ray_deepspeed_pipeline` doesn't import Ray or DeepSpeed; only the stage actors do.
 
@@ -40,7 +40,7 @@ Importing `ray_deepspeed_pipeline` doesn't import Ray or DeepSpeed; only the sta
 ./recipes/qwen35-2b-tp2pp2dp2.sh --steps 200      # extra flags override the recipe
 ```
 
-`recipes/` has one script per benchmarked layout, plus a text-only Qwen3 recipe. [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) covers the flags, your own data, and common failures.
+`recipes/` has one script per Qwen3.5-2B and 4B layout in [docs/BENCHMARK_RESULTS.md](docs/BENCHMARK_RESULTS.md), plus a text-only Qwen3 recipe; the 9B to 35B runs are scripts in `bench/`. [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) covers the flags, your own data and the environment variables.
 
 ## Python API
 
@@ -67,7 +67,7 @@ loss = engine.train_batch(data_iter)   # consumes exactly M (inputs, labels) ent
 engine.save_checkpoint("ckpt/", tag="step100")
 ```
 
-If the input embedding and output layer share a weight and land on different stages, untie them first (`train_vl.py --untie-embeddings`); on one stage they stay tied. Every public name, what it guarantees and what it raises are listed in [docs/CONTRACTS.md](docs/CONTRACTS.md). `train_vl.py` is a complete training script.
+If the input embedding and output layer share a weight and land on different stages, untie them first (`train_vl.py --untie-embeddings`); on one stage they stay tied. The docstrings in `src/ray_deepspeed_pipeline/` give each public name's guarantees and errors. `train_vl.py` is a complete training script.
 
 ## How it works
 
@@ -82,8 +82,8 @@ Vision encoder placement, how the cuts are chosen, memory, and the reasoning beh
 
 | Builder | Models | Validation |
 |---|---|---|
-| `HFModelStage` | Any HF model with a `config`: Llama, Mistral, Qwen2/3/3.5, Qwen3-MoE, Mixtral, Gemma 1–3, Phi-3, OLMo2, Granite, Cohere, StarCoder2, StableLM, DeepSeek-V3, GLM-4/4-MoE/5.3, GPT-2, GPT-NeoX, Falcon, Bloom, Mamba, Qwen3-VL, Qwen3.5-VL | Pipeline loss equals the unsplit model's on CPU (`tests/integration/test_hf_families.py`). Qwen3, Qwen3-MoE and Qwen3.5-VL validated on GPU. |
-| `CausalLMStage` | Llama, Qwen3, Qwen3-MoE | GPU-validated in every layout in CONTRACTS.md |
+| `HFModelStage` | Any HF model with a `config`: Llama, Mistral, Qwen2/3/3.5, Qwen3-MoE, Mixtral, Gemma 1–3, Phi-3, OLMo2, Granite, Cohere, StarCoder2, StableLM, DeepSeek-V3, GLM-4/4-MoE/5.3, GPT-2, GPT-NeoX, Falcon, Bloom, Mamba, Qwen3-VL, Qwen3.5-VL | Pipeline loss equals the unsplit model's on CPU (`tests/integration/test_hf_families.py`, `tests/integration/test_vl_pipeline.py`). Qwen3, Qwen3-MoE and Qwen3.5-VL validated on GPU. |
+| `CausalLMStage` | Llama, Qwen3, Qwen3-MoE | GPU-validated in every layout in `src/ray_deepspeed_pipeline/support_matrix.py` |
 | `GenericSequentialStage` | Plain sequential models | CPU |
 
 TP inside a stage uses the model's AutoTP plan. Configs without one get a plan for the standard projection names. Qwen3-VL injects vision features into its first decoder blocks, so its encoder can't be colocated and the first cut must come after them.
@@ -91,20 +91,18 @@ TP inside a stage uses the model's AutoTP plan. Configs without one get a plan f
 ## Tests
 
 ```bash
-pytest -q          # CPU: full runtime on Ray with a stub engine (~500 tests); GPU tests skip
+pytest -q          # CPU: full runtime on Ray with a stub engine (about 630 tests); GPU tests skip
 ruff check .
 ```
 
-The GPU tests (parity against the unsplit model, checkpoint round trip, rank-kill recovery) run on Modal: `scripts/modal_tests.py`.
+On a node with GPUs and DeepSpeed (`bench/setup_node.sh`), the same command also runs the GPU tests: parity against the unsplit model, checkpoint round trip and rank-kill recovery.
 
 ## Docs
 
 | | |
 |---|---|
-| [GETTING_STARTED](docs/GETTING_STARTED.md) | Install, terms, recipes, flags, your own data, common failures |
-| [REPRODUCE](docs/REPRODUCE.md) | Rerun the benchmarks |
+| [GETTING_STARTED](docs/GETTING_STARTED.md) | Install, recipes, flags, environment variables, rerunning the benchmarks |
 | [BENCHMARK_RESULTS](docs/BENCHMARK_RESULTS.md) | Qwen3.5-2B and 4B results, per-layout settings, what moved the numbers |
-| [CONTRACTS](docs/CONTRACTS.md) | Public API guarantees, errors, supported layouts |
 | [ENGINEERING](docs/ENGINEERING.md) | Design |
 
 ## Limitations
