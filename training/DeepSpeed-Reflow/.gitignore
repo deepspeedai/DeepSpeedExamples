@@ -1,0 +1,20 @@
+# Conda environment setup — local to our environment, not part of the public example.
+# Public users install via requirements.txt; this captures our exact dev environment.
+environment.yml
+conda_env*.yml
+*.conda.yml
+
+# Generated at runtime by the launcher scripts (DeepSpeed config + training outputs/logs).
+*_config.json
+*_output/
+__pycache__/
+wandb/
+
+# JIT-built CPU-Adam/Lion op extensions (torch cpp_extension build dirs).
+cpu_adam/
+cpu_lion/
+fused_adam/
+
+# Comparison / benchmark output collected by run_compare.sh.
+compare_out/
+bitexact_out/
