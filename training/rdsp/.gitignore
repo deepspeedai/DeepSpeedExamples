@@ -9,13 +9,6 @@ __pycache__/
 dist/
 build/
 
-# raw results of the old Modal Qwen3-0.6B grid
-bench/results/
-
-# bench_oct10: the working folder of the October-November benchmark rounds
-# (plans, queues, notes, raw logs, profiles).
-bench_oct10/
-
 # what the bench/ scripts write when they run stays local: each experiment's logs/ folder (logs,
 # profiles, prep output, the result notes kept beside them)
 bench/*/logs/
@@ -24,36 +17,3 @@ bench/*/logs/
 *.qdrep
 *.pt.trace.json
 *.dmon
-
-# kept on disk, not in the repository: the old Modal Qwen3-0.6B grid, one-off checks and tools
-bench/modal_bench.py
-bench/modal_smoke.py
-bench/analyze.py
-bench/megatron_hf_loop.py
-bench/megatron_pretrain.sh
-bench/rdsp_bench.py
-bench/bench_hooks.py
-bench/torchtitan/checks/
-bench/cluster/three.sh
-bench/cluster/ray_cluster3.sh
-bench/mimo/nsys_breakdown.py
-tests/unit/test_nsys_breakdown.py
-bench/encoder/summarize.py
-bench/encoder/sync_stacks.py
-
-# kept on disk, not in the repository: internal notes, slides, the Modal runners, recipes without
-# a published result
-CONTEXT.md
-docs/CODING_STANDARDS.md
-docs/CONTRACTS.md
-docs/P0.md
-docs/REPRODUCE.md
-docs/presentation/
-docs/research/
-scripts/
-recipes/qwen35-4b-vision1-tp2pp2.sh
-recipes/qwen35-4b-vision1-tp4.sh
-recipes/qwen35-4b-vision2-tp2dp2.sh
-
-# nCompass profiling plugin's working files
-ncompass/
