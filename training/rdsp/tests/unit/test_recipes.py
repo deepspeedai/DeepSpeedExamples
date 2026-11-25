@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 
-"""Every recipe in recipes/ is a valid command: its flags parse with the
+"""Every recipe the repository ships is a valid command: its flags parse with the
 script it calls, and its header states the hardware and the measured result."""
 
 import importlib.util
@@ -11,10 +11,15 @@ import shlex
 import pytest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+# one recipe per layout with a published result, plus the text-only Qwen3 recipe
 RECIPES = (
-    sorted(f for f in os.listdir(os.path.join(ROOT, "recipes")) if f.endswith(".sh"))
-    if os.path.isdir(os.path.join(ROOT, "recipes"))
-    else []
+    "qwen3-text-pp.sh",
+    "qwen35-2b-tp2pp2dp2.sh",
+    "qwen35-2b-vision1-tp2dp2.sh",
+    "qwen35-4b-coloc-tp2pp2dp2.sh",
+    "qwen35-4b-tp2pp2dp2.sh",
+    "qwen35-4b-tp4pp2dp1.sh",
+    "qwen35-4b-vision1-tp2dp2.sh",
 )
 
 
@@ -33,19 +38,9 @@ def _command(text: str) -> tuple[str, list[str]]:
     return os.path.basename(script), args[: args.index("$@")] if "$@" in args else args
 
 
-def test_there_is_a_recipe_per_validated_layout():
-    assert RECIPES == [
-        "qwen3-text-pp.sh",
-        "qwen35-2b-tp2pp2dp2.sh",
-        "qwen35-2b-vision1-tp2dp2.sh",
-        "qwen35-4b-coloc-tp2pp2dp2.sh",
-        "qwen35-4b-tp2pp2dp2.sh",
-        "qwen35-4b-tp4pp2dp1.sh",
-        "qwen35-4b-vision1-tp2dp2.sh",
-        "qwen35-4b-vision1-tp2pp2.sh",
-        "qwen35-4b-vision1-tp4.sh",
-        "qwen35-4b-vision2-tp2dp2.sh",
-    ]
+def test_every_published_layout_has_its_recipe():
+    for recipe in RECIPES:
+        assert os.path.isfile(os.path.join(ROOT, "recipes", recipe)), recipe
 
 
 @pytest.mark.parametrize("recipe", RECIPES)

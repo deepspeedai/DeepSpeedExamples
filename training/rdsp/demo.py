@@ -14,10 +14,9 @@ It trains a toy LM split across 2 Ray actor stages and checks, every step,
 that the pipeline reproduces the monolithic single-process model. Then it
 demonstrates the failure contracts. ~30 seconds.
 
-The same path with real DeepSpeed engines and Qwen3-0.6B, on 2 Modal GPUs
-(from the repo root):
-    modal run scripts/modal_tests.py --gpus L4:2 \
-        --tests tests/integration/test_two_stage_baseline.py
+The same path with real DeepSpeed engines and Qwen3-0.6B, on 2 GPUs with
+DeepSpeed installed (from the repo root):
+    pytest tests/integration/test_two_stage_baseline.py
 """
 
 import logging

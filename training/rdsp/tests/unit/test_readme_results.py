@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # DeepSpeed Team
 
-"""The README's headline step times are the medians of the logs docs/REPRODUCE.md cites,
-as bench/gap_round/scripts/medians.py computes them, and its ratios follow from them.
+"""The README's headline step times are the medians of the published runs' logs, as
+bench/common/medians.py computes them, and its ratios follow from them.
 The logs are not in the repository; these tests run where they are."""
 
 import os
@@ -11,23 +11,23 @@ import sys
 import pytest
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
-sys.path.insert(0, os.path.join(ROOT, "bench", "gap_round", "scripts"))
+sys.path.insert(0, os.path.join(ROOT, "bench", "common"))
 
 import medians  # noqa: E402
 
 # model: (rdsp, Megatron-Bridge, TorchTitan), each a (log format, log under bench/)
 LOGS = {
     "35B": (
-        ("rdsp", "two_node_35b/vision_stage/logs/rdsp-k4-rc.log"),
-        ("bridge", "gap_round/logs/bridge-pp2ep8-nv.log"),
+        ("rdsp", "qwen35_35b/logs/vision_stage/rdsp-k4-rc.log"),
+        ("bridge", "qwen35_35b/logs/pp2ep8/bridge-pp2ep8-nv.log"),
         (
             "titan",
-            "two_node_35b/fsdp16/logs/run-qwen35_35b_a3b_cord_fsdp16_ep8_bf16-node0.log",
+            "qwen35_35b/logs/fsdp16/run-qwen35_35b_a3b_cord_fsdp16_ep8_bf16-node0.log",
         ),
     ),
     "27B": (
-        ("rdsp", "bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows1-best.log"),
-        ("bridge", "bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs1-best.log"),
+        ("rdsp", "qwen35_27b/logs/pp8/rdsp-nov21fix-rows1-best.log"),
+        ("bridge", "qwen35_27b/logs/pp8/bridge-nov21fix-mbs1-best.log"),
         ("titan", "torchtitan/logs/run-qwen35_27b_cord_fsdp8_rc_bf16.log"),
     ),
 }

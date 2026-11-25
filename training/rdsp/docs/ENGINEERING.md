@@ -123,6 +123,8 @@ The second term in the sum is the encoder's attention over each image: about 4 �
 
 The estimate takes milliseconds and runs no trial steps. It picks the fastest measured cut in both TP2×PP2×DP2 layouts and is one layer off under TP4 ([BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md)). It ignores communication and counts MoE experts in full. `ExplicitCuts` overrides it.
 
+**Measured cuts.** `engine.measure_stages()` runs a few calibration steps with every stage timed and records each stage's busy time and peak memory. `BalancedTransformerBlocks(measured=...)` then re-cuts so the slowest stage is as fast as possible, keeping each stage within its GPU's memory. `train_vl.py --cuts measured` does both, at learning rate 0, before training starts. The 27B and 35B-A3B benchmark runs use it.
+
 ## Memory
 
 - **2 + 4 + 12/dp bytes per parameter** of training state under bf16 + ZeRO-1 + fp32 accumulation: bf16 weights, fp32 accumulator, then fp32 master and Adam's two moments split over DP (12 bytes at DP=2). rdsp sets `bf16.immediate_grad_update` so each bf16 gradient is added into fp32 as soon as autograd produces it, then frees the bf16 copy; DeepSpeed alone only zeroes it, keeping 2 more bytes per parameter. Megatron spends the same. On 4B this removed the out-of-memory errors that had forced recompute.
@@ -159,14 +161,14 @@ A test trains, saves and keeps training, then loads into a pipeline built from d
 
 One yardstick at every level: the split model must produce the unsplit model's numbers.
 
-- **CPU suite** (~430 tests). The full runtime runs on Ray with a stub engine:
+- **CPU suite** (about 630 tests). The full runtime runs on Ray with a stub engine:
   - schedules and boundary routing;
   - exact data consumption;
   - the failure contract;
   - checkpoint round trips;
-  - 24 HF families trained through `rdsp.initialize()` against the unsplit model;
+  - 25 HF families trained through `rdsp.initialize()` against the unsplit model;
   - the import-time guarantee that `import ray_deepspeed_pipeline` pulls in neither Ray nor DeepSpeed.
-- **GPU suite on Modal.** Every supported layout in [CONTRACTS.md](CONTRACTS.md) with real DeepSpeed and NCCL, on fp32 tiny models. Each run checks:
+- **GPU suite.** Every supported layout in `src/ray_deepspeed_pipeline/support_matrix.py` with real DeepSpeed and NCCL, on fp32 tiny models. Each run checks:
   - loss parity within 1e-4;
   - per-parameter update parity;
   - checkpoint resume;
@@ -188,9 +190,7 @@ One yardstick at every level: the split model must produce the unsplit model's n
 - **Placement.** One stage fits on one node, unless it needs more GPUs than a node has: then it spans nodes with each tensor-parallel group inside one node, and its checkpoints need storage those nodes share.
 - **Checkpoints.** Node-local: they survive actor loss, not node loss.
 - **No global gradient clipping.** DeepSpeed would clip each stage by its own norm, a different algorithm, so a nonzero `gradient_clipping` is rejected.
-- **Untested at scale.**
-  - The multi-node path is tested on Ray, not on real multi-node hardware.
-  - The 32-GPU four-stage layout hasn't run: the Modal account caps at 10 GPUs.
+- **Scale.** Two nodes (16 GPUs) is the most it has run on. The 32-GPU four-stage composed layout has run only in its one-node form.
 
 ## Profiling
 
@@ -202,9 +202,8 @@ One yardstick at every level: the split model must produce the unsplit model's n
 ```bash
 python demo.py           # CPU, ~30 s: pipeline vs unsplit losses side by side
 pytest -q                # CPU suite; GPU tests skip
-modal run scripts/modal_tests.py --gpus L4:2 --tests tests/integration/test_two_stage_baseline.py
-modal run scripts/modal_tests.py --gpus L4:2 --tests tests/integration/test_checkpoint_gpu.py
-modal run scripts/modal_tests.py --gpus L4:8 --tests tests/integration/test_heterogeneous_pipeline.py
+pytest -q tests/integration/test_two_stage_baseline.py tests/integration/test_checkpoint_gpu.py   # 2 GPUs
+pytest -q tests/integration/test_heterogeneous_pipeline.py                                       # up to 8 GPUs
 ```
 
-GPU runs are billed.
+The GPU tests need DeepSpeed installed (`bench/setup_node.sh`).
