@@ -1,6 +1,6 @@
 # Benchmark results
 
-rdsp against MegatronMIMO and Megatron-Bridge, training Qwen3.5-2B and 4B on CORD-v2. The first set: one AWS g7.48xlarge, 8× RTX PRO 4500 Blackwell, 32 GB, PCIe, no NVLink. A first 4B run on 8× H100 with NVLink follows them. Settings held equal, software versions and how to rerun: [REPRODUCE.md](REPRODUCE.md). Raw logs: `bench/published/{2b,4b,h100}/`; `python bench/mimo/summarize.py bench/published/2b` prints the table rows, and `tests/unit/test_bench_summarize.py` checks them against this file. The Qwen3.5-27B and 35B-A3B results on H100 nodes are in the [README](../README.md) and [REPRODUCE.md](REPRODUCE.md#h100-runs).
+rdsp against MegatronMIMO and Megatron-Bridge, training Qwen3.5-2B and 4B on CORD-v2. The first set: one AWS g7.48xlarge, 8× RTX PRO 4500 Blackwell, 32 GB, PCIe, no NVLink. A first 4B run on 8× H100 with NVLink follows them. Settings held equal, software versions and how to rerun: [REPRODUCE.md](REPRODUCE.md). `python bench/mimo/summarize.py <log directory>` prints the table rows from a run's logs. The Qwen3.5-27B and 35B-A3B results on H100 nodes are in the [README](../README.md) and [REPRODUCE.md](REPRODUCE.md#h100-runs).
 
 ## Results: 8× RTX PRO 4500, PCIe
 
@@ -26,7 +26,7 @@ Qwen3.5-4B on one AWS p5.48xlarge: 8× H100 SXM 80 GB, every pair of GPUs linked
 | TP4×PP2×DP1, vs Bridge | 18.24 s | 12.30 s | −33% | 7,184 | 10,658 | 898 | 1,332 | 0.861 | 0.581 |
 | Colocated vision + language TP2×PP2×DP2 (rdsp only) | — | 5.62 s | | | 23,322 | — | 2,915 | | 0.265 |
 
-Loss: every pair starts from the same step-0 loss; over steps 1–49 rdsp's mean difference from Megatron is +0.003, −0.003 and −0.008, and colocated's from Megatron-Bridge TP2×PP2×DP2 is −0.002. Logs: `bench/published/h100/`, with the GPU topology in `hardware.txt`.
+Loss: every pair starts from the same step-0 loss; over steps 1–49 rdsp's mean difference from Megatron is +0.003, −0.003 and −0.008, and colocated's from Megatron-Bridge TP2×PP2×DP2 is −0.002.
 
 Per GPU, MIMO's 5-GPU layout is the most efficient here (3,283 and 3,321 tokens/s per GPU); colocated is the fastest per step and the second most efficient per GPU (2,915).
 

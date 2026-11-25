@@ -273,7 +273,7 @@ MEDIAN_FIRST=5 python3 bench/gap_round/scripts/medians.py rdsp <log>            
 | 9B | 1 vision GPU + TP2 × DP2: rdsp / MIMO | 7.73 s / 8.41 s | `mimo_vs_rdsp/9b_v1_tp2pp1dp2/logs/rdsp-nov11-directadd.log`, `mimo-nov11.log` |
 | 27B | 1 vision GPU + TP4 × PP2: rdsp (stage timers on, `--profile`; the only rdsp run of this pair) / MIMO | 31.23 s / 30.82 s | `blog_round/logs27b/rdsp-27b-1rows-10steps-profile-run1.log`, `mimo-27b-1rows-10steps-run1-node2.log` |
 
-Log paths are relative to `bench/`. rdsp numbers its steps from 0. The 9B rdsp numbers above count from step 5.
+The logs are not in the repository; the table names the file each run writes, relative to `bench/`. rdsp numbers its steps from 0. The 9B rdsp numbers above count from step 5.
 
 ### Settings held equal
 

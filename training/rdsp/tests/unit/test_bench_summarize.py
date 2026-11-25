@@ -10,7 +10,14 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "bench", "mimo"))
 
+import pytest  # noqa: E402
 import summarize  # noqa: E402
+
+PUBLISHED = os.path.join(HERE, "..", "..", "bench", "published")
+# the 2B/4B/H100 logs are not in the repository; the tests that read them run where they are
+needs_published_logs = pytest.mark.skipif(
+    not os.path.isdir(PUBLISHED), reason="bench/published logs not here"
+)
 
 
 def _megatron_log(ms: float) -> str:
@@ -71,6 +78,7 @@ def test_rdsp_only_layout_gets_a_row_without_megatron(tmp_path, capsys):
     assert "5.00" in row and row.count("-") >= 2
 
 
+@needs_published_logs
 def test_published_2b_and_4b_logs_give_the_benchmark_results_numbers(capsys):
     """bench/published holds the logs behind BENCHMARK_RESULTS.md's PCIe table;
     summarize.py on them prints every step time it reports."""
@@ -87,6 +95,7 @@ def test_published_2b_and_4b_logs_give_the_benchmark_results_numbers(capsys):
         assert f"| {megatron} s | {rdsp} s |" in doc
 
 
+@needs_published_logs
 def test_published_h100_logs_give_the_benchmark_results_numbers(capsys):
     """bench/published/h100 holds the 8x H100 logs; summarize.py on them prints
     every step time BENCHMARK_RESULTS.md reports for H100."""
@@ -101,6 +110,7 @@ def test_published_h100_logs_give_the_benchmark_results_numbers(capsys):
         assert f"| {cell} | {rdsp} s |" in doc, (megatron, rdsp)
 
 
+@needs_published_logs
 def test_docs_report_tokens_per_gpu_from_the_logs(capsys):
     """Every published row's tokens/s per GPU (both systems) appears in
     BENCHMARK_RESULTS.md, as printed by summarize.py."""

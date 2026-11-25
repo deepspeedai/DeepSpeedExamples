@@ -9,12 +9,11 @@ __pycache__/
 dist/
 build/
 
-# raw run logs and profiles; the published ones are in bench/published
+# raw run logs and profiles
 bench/results/
 
 # bench_oct10: the working folder of the October-November benchmark rounds
-# (plans, queues, notes, raw logs, profiles). The scripts and logs that
-# docs/REPRODUCE.md uses are copies under bench/.
+# (plans, queues, notes, raw logs, profiles).
 bench_oct10/
 
 # what the bench/ scripts write when they run stays local...
@@ -29,44 +28,14 @@ bench/mimo_vs_rdsp/convert.log
 *.pt.trace.json
 *.dmon
 
-# ...except the logs docs/REPRODUCE.md cites for its step times
-!bench/two_node_35b/vision_stage/logs/rdsp-k4-rc.log
-!bench/gap_round/logs/bridge-pp2ep8-nv.log
-!bench/two_node_35b/fsdp16/logs/run-qwen35_35b_a3b_cord_fsdp16_ep8_bf16-node0.log
-!bench/two_node_35b/pp8dp2/logs/rdsp.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-fix-p8.log
-!bench/torchtitan/logs/run-qwen35_27b_cord_fsdp8_rc_bf16.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-gap-cut1.log
-!bench/mimo_vs_rdsp/9b_v1_tp2pp2dp1/logs/rdsp-nov11-fix-t.log
-!bench/mimo_vs_rdsp/9b_v1_tp2pp2dp1/logs/mimo-nov11-r1.log
-!bench/mimo_vs_rdsp/9b_v1_tp2pp1dp2/logs/rdsp-nov11-directadd.log
-!bench/mimo_vs_rdsp/9b_v1_tp2pp1dp2/logs/mimo-nov11.log
-!bench/blog_round/logs27b/rdsp-27b-1rows-10steps-profile-run1.log
-!bench/blog_round/logs27b/mimo-27b-1rows-10steps-run1-node2.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21-mbs1.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21-mbs2.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21-mbs4.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs1-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs2-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs2-block8.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs2-block9.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs2-selective.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs4-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov21fix-mbs8-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21-rows1.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21-rows2.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21-rows4.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows1-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows2-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows2-compile.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows2-per1.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows2-rc6.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows4-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows4-profile-all.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/rdsp-nov21fix-rows8-best.log
-!bench/bridge_vs_rdsp/27b_tp1pp8dp1/logs/bridge-nov11.log
-!bench/bridge_vs_rdsp/27b_tp2pp2dp2/logs/bridge-50.log
-!bench/torchtitan/logs/run-qwen35_27b_cord_tp4dp2.log
+# benchmark logs and raw results stay local: docs/REPRODUCE.md names the log
+# each run writes; the write-ups (*.md) are kept
+bench/published/
+bench/blog_round/logs27b/
+bench/encoder_test/results/**
+!bench/encoder_test/results/**/
+!bench/encoder_test/results/**/*.md
+bench/torchtitan/results/data_check.txt
 
 # nCompass profiling plugin's working files
 ncompass/

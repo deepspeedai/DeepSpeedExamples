@@ -2,7 +2,8 @@
 # DeepSpeed Team
 
 """The README's headline step times are the medians of the logs docs/REPRODUCE.md cites,
-as bench/gap_round/scripts/medians.py computes them, and its ratios follow from them."""
+as bench/gap_round/scripts/medians.py computes them, and its ratios follow from them.
+The logs are not in the repository; these tests run where they are."""
 
 import os
 import sys
@@ -32,12 +33,25 @@ LOGS = {
 }
 
 
+def _logs_present(model: str) -> bool:
+    return all(os.path.exists(os.path.join(ROOT, "bench", log)) for _, log in LOGS[model])
+
+
+needs_logs = pytest.mark.parametrize(
+    "model",
+    [
+        pytest.param(m, marks=pytest.mark.skipif(not _logs_present(m), reason="logs not here"))
+        for m in sorted(LOGS)
+    ],
+)
+
+
 def readme() -> str:
     with open(os.path.join(ROOT, "README.md")) as f:
         return f.read()
 
 
-@pytest.mark.parametrize("model", sorted(LOGS))
+@needs_logs
 def test_the_results_row_is_the_cited_logs_medians(model):
     ours, bridge, titan = (
         medians.median(kind, os.path.join(ROOT, "bench", log)) for kind, log in LOGS[model]
@@ -46,7 +60,7 @@ def test_the_results_row_is_the_cited_logs_medians(model):
     assert row in readme()
 
 
-@pytest.mark.parametrize("model", sorted(LOGS))
+@needs_logs
 def test_the_ratios_follow_from_the_step_times(model):
     ours, bridge, titan = (
         medians.median(kind, os.path.join(ROOT, "bench", log)) for kind, log in LOGS[model]

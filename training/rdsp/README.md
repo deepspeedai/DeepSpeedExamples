@@ -19,7 +19,7 @@ Qwen3.5 vision-language models on H100 GPUs, trained on CORD-v2. Median time per
 - On MegatronMIMO's own layouts, with one GPU for the vision encoder, rdsp runs at 0.99–1.09× MIMO's throughput.
 - rdsp ran the 35B with the vision encoder on its own 4-GPU stage and six 2-GPU language stages, and the 27B as eight 1-GPU stages, each choosing how many of its layers to recompute. Megatron-Bridge used the layout of NVIDIA's H100 recipe on the 35B and rdsp's eight-stage split on the 27B. TorchTitan sharded over all GPUs, with expert parallelism on the 35B.
 
-One run per configuration. Settings, commands and the log behind each number: [docs/REPRODUCE.md](docs/REPRODUCE.md). Earlier Qwen3.5-2B and 4B results on 8 GPUs: [docs/BENCHMARK_RESULTS.md](docs/BENCHMARK_RESULTS.md).
+One run per configuration. Settings and commands for each number: [docs/REPRODUCE.md](docs/REPRODUCE.md). Earlier Qwen3.5-2B and 4B results on 8 GPUs: [docs/BENCHMARK_RESULTS.md](docs/BENCHMARK_RESULTS.md).
 
 ## Install
 

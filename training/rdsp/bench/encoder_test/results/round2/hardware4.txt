@@ -1,3 +1,0 @@
-      8 NVIDIA H100 80GB HBM3, 81559 MiB, 595.112.07
-CPU(s):                                  192
-Model name:                              AMD EPYC 7R13 Processor
