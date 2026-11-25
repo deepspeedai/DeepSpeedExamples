@@ -10,7 +10,7 @@ Linux, CUDA GPUs, Python 3.12. On a fresh node:
 bash bench/setup_node.sh
 ```
 
-It builds `~/venv` with torch 2.13.0, Transformers 5.17.0, Ray 2.59.0, DeepSpeed at commit 53a2ac4 (every result was measured with it), rdsp and the Qwen3.5 kernels, and pulls the NeMo container the Megatron comparisons run in. To install by hand, run its `uv pip install` lines in your own environment.
+It builds `~/venv` with torch 2.13.0, Transformers 5.17.0, Ray 2.59.0, DeepSpeed at commit 53a2ac4 (every result was measured with it), rdsp and the Qwen3.5 kernels, and pulls the NeMo container the Megatron comparisons run in. To install by hand, run its `uv pip install` lines in your own environment. DeepSpeed 0.19.3 is the first PyPI release that includes that commit (`pip install "deepspeed>=0.19.3"`).
 
 ## Run a recipe
 

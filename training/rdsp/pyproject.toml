@@ -17,7 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 # deepspeed is only importable on Linux+CUDA; the stage actors import it
 # lazily, never at package import time.
-gpu = ["deepspeed"]
+gpu = ["deepspeed>=0.19.3"]
 # transformers: the tests of train.py and train_vl.py import those scripts
 dev = ["pytest", "ruff", "transformers"]
 
