@@ -11,7 +11,7 @@
 #           --vision-compile was added (Megatron-Bridge TP2xPP2xDP2: 8.79 s)
 #
 # DATA: cord-v2 (default; downloads CORD-v2, images scaled to --max-pixels)
-# or exported:<dir> from bench/mimo/runs.sh export (the benchmark's samples).
+# or exported:<dir> from bench/common/runs.sh export (the benchmark's samples).
 # Both pad each microbatch to its longest row.
 # Extra arguments are passed to train_vl.py and override the flags below.
 set -euo pipefail

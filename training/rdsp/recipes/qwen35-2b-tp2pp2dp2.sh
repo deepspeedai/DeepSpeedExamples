@@ -10,7 +10,7 @@
 #           (PCIe), DATA=exported:<dir> (Megatron-Bridge: 7.39 s)
 #
 # DATA: cord-v2 (default; downloads CORD-v2, images scaled to --max-pixels)
-# or exported:<dir> from bench/mimo/runs.sh export (the benchmark's samples).
+# or exported:<dir> from bench/common/runs.sh export (the benchmark's samples).
 # Both pad each microbatch to its longest row. The cut and times above were
 # measured on exported data; cord-v2's smaller images change both.
 # Extra arguments are passed to train_vl.py and override the flags below.

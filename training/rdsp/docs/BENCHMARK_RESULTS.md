@@ -1,10 +1,10 @@
 # Benchmark results
 
-rdsp against MegatronMIMO and Megatron-Bridge, training Qwen3.5-2B and 4B on CORD-v2. The first set: one AWS g7.48xlarge, 8× RTX PRO 4500 Blackwell, 32 GB, PCIe, no NVLink. A first 4B run on 8× H100 with NVLink follows them. Settings held equal, software versions and how to rerun: [REPRODUCE.md](REPRODUCE.md). `python bench/mimo/summarize.py <log directory>` prints the table rows from a run's logs. The Qwen3.5-27B and 35B-A3B results on H100 nodes are in the [README](../README.md) and [REPRODUCE.md](REPRODUCE.md#h100-runs).
+rdsp against MegatronMIMO and Megatron-Bridge, training Qwen3.5-2B and 4B on CORD-v2. The first set ran on one AWS g7.48xlarge: 8× RTX PRO 4500 Blackwell, 32 GB, PCIe, no NVLink. A 4B run on 8× H100 with NVLink follows. How to rerun: [GETTING_STARTED.md](GETTING_STARTED.md#reproducing-the-qwen35-2b-and-4b-results). `python bench/common/summarize.py <log directory>` prints the table rows from a run's logs. The Qwen3.5-9B, 27B and 35B-A3B results are in the [README](../README.md) and [GETTING_STARTED.md](GETTING_STARTED.md#reproducing-the-blogs-results).
 
 ## Results: 8× RTX PRO 4500, PCIe
 
-Median over steps 6–50. Each step is 64 rows of 2,048 tokens on both systems. Per GPU divides by the layout's GPU count, so the 5-GPU MIMO layout and the 8-GPU layouts compare directly. Cost assumes $5.32/h for 8 GPUs, prorated to 5 for the MIMO layout.
+Median over steps 6–50 of one 50-step run, 64 rows of up to 2,048 tokens a step. Cost assumes $5.32/h for 8 GPUs, prorated to 5 for the MIMO layout.
 
 | Model | Layout | Megatron | rdsp | Step time | Megatron tok/s | rdsp tok/s | Megatron tok/s per GPU | rdsp tok/s per GPU | Megatron $/M tok | rdsp $/M tok |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -15,9 +15,11 @@ Median over steps 6–50. Each step is 64 rows of 2,048 tokens on both systems. 
 
 Loss: every pair starts from the same step-0 loss. Over steps 1–49, rdsp's mean difference from Megatron is +0.0005 (2B MIMO layout), +0.003 (4B TP2×PP2×DP2) and −0.0024 (4B TP4×PP2×DP1). Steps 4–5 vary by up to 0.08 between repeated runs of either system, from GPU kernels that aren't bit-for-bit deterministic.
 
-## Results: 8× H100, NVLink (first run)
+The 4B Megatron numbers come from a second machine of the same type.
 
-Qwen3.5-4B on one AWS p5.48xlarge: 8× H100 SXM 80 GB, every pair of GPUs linked by NVLink through NVSwitch (`nvidia-smi topo -m`: NV18). Same software, data, settings and recipes as above. Megatron-Bridge's settings were diffed against the PCIe runs: the only difference was the step count. Median over steps 6–50, 64 rows of 2,048 tokens a step; cost assumes $22.28/h for 8 GPUs (spot, us-east-2).
+## Results: 8× H100, NVLink
+
+Qwen3.5-4B on one AWS p5.48xlarge: 8× H100 SXM 80 GB, every pair of GPUs linked by NVLink through NVSwitch (`nvidia-smi topo -m`: NV18). Same software, data, settings and recipes as above. Cost assumes $22.28/h for 8 GPUs (spot, us-east-2).
 
 | Layout | Megatron | rdsp | Step time | Megatron tok/s | rdsp tok/s | Megatron tok/s per GPU | rdsp tok/s per GPU | Megatron $/M tok | rdsp $/M tok |
 |---|---|---|---|---|---|---|---|---|---|
@@ -36,11 +38,11 @@ Per GPU, MIMO's 5-GPU layout is the most efficient here (3,283 and 3,321 tokens/
 - **rdsp's TP4 split is off on H100.** Stage 0 (vision encoder + 12 layers) is busy 12.1 s per step while stage 1 waits 3.2 s. The balanced estimate doesn't model how much less efficiently the encoder's small matrices run under TP4.
 - **Colocated ran without compiling the encoder.** The recipe's `compile_vision` doesn't apply to a colocated encoder (now rejected at start-up); `recipes/qwen35-4b-coloc-tp2pp2dp2.sh` compiles it, and is unmeasured.
 - **NVLink was used by both systems.** With `NCCL_DEBUG=INFO`, every NCCL connection on both sides is `P2P/CUMEM`, with no `SHM` or `NET` fallback.
-- **Defaults on both sides.** Megatron's TP communication overlap (`tp_comm_overlap`) is off in its stock recipe, as on PCIe; rdsp has no equivalent. A run with it on would be a separate, labelled number.
+- **Defaults on both sides.** Megatron's TP communication overlap (`tp_comm_overlap`) is off in its stock recipe, as on PCIe; rdsp has no equivalent.
 
 ## rdsp settings per layout
 
-All runs: `--prefetch --sharded-loss --drop-padding-mask --pad-per-microbatch --cuts balanced`, with the recipe in `recipes/`.
+Every run uses its recipe in `recipes/`, with `--prefetch --sharded-loss --drop-padding-mask --pad-per-microbatch` and `--cuts balanced` unless noted.
 
 | Layout | Recipe | Extra settings | Cut chosen |
 |---|---|---|---|
@@ -51,28 +53,25 @@ All runs: `--prefetch --sharded-loss --drop-padding-mask --pad-per-microbatch --
 
 Megatron used its default even split (12 of 24, 16 of 32). It accepts uneven splits through flags; we didn't tune them.
 
+Settings held equal: sequence length 2,048, 64 rows a step, one row per GPU per microbatch; AdamW, learning rate 1e-5 constant, betas 0.9 / 0.95, eps 1e-8, no weight decay, clipping or warm-up; bf16 compute with fp32 gradients and optimizer state split over data parallel; no recompute. `bench/common/runs.sh` turns off Megatron's defaults that differ: clipping, warm-up, cosine decay, the multi-token-prediction head and the shuffling sampler.
+
+Differences that remain:
+
+- **Padding.** Megatron-Bridge pads every row to 2,048 whenever it pipelines (`dataset.pad_to_max_length`, forced when PP > 1). rdsp pads each microbatch to its longest row. So in the vs-Bridge rows Bridge computes about 2 positions per real token against rdsp's 1.1–1.2, and the two do not do equal work. MegatronMIMO's padding changes its step time little (9.60 s with dynamic padding against 9.64 s).
+- **Loss.** Megatron-Bridge trains on the token mean. MegatronMIMO trains on per-microbatch means and can't be changed, so the rdsp run against it does the same (`--loss microbatch-mean`).
+- **Embeddings.** In the pipeline layouts Megatron ties the input embedding and the output layer across stages; rdsp trains two copies (`--untie-embeddings`).
+
 ## The balanced cut
 
-In a two-stage pipeline the step runs at the pace of the slower stage. `--cuts balanced` estimates each part's work before training and minimises the most expensive stage, each stage's cost divided by its GPU count:
+`--cuts balanced` estimates each stage's work before training ([ENGINEERING.md](ENGINEERING.md#balanced-cuts)). We checked it by timing every candidate cut for a few steps:
 
-- A decoder layer costs its parameter count; so does the output head, on the last stage.
-- The vision encoder costs its parameter count times a ratio measured from the first batch:
+| Layout | Even split | Balanced | Fastest measured |
+|---|---|---|---|
+| 2B TP2×PP2×DP2 | 12 | 5 (5.30 s) | 5 |
+| 4B TP2×PP2×DP2 | 16 (out of memory) | 13 (8.69 s) | 13 |
+| 4B TP4×PP2×DP1 | 16 (14.54 s) | 12 (13.29 s) | 11 (13.15 s) |
 
-```
-ratio = Σ_images patches × (1 + 2 × patches × width / layer_params) / text tokens computed
-```
-
-The second term is the encoder's attention over each image: about 4 × patches × width multiply-adds per patch, against 2 × layer_params for the matrix products. A CORD-v2 image has about 3,800 patches, so attention makes the encoder about 1.6× more expensive than its parameters suggest. "Text tokens computed" counts each microbatch at its padded length, not the configured 2048.
-
-An earlier version divided by 2048 and left out attention. Both errors made the encoder look about half as expensive, so the cut landed too late. We checked the corrected estimate by timing every candidate cut for a few steps:
-
-| Layout | Even | Old estimate | Balanced | Fastest measured |
-|---|---|---|---|---|
-| 2B TP2×PP2×DP2 | 12 | 11 (6.07 s) | 5 (5.30 s) | 5 |
-| 4B TP2×PP2×DP2 | 16 | 16 (OOM) | 13 (8.69 s) | 13 |
-| 4B TP4×PP2×DP1 | 16 | 16 (14.54 s) | 12 (13.29 s) | 11 (13.15 s) |
-
-Under TP4 the estimate misses by one layer (about 1%). The encoder's small matrices lose efficiency when split four ways, and the estimate doesn't model that. The timing sweep was only a check and isn't part of rdsp.
+Under TP4 the estimate misses by one layer (about 1%): the encoder's small matrices lose efficiency when split four ways, and the estimate doesn't model that.
 
 ## What moved the numbers
 
@@ -88,7 +87,7 @@ rdsp started 40% slower than MegatronMIMO in MIMO's own layout. 2B step time aft
 | No padding mask: rows pad only on the right, so causal attention ignores the padding anyway, and SDPA picks its flash kernel | 9.05 s |
 | bf16 gradients freed after fp32 accumulation (2 bytes per parameter less, as in Megatron), and padding per microbatch (1.71 → 1.20 padded tokens per real token) | 8.30 s |
 
-Same chain for 4B TP2×PP2×DP2: 13.51 s → 11.57 s → 10.58 s → 8.71 s → 8.69 s. The freed gradients removed the out-of-memory errors that had forced recompute, and the corrected balanced cut did the rest.
+Same chain for 4B TP2×PP2×DP2: 13.51 s → 11.57 s → 10.58 s → 8.71 s → 8.69 s. The freed gradients removed the out-of-memory errors that had forced recompute, and the balanced cut did the rest.
 
 ## Not included
 
@@ -97,11 +96,10 @@ Same chain for 4B TP2×PP2×DP2: 13.51 s → 11.57 s → 10.58 s → 8.71 s → 
 - **9B and up.** These need 80 GB-class GPUs in these layouts.
 - **Colocated vision.** rdsp only; neither Megatron system supports it for Qwen3.5. 4B ran at 9.66 s, slower than TP2×PP2×DP2; 2B didn't fit.
 - **Repeats.** One 50-step run per configuration.
-- **Interconnect.** On NVLink machines, rdsp's communication savings would matter less.
 
 ## Validation provenance
 
-The supported-layout rows in [CONTRACTS.md](CONTRACTS.md) passed on Modal (8× L4, real DeepSpeed and NCCL, fp32 tiny models, SGD with momentum), with:
+The supported layouts in `src/ray_deepspeed_pipeline/support_matrix.py` passed on 2 to 8 L4 GPUs (real DeepSpeed and NCCL, fp32 tiny models, SGD with momentum), with:
 - loss parity against the unsplit model within 1e-4;
 - per-parameter update parity within 2.4e-5 (3e-4 with AutoEP folding);
 - checkpoint round trip;

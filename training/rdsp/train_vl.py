@@ -16,7 +16,7 @@ built by the model's own processor; the loss covers the caption tokens only.
         --rows 2 --microbatches 32 --stages 2 --cuts 16 \
         --stage 0:gpus=4,tp=2,zero=1 --stage 1:gpus=4,tp=2,zero=1
 
-`exported:DIR` reads samples written by bench/mimo/export_bridge_batches.py
+`exported:DIR` reads samples written by bench/common/export_bridge_batches.py
 (Megatron-Bridge's own SFT pipeline), one file per step, in order.
 """
 
@@ -469,7 +469,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--dataset",
         default="synthetic",
-        help="synthetic, cord-v2, or exported:DIR (export_bridge_batches.py)",
+        help="synthetic, cord-v2, or exported:DIR (bench/common/export_bridge_batches.py)",
     )
     p.add_argument(
         "--loss",

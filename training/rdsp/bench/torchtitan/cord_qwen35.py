@@ -3,7 +3,7 @@
 
 """TorchTitan on the rows Megatron-Bridge exported: Qwen3.5 on CORD-v2.
 
-Bridge's SFT rows, exported by bench/mimo/export_bridge_batches.py (the files rdsp
+Bridge's SFT rows, exported by bench/common/export_bridge_batches.py (the files rdsp
 replays), are fed to TorchTitan unchanged: same rows in the same order, same token
 ids, same answer-only loss mask, same image patches, every row padded to 2048. Only
 the conventions change:
@@ -19,7 +19,7 @@ the conventions change:
 
 Each row is one document of 2048 positions (padding included, causal), as rdsp runs
 it with --drop-padding-mask. The data path (cord_data.py) is checked on a CPU against
-the export and Hugging Face's M-RoPE positions: checks/, results/data_check.txt.
+the export and Hugging Face's M-RoPE positions (those checks are not in the repository).
 
 Run from a TorchTitan checkout (read at 3c36a77; no change to it), on 8 GPUs:
 

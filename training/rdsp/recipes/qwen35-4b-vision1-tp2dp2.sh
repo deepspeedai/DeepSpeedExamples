@@ -5,10 +5,11 @@
 # MegatronMIMO's non-colocated layout.
 #
 # GPUs:     5, 80 GB class (does not fit 32 GB GPUs without recompute)
-# Measured: not yet
+# Measured: 7.89 s per step, 64 rows of up to 2048 tokens, 8x H100
+#           (NVLink), DATA=exported:<dir> (MegatronMIMO: 7.99 s)
 #
 # DATA: cord-v2 (default; downloads CORD-v2, images scaled to --max-pixels)
-# or exported:<dir> from bench/mimo/runs.sh export (the benchmark's samples).
+# or exported:<dir> from bench/common/runs.sh export (the benchmark's samples).
 # Both pad each microbatch to its longest row.
 # Extra arguments are passed to train_vl.py and override the flags below.
 set -euo pipefail
