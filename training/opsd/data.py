@@ -8,9 +8,9 @@ If the tokenizer exposes ``apply_chat_template``, single-turn prompts are
 wrapped in a user-role message with ``add_generation_prompt=True`` so the
 student generates the assistant turn.
 
-Batches are **left-padded** because causal generation requires real tokens at
-    the right edge — :class:`deepspeed.runtime.rollout.RolloutRequest` and the hybrid-engine
-backend both assume this layout.
+Batches are **left-padded** so the real tokens sit at the right edge; the trainer
+turns each row's real tokens into one :class:`deepspeed.runtime.rollout.RolloutRecord`
+of the rollout request.
 """
 
 import json

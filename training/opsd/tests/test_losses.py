@@ -12,7 +12,6 @@ import pytest
 import torch
 
 from losses import chunked_distillation_loss
-from utils import build_response_mask
 
 
 @pytest.mark.parametrize("loss_type", ["forward_kl", "reverse_kl", "jsd"])
@@ -127,21 +126,3 @@ def test_all_zero_mask_returns_zero():
     mask = torch.zeros(2, 8)
     loss = chunked_distillation_loss(s, t, mask, loss_type="reverse_kl")
     assert loss.item() == pytest.approx(0.0, abs=1e-6)
-
-
-def test_build_response_mask_basic():
-    attention_mask = torch.tensor([[1, 1, 1, 1, 0], [1, 1, 1, 1, 1]])
-    response_start_idx = torch.tensor([2, 3])
-    resp = build_response_mask(response_start_idx, attention_mask)
-    expected = torch.tensor([[0, 0, 1, 1, 0], [0, 0, 0, 1, 1]])
-    assert torch.equal(resp, expected)
-
-
-def test_build_response_mask_validates_shapes():
-    with pytest.raises(ValueError, match="response_start_idx must be 1-D"):
-        build_response_mask(torch.zeros(2, 2), torch.ones(2, 4))
-    with pytest.raises(ValueError, match="attention_mask must be 2-D"):
-        build_response_mask(torch.zeros(2), torch.ones(4))
-    with pytest.raises(ValueError, match="batch"):
-        build_response_mask(torch.zeros(3), torch.ones(2, 4))
-

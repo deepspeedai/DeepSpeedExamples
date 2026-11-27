@@ -119,13 +119,15 @@ def _build_engine(model, args):
 
 def _make_request(model, batch_size, prompt_length, device):
     import torch
-    from deepspeed.runtime.rollout.base import RolloutRequest
+    from deepspeed.runtime.rollout.base import RolloutRecord, RolloutRequest
 
     vocab_size = model.config.vocab_size
     first_token_id = min(3, vocab_size - 1)
     prompt_ids = torch.randint(first_token_id, vocab_size, (batch_size, prompt_length), device=device)
-    prompt_attention_mask = torch.ones_like(prompt_ids)
-    return RolloutRequest(prompt_ids=prompt_ids, prompt_attention_mask=prompt_attention_mask)
+    return RolloutRequest(samples=[
+        RolloutRecord(group_index=row, tokens=ids, attention_mask=[1] * prompt_length)
+        for row, ids in enumerate(prompt_ids.tolist())
+    ])
 
 
 def _run_case(rollout, model, args, batch_size, samples_per_prompt, prompt_length, response_length, device):
